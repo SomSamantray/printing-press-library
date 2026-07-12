@@ -373,12 +373,61 @@ func eaMatchConsistent(report *PlayerReport, player *eafc.Player) (string, bool)
 	if len(tmTokens) == 0 || len(eaTokens) == 0 {
 		return fmt.Sprintf("unavailable: unverifiable name match (missing club to confirm EA team %q against TM club %q)", player.Team, report.Club), false
 	}
+	clubAgrees := false
 	for token := range tmTokens {
 		if eaTokens[token] {
-			return "", true
+			clubAgrees = true
+			break
 		}
 	}
-	return fmt.Sprintf("unavailable: ambiguous name match (EA team %q vs TM club %q)", player.Team, report.Club), false
+	if !clubAgrees {
+		return fmt.Sprintf("unavailable: ambiguous name match (EA team %q vs TM club %q)", player.Team, report.Club), false
+	}
+	// Club is the same, but a same-club teammate can still be returned by EA's
+	// name search (two similarly-named players at one club). Require a second
+	// positive signal: the EA hit's own name must share a token with the
+	// Transfermarkt name. EA is searched by that name, so a correct hit almost
+	// always agrees; a fuzzy same-club namesake (different surname) does not.
+	if !nameAffirms(report.Name, player) {
+		return fmt.Sprintf("unavailable: same-club name mismatch (EA %q vs TM %q at %q)", player.DisplayName(), report.Name, report.Club), false
+	}
+	return "", true
+}
+
+// nameTokens splits a personal name into significant lowercase, diacritic-folded
+// tokens (dropping one/two-letter fragments like initials). It reuses the
+// store's normalization so folding matches the potential-lookup path.
+func nameTokens(s string) []string {
+	out := make([]string, 0, 4)
+	for _, tok := range strings.Fields(store.NormalizePotentialName(s)) {
+		if len(tok) >= 3 {
+			out = append(out, tok)
+		}
+	}
+	return out
+}
+
+// nameAffirms reports whether the EA player's name shares a token with the
+// Transfermarkt name. Prefix-tolerant so short/nick forms still match
+// ("Rodri" affirms "Rodrigo"); a genuinely different surname does not.
+func nameAffirms(tmName string, player *eafc.Player) bool {
+	tm := nameTokens(tmName)
+	ea := nameTokens(player.DisplayName() + " " + player.FirstName + " " + player.LastName + " " + player.CommonName)
+	for _, a := range tm {
+		for _, b := range ea {
+			if a == b {
+				return true
+			}
+			// Prefix affinity: the shorter token (>=4) is a prefix of the longer.
+			if len(a) >= 4 && strings.HasPrefix(b, a) {
+				return true
+			}
+			if len(b) >= 4 && strings.HasPrefix(a, b) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func newPlayerReport(query, id, name, club, position, foot string, age int, nationality string, value int64) *PlayerReport {

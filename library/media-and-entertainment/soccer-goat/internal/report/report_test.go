@@ -40,25 +40,26 @@ func TestDecodeRosterInitializesEmptySlice(t *testing.T) {
 
 func TestEAMatchConsistent(t *testing.T) {
 	cases := []struct {
-		name   string
-		club   string
-		nat    string
-		eaTeam string
-		eaNat  string
-		wantOK bool
+		name    string
+		tmName  string
+		club    string
+		eaFirst string
+		eaLast  string
+		eaTeam  string
+		wantOK  bool
 	}{
-		{"exact club", "SL Benfica", "Norway", "SL Benfica", "Norway", true},
-		{"club affix variation", "Benfica", "", "SL Benfica", "", true},
-		{"real madrid variation", "Real Madrid", "", "Real Madrid CF", "", true},
-		{"missing tm club unverifiable rejected", "", "", "SL Benfica", "", false},
-		{"missing ea team unverifiable rejected", "SL Benfica", "", "", "", false},
-		{"clear mismatch rejected", "SL Benfica", "Norway", "Manchester City", "England", false},
-		{"same nationality different club still rejected", "SL Benfica", "Brazil", "Palmeiras", "Brazil", false},
+		{"exact club + name", "Andreas Schjelderup", "SL Benfica", "Andreas", "Schjelderup", "SL Benfica", true},
+		{"club affix variation", "Andreas Schjelderup", "Benfica", "Andreas", "Schjelderup", "SL Benfica", true},
+		{"nickname prefix affirms", "Rodri", "Manchester City", "Rodrigo", "Hernández", "Manchester City", true},
+		{"missing tm club unverifiable rejected", "Andreas Schjelderup", "", "Andreas", "Schjelderup", "SL Benfica", false},
+		{"missing ea team unverifiable rejected", "Andreas Schjelderup", "SL Benfica", "Andreas", "Schjelderup", "", false},
+		{"different club rejected", "Andreas Schjelderup", "SL Benfica", "Andreas", "Schjelderup", "Manchester City", false},
+		{"same-club namesake rejected", "Tomás Araújo", "SL Benfica", "António", "Silva", "SL Benfica", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			report := &PlayerReport{Club: tc.club, Nationality: tc.nat}
-			player := &eafc.Player{Team: tc.eaTeam, Nationality: tc.eaNat}
+			report := &PlayerReport{Name: tc.tmName, Club: tc.club}
+			player := &eafc.Player{FirstName: tc.eaFirst, LastName: tc.eaLast, Team: tc.eaTeam}
 			detail, ok := eaMatchConsistent(report, player)
 			if ok != tc.wantOK {
 				t.Fatalf("eaMatchConsistent ok = %v (detail %q), want %v", ok, detail, tc.wantOK)
