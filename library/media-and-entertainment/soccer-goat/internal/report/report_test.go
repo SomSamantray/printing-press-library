@@ -50,8 +50,8 @@ func TestEAMatchConsistent(t *testing.T) {
 		{"exact club", "SL Benfica", "Norway", "SL Benfica", "Norway", true},
 		{"club affix variation", "Benfica", "", "SL Benfica", "", true},
 		{"real madrid variation", "Real Madrid", "", "Real Madrid CF", "", true},
-		{"missing tm club accepts", "", "", "SL Benfica", "", true},
-		{"missing ea team accepts", "SL Benfica", "", "", "", true},
+		{"missing tm club unverifiable rejected", "", "", "SL Benfica", "", false},
+		{"missing ea team unverifiable rejected", "SL Benfica", "", "", "", false},
 		{"clear mismatch rejected", "SL Benfica", "Norway", "Manchester City", "England", false},
 		{"same nationality different club still rejected", "SL Benfica", "Brazil", "Palmeiras", "Brazil", false},
 	}

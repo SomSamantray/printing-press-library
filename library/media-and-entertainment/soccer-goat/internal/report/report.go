@@ -321,22 +321,28 @@ func clubTokens(name string) map[string]bool {
 // same player the Transfermarkt spine resolved. It returns (detail, false) with
 // a human-readable reason when the match should be rejected.
 //
-// The only strong discriminator is the club: when both sides name a club and
-// their significant tokens don't overlap (after dropping affix noise like
-// SL/FC/CF), the hit is almost certainly a different player who happens to share
-// the name, so we reject rather than merge. Nationality is deliberately NOT used
-// as a rescue — many players share a nationality, so "same country, different
-// club" is exactly the common-name collision this guard exists to catch. When
-// either side has no club to compare, we accept (best-effort); the Transfermarkt
-// market value is correct regardless, and only the EA rating/potential is at
-// stake. The residual false-reject case (a real mid-cycle transfer where the two
-// sources disagree on the club) degrades to an honest "unavailable", which is
-// the safe direction for a best-effort field.
+// EA is searched by name only, so the club is the one strong discriminator we
+// have for telling a real match from a namesake. The guard therefore requires a
+// positive club agreement: both sides must name a club AND their significant
+// tokens must overlap (after dropping affix noise like SL/FC/CF). Any weaker
+// state is rejected:
+//   - clubs disagree -> almost certainly a different player who shares the name;
+//   - either club missing -> we cannot verify, so we refuse to merge on the name
+//     alone rather than risk attaching a namesake's rating.
+//
+// Nationality is deliberately not consulted (too many players share one, so
+// "same country, different club" is exactly the collision this guard catches).
+// On any rejection the report keeps its correct Transfermarkt market value and
+// simply marks the best-effort EA rating/potential "unavailable" — the safe
+// direction. In practice both sources populate the club on virtually every
+// active player, so this rarely costs coverage; the residual cost (a real
+// mid-cycle transfer, or a club-less free agent) is an honest "unavailable"
+// instead of a silent mismerge.
 func eaMatchConsistent(report *PlayerReport, player *eafc.Player) (string, bool) {
 	tmTokens := clubTokens(report.Club)
 	eaTokens := clubTokens(player.Team)
 	if len(tmTokens) == 0 || len(eaTokens) == 0 {
-		return "", true
+		return fmt.Sprintf("unavailable: unverifiable name match (missing club to confirm EA team %q against TM club %q)", player.Team, report.Club), false
 	}
 	for token := range tmTokens {
 		if eaTokens[token] {
