@@ -9,16 +9,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/cliutil"
-	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/learn"
-	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/learn/lookups"
-	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/store"
 	"github.com/spf13/cobra"
 	"io"
 	"net/url"
 	"os"
 	"regexp"
 	"slices"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/learn/lookups"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/store"
 	"sort"
 	"strconv"
 	"strings"
@@ -405,6 +405,9 @@ Resource scoping:
 	cmd.Flags().StringArrayVar(&resourceParamFlags, "resource-param", nil, "Per-resource extra query param (repeatable, resource:key=value). Wins over --param and --global-param when keys conflict.")
 	cmd.Flags().StringArrayVar(&globalParamFlags, "global-param", nil, "Extra query param to inject into every sync request including dependent path-scoped calls (repeatable, key=value). Use when an API requires a scope on every call regardless of path nesting.")
 	cmd.Flags().StringArrayVar(&pathContextFlags, "path-context", nil, "Fill a {key} placeholder in BaseURL or request paths from a supplied value (repeatable, key=value). Wins over env-resolved Config.TemplateVars values, so it doubles as a one-off override at the call site. Use it when an env variable already holds a different value, or when the spec did not annotate the placeholder with an env var.")
+
+	// Hand-authored: `sync potential` loads the bundled potential dataset.
+	cmd.AddCommand(newSyncPotentialCmd(flags))
 
 	return cmd
 }

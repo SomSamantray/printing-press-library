@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/report"
 	"github.com/spf13/cobra"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/report"
 )
 
 type playerComparison struct {
@@ -42,6 +42,10 @@ func newNovelCompareCmd(flags *rootFlags) *cobra.Command {
 				return err
 			}
 			agg := report.NewAggregator(c)
+			if ps, closePS := openPotentialStore(cmd); ps != nil {
+				defer closePS()
+				agg.WithPotentialStore(ps)
+			}
 			ctx := cmd.Context()
 			a, err := agg.ResolvePlayer(ctx, args[0])
 			if err != nil {

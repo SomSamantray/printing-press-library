@@ -14,9 +14,18 @@ import (
 	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/source/eafc"
 	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/source/espn"
 	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/source/potential"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/store"
 )
 
 const potentialUnavailable = "unavailable: Cloudflare (set SOCCER_GOAT_FIFACM_COOKIE for potential)"
+const potentialDatasetHint = "unavailable: run 'sync potential' to load the offline dataset, or 'auth login' for live"
+
+// PotentialLooker is the subset of the local store the aggregator uses to fetch
+// potential ratings. Kept as an interface so report stays testable without a
+// live SQLite store.
+type PotentialLooker interface {
+	LookupPotential(ctx context.Context, eaID int, name string) (store.PotentialRow, bool, error)
+}
 
 type SourceStatus struct {
 	OK     bool   `json:"ok"`
@@ -77,10 +86,11 @@ func FormatEuros(value int64) string {
 }
 
 type Aggregator struct {
-	TM   *client.Client
-	EA   *eafc.Client
-	Pot  *potential.Client
-	ESPN *espn.Client
+	TM             *client.Client
+	EA             *eafc.Client
+	Pot            *potential.Client
+	ESPN           *espn.Client
+	PotentialStore PotentialLooker
 }
 
 func NewAggregator(tm *client.Client) *Aggregator {
@@ -90,6 +100,14 @@ func NewAggregator(tm *client.Client) *Aggregator {
 		Pot:  potential.New(),
 		ESPN: espn.New(),
 	}
+}
+
+// WithPotentialStore wires the local store as the primary (offline) potential
+// source. Nil-safe: an aggregator without a store simply falls back to the live
+// best-effort path.
+func (a *Aggregator) WithPotentialStore(s PotentialLooker) *Aggregator {
+	a.PotentialStore = s
+	return a
 }
 
 func (a *Aggregator) ResolvePlayer(ctx context.Context, name string) (*PlayerReport, error) {
@@ -276,18 +294,29 @@ func (a *Aggregator) enrichEAAndPotential(ctx context.Context, report *PlayerRep
 	report.EASlug = player.ID
 	report.Sources["ea-fc"] = SourceStatus{OK: true}
 
-	if a.Pot == nil || report.EASlug <= 0 {
-		report.Sources["potential"] = SourceStatus{Detail: potentialUnavailable}
-		return
+	// Potential, tier 1: the bundled/synced dataset (offline, primary). Joined on
+	// the EA id, which the dataset shares exactly, with a normalized-name
+	// fallback. This is the path that makes potential populate by default.
+	if a.PotentialStore != nil {
+		if row, ok, err := a.PotentialStore.LookupPotential(ctx, report.EASlug, report.Name); err == nil && ok {
+			report.Potential = row.Potential
+			report.PotentialSource = row.Source
+			report.Sources["potential"] = SourceStatus{OK: true}
+			return
+		}
 	}
-	rating, ratingOK, _ := a.Pot.ByEAID(ctx, report.EASlug)
-	if !ratingOK {
-		report.Sources["potential"] = SourceStatus{Detail: potentialUnavailable}
-		return
+
+	// Potential, tier 2: live best-effort (Cloudflare) fallback for players the
+	// dataset missed, only when a clearance cookie is configured.
+	if a.Pot != nil && report.EASlug > 0 {
+		if rating, ratingOK, _ := a.Pot.ByEAID(ctx, report.EASlug); ratingOK {
+			report.Potential = rating.Potential
+			report.PotentialSource = rating.Source
+			report.Sources["potential"] = SourceStatus{OK: true}
+			return
+		}
 	}
-	report.Potential = rating.Potential
-	report.PotentialSource = rating.Source
-	report.Sources["potential"] = SourceStatus{OK: true}
+	report.Sources["potential"] = SourceStatus{Detail: potentialDatasetHint}
 }
 
 // clubNoiseTokens are common club-name affixes that carry no identifying

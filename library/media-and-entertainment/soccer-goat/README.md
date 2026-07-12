@@ -120,7 +120,10 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 # confirm sources are reachable before a lookup
 soccer-goat-pp-cli doctor --dry-run
 
-# the headline: one name, full cross-source report
+# one-time: load the bundled potential dataset so potential populates offline
+soccer-goat-pp-cli sync potential
+
+# the headline: one name, full cross-source report (value + rating + potential)
 soccer-goat-pp-cli player schjelderup
 
 # the whole squad with values and ratings
@@ -368,6 +371,6 @@ Static request headers can be configured under `headers`; per-command header ove
 - Run the `list` command to see available items
 
 ### API-specific
-- **potential shows as unavailable** — sofifa/fifacm sit behind Cloudflare, so potential is best-effort and shows as unavailable without a cleared session. Paste a cleared-Cloudflare cookie into SOCCER_GOAT_FIFACM_COOKIE (or SOCCER_GOAT_SOFIFA_COOKIE) and retry.
+- **potential shows as unavailable** — run `soccer-goat-pp-cli sync potential` once to load the bundled potential dataset into the local store. After that, potential populates offline for ~18k players (joined on the EA player id). Players missing from the dataset (very young academy prospects) can still fall back to the live sofifa/fifacm path if you set a cleared-Cloudflare cookie in SOCCER_GOAT_FIFACM_COOKIE.
 - **Transfermarkt lookups fail or rate-limit** — point at your own transfermarkt-api instance with SOCCER_GOAT_BASE_URL, or wait and retry; the public instance is shared.
 - **ESPN stats section is empty** — ESPN soccer player coverage is thin; the report omits it cleanly and still returns value + rating + potential.

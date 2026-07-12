@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/report"
 	"github.com/spf13/cobra"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/report"
 )
 
 type ratingDivergence struct {
@@ -64,6 +64,10 @@ func newNovelOverUnderRatedCmd(flags *rootFlags) *cobra.Command {
 				return err
 			}
 			agg := report.NewAggregator(c)
+			if ps, closePS := openPotentialStore(cmd); ps != nil {
+				defer closePS()
+				agg.WithPotentialStore(ps)
+			}
 			ctx := cmd.Context()
 			team, err := agg.ResolveTeam(ctx, strings.TrimSpace(flagTeam))
 			if err != nil {

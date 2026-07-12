@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/report"
 	"github.com/spf13/cobra"
+	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/report"
 )
 
 const noPotentialDataNote = "no potential data available (sofifa/fifacm behind Cloudflare; set SOCCER_GOAT_FIFACM_COOKIE)"
@@ -61,6 +61,10 @@ func newNovelPotentialGapCmd(flags *rootFlags) *cobra.Command {
 				return err
 			}
 			agg := report.NewAggregator(c)
+			if ps, closePS := openPotentialStore(cmd); ps != nil {
+				defer closePS()
+				agg.WithPotentialStore(ps)
+			}
 			ctx := cmd.Context()
 			team, err := agg.ResolveTeam(ctx, strings.TrimSpace(flagTeam))
 			if err != nil {
