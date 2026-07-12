@@ -53,7 +53,7 @@ func TestEAMatchConsistent(t *testing.T) {
 		{"missing tm club accepts", "", "", "SL Benfica", "", true},
 		{"missing ea team accepts", "SL Benfica", "", "", "", true},
 		{"clear mismatch rejected", "SL Benfica", "Norway", "Manchester City", "England", false},
-		{"mismatch club rescued by nationality", "SL Benfica", "Norway", "Some Other FC", "Norway", true},
+		{"same nationality different club still rejected", "SL Benfica", "Brazil", "Palmeiras", "Brazil", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

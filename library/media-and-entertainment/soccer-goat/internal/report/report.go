@@ -319,9 +319,19 @@ func clubTokens(name string) map[string]bool {
 
 // eaMatchConsistent decides whether an EA search hit plausibly refers to the
 // same player the Transfermarkt spine resolved. It returns (detail, false) with
-// a human-readable reason when the match should be rejected. The check is
-// deliberately lenient: it only rejects on a clear club disagreement that
-// nationality does not rescue, so ordinary club-name variations still pass.
+// a human-readable reason when the match should be rejected.
+//
+// The only strong discriminator is the club: when both sides name a club and
+// their significant tokens don't overlap (after dropping affix noise like
+// SL/FC/CF), the hit is almost certainly a different player who happens to share
+// the name, so we reject rather than merge. Nationality is deliberately NOT used
+// as a rescue — many players share a nationality, so "same country, different
+// club" is exactly the common-name collision this guard exists to catch. When
+// either side has no club to compare, we accept (best-effort); the Transfermarkt
+// market value is correct regardless, and only the EA rating/potential is at
+// stake. The residual false-reject case (a real mid-cycle transfer where the two
+// sources disagree on the club) degrades to an honest "unavailable", which is
+// the safe direction for a best-effort field.
 func eaMatchConsistent(report *PlayerReport, player *eafc.Player) (string, bool) {
 	tmTokens := clubTokens(report.Club)
 	eaTokens := clubTokens(player.Team)
@@ -332,10 +342,6 @@ func eaMatchConsistent(report *PlayerReport, player *eafc.Player) (string, bool)
 		if eaTokens[token] {
 			return "", true
 		}
-	}
-	// Clubs disagree; accept only if nationality corroborates the match.
-	if report.Nationality != "" && strings.EqualFold(strings.TrimSpace(report.Nationality), strings.TrimSpace(player.Nationality)) {
-		return "", true
 	}
 	return fmt.Sprintf("unavailable: ambiguous name match (EA team %q vs TM club %q)", player.Team, report.Club), false
 }
