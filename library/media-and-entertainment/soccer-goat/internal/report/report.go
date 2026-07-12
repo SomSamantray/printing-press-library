@@ -253,6 +253,18 @@ func (a *Aggregator) enrichEAAndPotential(ctx context.Context, report *PlayerRep
 		report.Sources["potential"] = SourceStatus{Detail: potentialUnavailable}
 		return
 	}
+	// EA is searched by name only, so for common or duplicated names the first
+	// hit can be a different player. Verify the EA match against the identity we
+	// already trust from Transfermarkt (club, then nationality) before merging
+	// its rating/potential — otherwise team boards and divergence rankings could
+	// combine one player's TM value with another player's EA rating. When we have
+	// no TM signal to compare, accept the match (best-effort); the TM value is
+	// correct regardless.
+	if detail, consistent := eaMatchConsistent(report, player); !consistent {
+		report.Sources["ea-fc"] = SourceStatus{Detail: detail}
+		report.Sources["potential"] = SourceStatus{Detail: potentialUnavailable}
+		return
+	}
 	report.EAOverall = player.Overall
 	report.Pace = player.Pace
 	report.Shooting = player.Shooting
@@ -276,6 +288,56 @@ func (a *Aggregator) enrichEAAndPotential(ctx context.Context, report *PlayerRep
 	report.Potential = rating.Potential
 	report.PotentialSource = rating.Source
 	report.Sources["potential"] = SourceStatus{OK: true}
+}
+
+// clubNoiseTokens are common club-name affixes that carry no identifying
+// signal, so they are dropped before comparing a Transfermarkt club against an
+// EA team label ("SL Benfica" vs "Benfica", "Real Madrid CF" vs "Real Madrid").
+var clubNoiseTokens = map[string]bool{
+	"fc": true, "cf": true, "sc": true, "ac": true, "afc": true, "cd": true,
+	"sl": true, "ss": true, "us": true, "rc": true, "sv": true, "ud": true,
+	"club": true, "de": true, "the": true, "b": true, "ii": true, "1": true,
+}
+
+// clubTokens normalizes a club/team name to its significant lowercase tokens.
+func clubTokens(name string) map[string]bool {
+	tokens := make(map[string]bool)
+	for _, raw := range strings.Fields(strings.ToLower(name)) {
+		cleaned := strings.Map(func(r rune) rune {
+			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+				return r
+			}
+			return -1
+		}, raw)
+		if cleaned == "" || clubNoiseTokens[cleaned] {
+			continue
+		}
+		tokens[cleaned] = true
+	}
+	return tokens
+}
+
+// eaMatchConsistent decides whether an EA search hit plausibly refers to the
+// same player the Transfermarkt spine resolved. It returns (detail, false) with
+// a human-readable reason when the match should be rejected. The check is
+// deliberately lenient: it only rejects on a clear club disagreement that
+// nationality does not rescue, so ordinary club-name variations still pass.
+func eaMatchConsistent(report *PlayerReport, player *eafc.Player) (string, bool) {
+	tmTokens := clubTokens(report.Club)
+	eaTokens := clubTokens(player.Team)
+	if len(tmTokens) == 0 || len(eaTokens) == 0 {
+		return "", true
+	}
+	for token := range tmTokens {
+		if eaTokens[token] {
+			return "", true
+		}
+	}
+	// Clubs disagree; accept only if nationality corroborates the match.
+	if report.Nationality != "" && strings.EqualFold(strings.TrimSpace(report.Nationality), strings.TrimSpace(player.Nationality)) {
+		return "", true
+	}
+	return fmt.Sprintf("unavailable: ambiguous name match (EA team %q vs TM club %q)", player.Team, report.Club), false
 }
 
 func newPlayerReport(query, id, name, club, position, foot string, age int, nationality string, value int64) *PlayerReport {
