@@ -407,27 +407,36 @@ func nameTokens(s string) []string {
 	return out
 }
 
-// nameAffirms reports whether the EA player's name shares a token with the
-// Transfermarkt name. Prefix-tolerant so short/nick forms still match
-// ("Rodri" affirms "Rodrigo"); a genuinely different surname does not.
-func nameAffirms(tmName string, player *eafc.Player) bool {
-	tm := nameTokens(tmName)
-	ea := nameTokens(player.DisplayName() + " " + player.FirstName + " " + player.LastName + " " + player.CommonName)
-	for _, a := range tm {
-		for _, b := range ea {
-			if a == b {
-				return true
-			}
-			// Prefix affinity: the shorter token (>=4) is a prefix of the longer.
-			if len(a) >= 4 && strings.HasPrefix(b, a) {
-				return true
-			}
-			if len(b) >= 4 && strings.HasPrefix(a, b) {
-				return true
-			}
+// tokenAffirms reports whether tok matches any token in set, either exactly or
+// prefix-tolerantly (the shorter token, >=4 chars, is a prefix of the longer) so
+// short/nick forms still match ("rodri" affirms "rodrigo").
+func tokenAffirms(tok string, set []string) bool {
+	for _, s := range set {
+		if tok == s {
+			return true
+		}
+		if len(tok) >= 4 && strings.HasPrefix(s, tok) {
+			return true
+		}
+		if len(s) >= 4 && strings.HasPrefix(tok, s) {
+			return true
 		}
 	}
 	return false
+}
+
+// nameAffirms reports whether the EA player's name and the Transfermarkt name
+// agree on the *surname*, not merely a shared first name. A shared first name
+// alone ("João Silva" vs same-club "João Santos") is exactly the collision this
+// rejects; the discriminator is the last (surname) token, checked in both
+// directions and prefix-tolerantly so nick/short forms still match.
+func nameAffirms(tmName string, player *eafc.Player) bool {
+	tm := nameTokens(tmName)
+	ea := nameTokens(player.DisplayName() + " " + player.FirstName + " " + player.LastName + " " + player.CommonName)
+	if len(tm) == 0 || len(ea) == 0 {
+		return false
+	}
+	return tokenAffirms(tm[len(tm)-1], ea) || tokenAffirms(ea[len(ea)-1], tm)
 }
 
 func newPlayerReport(query, id, name, club, position, foot string, age int, nationality string, value int64) *PlayerReport {

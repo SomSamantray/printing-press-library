@@ -55,6 +55,8 @@ func TestEAMatchConsistent(t *testing.T) {
 		{"missing ea team unverifiable rejected", "Andreas Schjelderup", "SL Benfica", "Andreas", "Schjelderup", "", false},
 		{"different club rejected", "Andreas Schjelderup", "SL Benfica", "Andreas", "Schjelderup", "Manchester City", false},
 		{"same-club namesake rejected", "Tomás Araújo", "SL Benfica", "António", "Silva", "SL Benfica", false},
+		{"shared first name different surname rejected", "João Silva", "SL Benfica", "João", "Santos", "SL Benfica", false},
+		{"shared surname affirms", "João Silva", "SL Benfica", "Pedro", "Silva", "SL Benfica", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
