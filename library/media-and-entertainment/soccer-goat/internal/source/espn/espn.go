@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	// searchURL is ESPN's live site search. The former common/v3/search endpoint
-	// silently went to count:0 for every query; search/v2 is the working surface.
+	// searchURL is ESPN's multi-sport site search. Root cause of the prior 100%
+	// miss: the old code queried common/v3/search with sport=soccer, and that
+	// endpoint returns count:0 for a sport= filter (it wants type=player). We use
+	// the richer search/v2 endpoint, which is live and returns typed player rows.
 	searchURL = "https://site.web.api.espn.com/apis/search/v2"
 	// overviewURLFmt returns an athlete's season statistics, per-competition
 	// splits, and recent-match gameLog in a single call.
