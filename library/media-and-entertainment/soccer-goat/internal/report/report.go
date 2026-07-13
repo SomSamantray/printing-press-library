@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sort"
 	"sync"
 
 	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/soccer-goat/internal/client"
@@ -85,11 +86,18 @@ func FormatEuros(value int64) string {
 	return fmt.Sprintf("€%d", value)
 }
 
+// ESPNResolver is the slice of the ESPN client the aggregator needs, expressed
+// as an interface so report wiring can be unit-tested with a stub.
+type ESPNResolver interface {
+	Lookup(ctx context.Context, name string) (espn.Context, bool, error)
+	Enrich(ctx context.Context, id string) (*espn.Enrichment, error)
+}
+
 type Aggregator struct {
 	TM             *client.Client
 	EA             *eafc.Client
 	Pot            *potential.Client
-	ESPN           *espn.Client
+	ESPN           ESPNResolver
 	PotentialStore PotentialLooker
 }
 
@@ -136,6 +144,13 @@ func (a *Aggregator) ResolvePlayer(ctx context.Context, name string) (*PlayerRep
 	} else if context, ok, lookupErr := a.ESPN.Lookup(ctx, name); lookupErr != nil {
 		report.Sources["espn"] = SourceStatus{Detail: "unavailable: " + lookupErr.Error()}
 	} else if ok {
+		// A failed enrich never demotes a successful resolve: context stays,
+		// espn stays OK, only the stats/splits/recent block is absent.
+		if enr, enrErr := a.ESPN.Enrich(ctx, context.AthleteID); enrErr == nil && enr != nil {
+			context.Stats = enr.Stats
+			context.Splits = enr.Splits
+			context.RecentGames = enr.RecentGames
+		}
 		report.ESPN = &context
 		report.Sources["espn"] = SourceStatus{OK: true}
 	} else {
@@ -179,7 +194,6 @@ func (a *Aggregator) ResolveTeam(ctx context.Context, clubName string) (*TeamRep
 		Sources:  make(map[string]SourceStatus, 4),
 	}
 	team.Sources["transfermarkt"] = SourceStatus{OK: true}
-	team.Sources["espn"] = SourceStatus{Detail: "not requested for team report"}
 	for _, rosterPlayer := range roster {
 		value := int64(rosterPlayer.MarketValue)
 		team.SquadValue += value
@@ -194,7 +208,6 @@ func (a *Aggregator) ResolveTeam(ctx context.Context, clubName string) (*TeamRep
 			firstName(rosterPlayer.Nationality),
 			value,
 		)
-		player.Sources["espn"] = SourceStatus{Detail: "not requested for team report"}
 		team.Players = append(team.Players, *player)
 	}
 	team.SquadValueLabel = FormatEuros(team.SquadValue)
@@ -225,7 +238,118 @@ func (a *Aggregator) ResolveTeam(ctx context.Context, clubName string) (*TeamRep
 		status.Detail = potentialUnavailable
 		team.Sources["potential"] = status
 	}
+
+	// ESPN gets its own budget: the existing dogfood cap above is IsDogfoodEnv()
+	// gated and does not bound production runs, and ESPN is ~2 calls/player, so a
+	// full squad would otherwise serialize dozens of calls. Enrich the top players
+	// by market value and mark the rest skipped.
+	if a.ESPN == nil {
+		for index := range team.Players {
+			team.Players[index].Sources["espn"] = SourceStatus{Detail: "unavailable: ESPN client not configured"}
+		}
+		team.Sources["espn"] = SourceStatus{Detail: "unavailable: ESPN client not configured"}
+	} else {
+		espnOK, espnAttempted := a.enrichTeamESPN(ctx, team.Players)
+		detail := fmt.Sprintf("enriched %d/%d players", espnOK, espnAttempted)
+		if espnAttempted < len(team.Players) {
+			detail += fmt.Sprintf("; ESPN budget capped enrichment at %d/%d", espnAttempted, len(team.Players))
+		}
+		team.Sources["espn"] = SourceStatus{OK: espnOK > 0, Detail: detail}
+	}
 	return team, nil
+}
+
+// espnTeamBudget bounds how many players in a squad report get ESPN enrichment
+// (top N by market value). ESPN is ~2 calls/player through a rate limiter, so an
+// uncapped squad would add tens of seconds of latency.
+const espnTeamBudget = 12
+
+// enrichTeamESPN resolves + enriches ESPN for the top-value players (up to the
+// budget), marking the rest "skipped: espn enrichment limit". Returns the number
+// of successful enrichments and the number attempted.
+func (a *Aggregator) enrichTeamESPN(ctx context.Context, players []PlayerReport) (okCount, attempted int) {
+	if len(players) == 0 {
+		return 0, 0
+	}
+	budget := espnEnrichIndices(players)
+	inBudget := make(map[int]bool, len(budget))
+	for _, index := range budget {
+		inBudget[index] = true
+	}
+	for index := range players {
+		if !inBudget[index] {
+			players[index].Sources["espn"] = SourceStatus{Detail: "skipped: espn enrichment limit"}
+		}
+	}
+
+	workers := len(budget)
+	if workers > 6 {
+		workers = 6
+	}
+	jobs := make(chan int)
+	var group sync.WaitGroup
+	var mu sync.Mutex
+	group.Add(workers)
+	for worker := 0; worker < workers; worker++ {
+		go func() {
+			defer group.Done()
+			for index := range jobs {
+				if a.resolveESPNPlayer(ctx, &players[index]) {
+					mu.Lock()
+					okCount++
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+	for _, index := range budget {
+		jobs <- index
+	}
+	close(jobs)
+	group.Wait()
+	return okCount, len(budget)
+}
+
+// resolveESPNPlayer resolves and enriches ESPN for a single player, setting its
+// source status. Returns true on a successful resolve.
+func (a *Aggregator) resolveESPNPlayer(ctx context.Context, player *PlayerReport) bool {
+	context, ok, err := a.ESPN.Lookup(ctx, player.Name)
+	if err != nil {
+		player.Sources["espn"] = SourceStatus{Detail: "unavailable: " + err.Error()}
+		return false
+	}
+	if !ok {
+		player.Sources["espn"] = SourceStatus{Detail: "unavailable: no ESPN athlete result"}
+		return false
+	}
+	if enr, enrErr := a.ESPN.Enrich(ctx, context.AthleteID); enrErr == nil && enr != nil {
+		context.Stats = enr.Stats
+		context.Splits = enr.Splits
+		context.RecentGames = enr.RecentGames
+	}
+	player.ESPN = &context
+	player.Sources["espn"] = SourceStatus{OK: true}
+	return true
+}
+
+// espnEnrichIndices returns the indices of the highest-value players to enrich,
+// capped at the budget (and further capped to 5 under dogfood for speed).
+func espnEnrichIndices(players []PlayerReport) []int {
+	indices := make([]int, len(players))
+	for i := range indices {
+		indices[i] = i
+	}
+	sort.SliceStable(indices, func(a, b int) bool {
+		return players[indices[a]].MarketValue > players[indices[b]].MarketValue
+	})
+	limit := espnTeamBudget
+	if cliutil.IsDogfoodEnv() && limit > 5 {
+		limit = 5
+	}
+	if limit > len(indices) {
+		limit = len(indices)
+	}
+	return indices[:limit]
 }
 
 func (a *Aggregator) enrichTeamPlayers(ctx context.Context, players []PlayerReport) {
