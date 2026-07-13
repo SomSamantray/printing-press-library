@@ -68,12 +68,42 @@ func printPlayerReport(w io.Writer, player *report.PlayerReport) error {
 		ratingLabel(player.EAOverall), ratingLabel(player.Potential), availableLabel(player.PotentialSource))
 	fmt.Fprintf(w, "PAC %d SHO %d PAS %d DRI %d DEF %d PHY %d\n",
 		player.Pace, player.Shooting, player.Passing, player.Dribbling, player.Defending, player.Physical)
+	printESPNBlock(w, player)
 	fmt.Fprintf(w, "Sources: transfermarkt %s, ea-fc %s, potential %s, espn %s\n",
 		sourceStatusLabel(player.Sources["transfermarkt"]),
 		sourceStatusLabel(player.Sources["ea-fc"]),
 		sourceStatusLabel(player.Sources["potential"]),
 		sourceStatusLabel(player.Sources["espn"]))
 	return nil
+}
+
+// printESPNBlock renders the ESPN season line, per-competition splits, and
+// recent-match form when enrichment populated them. Silent when ESPN is absent.
+func printESPNBlock(w io.Writer, player *report.PlayerReport) {
+	e := player.ESPN
+	if e == nil {
+		return
+	}
+	if e.Stats != nil {
+		s := e.Stats
+		fmt.Fprintf(w, "ESPN season: %dG %dA, %d shots (%d on target), %d starts, %d YC/%d RC\n",
+			s.Goals, s.Assists, s.Shots, s.ShotsOnTarget, s.Starts, s.YellowCards, s.RedCards)
+	}
+	for _, split := range e.Splits {
+		fmt.Fprintf(w, "  %s: %dG %dA, %d shots\n",
+			split.DisplayName, split.Stats.Goals, split.Stats.Assists, split.Stats.Shots)
+	}
+	if len(e.RecentGames) > 0 {
+		parts := make([]string, 0, len(e.RecentGames))
+		for _, g := range e.RecentGames {
+			atVs := g.AtVs
+			if atVs == "" {
+				atVs = "vs"
+			}
+			parts = append(parts, fmt.Sprintf("%s %s %s %s (%dG %dA)", atVs, g.Opponent, g.Result, g.Score, g.Goals, g.Assists))
+		}
+		fmt.Fprintf(w, "  Last %d: %s\n", len(parts), strings.Join(parts, "; "))
+	}
 }
 
 func ratingLabel(value int) string {

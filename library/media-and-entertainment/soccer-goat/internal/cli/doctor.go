@@ -256,6 +256,9 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 
 			report["version"] = version
 
+			// ESPN source canary: detects endpoint drift (see doctor_espn.go).
+			report["espn"] = espnCanary(cmd.Context())
+
 			if flags.asJSON {
 				if err := printJSONFiltered(cmd.OutOrStdout(), report, flags); err != nil {
 					return err
@@ -274,6 +277,7 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 				{"credentials_location_warning", "Credentials Storage"},
 				{"api", "API"},
 				{"credentials", "Credentials"},
+				{"espn", "ESPN Source"},
 			}
 			for _, ck := range checkKeys {
 				v, ok := report[ck.key]

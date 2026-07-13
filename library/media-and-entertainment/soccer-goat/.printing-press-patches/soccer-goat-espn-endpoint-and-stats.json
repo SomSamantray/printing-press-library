@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "id": "soccer-goat-espn-live-endpoints-are-search-v2-and-overview",
+  "applied_at": "2026-07-12",
+  "base_run_id": "20260712-074136",
+  "base_printing_press_version": "4.27.1",
+  "summary": "ESPN's usable soccer athlete surface is search/v2 for resolution plus .../athletes/<id>/overview for season stats, per-competition splits, and recent-match form; the common/v3/search endpoint is dead and a regen must not reintroduce it.",
+  "reason": "common/v3/search silently returns count:0 for every query (verified across multiple global players), so the generated ESPN lookup produced a 100% 'no ESPN athlete result' miss. Resolution now guards on soccer+name-match to avoid resolving the wrong athlete once the sport filter is gone, and a doctor canary flags the next silent endpoint death.",
+  "files": [
+    "internal/source/espn/espn.go",
+    "internal/report/report.go",
+    "internal/cli/player.go",
+    "internal/cli/doctor.go",
+    "internal/cli/doctor_espn.go"
+  ],
+  "validated_outcome": "player 'joao neves' returns sources.espn ok with athleteId 355061, non-empty season stats and per-competition splits (Portugal teamId 482), and recent games; team reports enrich ESPN for the top players by market value within a budget; doctor's ESPN Source canary reports healthy.",
+  "upstream_issue": ""
+}
