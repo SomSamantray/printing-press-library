@@ -22,7 +22,7 @@ func newPhoneNumbersSearchCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "search",
 		Short:       "Search available phone numbers",
-		Example:     "  bolna-pp-cli-pp-cli phone-numbers search --country IN",
+		Example:     "  bolna-pp-cli phone-numbers search --country IN",
 		Annotations: map[string]string{"pp:endpoint": "phone-numbers.search", "pp:method": "GET", "pp:path": "/phone-numbers/search", "pp:happy-args": "--country=IN", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/phone-numbers/search"

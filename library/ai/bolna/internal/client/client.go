@@ -637,7 +637,7 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 			req.Header.Del(BinaryResponseHeader)
 		}
 		if req.Header.Get("User-Agent") == "" {
-			req.Header.Set("User-Agent", "bolna-pp-cli-pp-cli/1.0.0")
+			req.Header.Set("User-Agent", "github.com/mvanhorn/printing-press-library/library/ai/bolna/1.0.0")
 		}
 		// Go's net/http omits Accept by default; browsers, curl, and other
 		// stdlibs always send it. Fingerprint-checking WAFs (Imperva, Akamai,
@@ -857,7 +857,7 @@ func looksLikeCredentialPlaceholder(value string) bool {
 }
 
 func authPlaceholderCredentialError(cfg *config.Config) error {
-	return authPlaceholderCredentialErrorWithSetup(cfg, "export BOLNA_PP_CLI_BEARER_AUTH=<your-token> or bolna-pp-cli-pp-cli auth set-token <token>")
+	return authPlaceholderCredentialErrorWithSetup(cfg, "export BOLNA_PP_CLI_BEARER_AUTH=<your-token> or bolna-pp-cli auth set-token <token>")
 }
 
 func authPlaceholderCredentialErrorWithSetup(cfg *config.Config, setup string) error {

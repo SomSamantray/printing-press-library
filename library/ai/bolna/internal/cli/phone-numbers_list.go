@@ -16,7 +16,7 @@ func newPhoneNumbersListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List phone numbers",
-		Example:     "  bolna-pp-cli-pp-cli phone-numbers list",
+		Example:     "  bolna-pp-cli phone-numbers list",
 		Annotations: map[string]string{"pp:endpoint": "phone-numbers.list", "pp:method": "GET", "pp:path": "/phone-numbers/all", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/phone-numbers/all"

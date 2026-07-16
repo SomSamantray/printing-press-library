@@ -16,7 +16,7 @@ func newSipTrunksListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List SIP trunks",
-		Example:     "  bolna-pp-cli-pp-cli sip-trunks list",
+		Example:     "  bolna-pp-cli sip-trunks list",
 		Annotations: map[string]string{"pp:endpoint": "sip-trunks.list", "pp:method": "GET", "pp:path": "/sip-trunks/trunks", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/sip-trunks/trunks"

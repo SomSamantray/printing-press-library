@@ -17,7 +17,7 @@ func newExecutionsLogExecutionRawCmd(flags *rootFlags) *cobra.Command {
 		Use:         "execution-raw <execution_id>",
 		Aliases:     []string{"get"},
 		Short:       "Get raw execution logs",
-		Example:     "  bolna-pp-cli-pp-cli executions log execution-raw 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli executions log execution-raw 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "log.execution-raw", "pp:method": "GET", "pp:path": "/executions/{execution_id}/log", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

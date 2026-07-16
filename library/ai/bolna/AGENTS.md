@@ -1,34 +1,34 @@
 # Bolna Pp Cli Printed CLI Agent Guide
 
-This directory is a generated `bolna-pp-cli-pp-cli` printed CLI. It was produced by [CLI Printing Press](https://github.com/mvanhorn/cli-printing-press), so treat systemic fixes as upstream Printing Press fixes first. Keep local edits narrow and document why a generated-tree patch belongs here.
+This directory is a generated `bolna-pp-cli` printed CLI. It was produced by [CLI Printing Press](https://github.com/mvanhorn/cli-printing-press), so treat systemic fixes as upstream Printing Press fixes first. Keep local edits narrow and document why a generated-tree patch belongs here.
 
 ## Local Operating Contract
 
 Start by asking the generated CLI for current runtime truth:
 
 ```bash
-bolna-pp-cli-pp-cli doctor --json
-bolna-pp-cli-pp-cli agent-context --pretty
+bolna-pp-cli doctor --json
+bolna-pp-cli agent-context --pretty
 ```
 
 Use runtime discovery instead of relying on a copied command list:
 
 ```bash
-bolna-pp-cli-pp-cli which "<capability>" --json
-bolna-pp-cli-pp-cli <command> --help
+bolna-pp-cli which "<capability>" --json
+bolna-pp-cli <command> --help
 ```
 
 Add `--agent` to command invocations for JSON, compact output, non-interactive defaults, no color, and confirmation-safe scripting:
 
 ```bash
-bolna-pp-cli-pp-cli <command> --agent
+bolna-pp-cli <command> --agent
 ```
 
 Before running an unfamiliar command that may mutate remote state, inspect its help and prefer a dry run:
 
 ```bash
-bolna-pp-cli-pp-cli <command> --help
-bolna-pp-cli-pp-cli <command> --dry-run --agent
+bolna-pp-cli <command> --help
+bolna-pp-cli <command> --dry-run --agent
 ```
 
 Use `--yes --no-input` only after the target, arguments, and side effects are clear.
@@ -37,9 +37,9 @@ Use `--yes --no-input` only after the target, arguments, and side effects are cl
 
 This CLI ships a self-capturing teach/recall loop backed by the local SQLite store. The CLI journals every invocation, derives `flag_alias` candidates from failed-flag + corrected-retry pairs, and synthesizes a playbook candidate when a family is taught without one - no manual failure bookkeeping. The agent's role is judgment:
 
-1. On a new user question, call `bolna-pp-cli-pp-cli recall "<question>" --agent` FIRST. If `found=true` and the top result has `entity_match == "exact"` and `confidence >= 2`, skip discovery and go straight to the live fetch for the returned resource IDs. If the store is cold (recall finds nothing and `learnings list` and `learnings candidates` are both empty), skip recall for the rest of the session.
+1. On a new user question, call `bolna-pp-cli recall "<question>" --agent` FIRST. If `found=true` and the top result has `entity_match == "exact"` and `confidence >= 2`, skip discovery and go straight to the live fetch for the returned resource IDs. If the store is cold (recall finds nothing and `learnings list` and `learnings candidates` are both empty), skip recall for the rest of the session.
 2. When the envelope carries a `candidates` section (warning `candidates_present`), candidates are try-then-confirm, never facts: follow each candidate's two-step `next_action` verbatim (trial command first, then `learnings confirm <id>` only after the trial verified the behavior), and reject wrong ones with `learnings reject <id>`. Never re-teach something recall surfaced as a candidate; confirm or reject it instead.
-3. After answering, always fire `bolna-pp-cli-pp-cli teach --query "<question>" --resource <id> --resource-type <type> &` in the background - teaching is unconditional and is the anchor that triggers playbook synthesis. Teach the structural question with identifiers stripped (no names, emails, phone numbers, account ids); the CLI warns on obvious PII shapes but does not block.
+3. After answering, always fire `bolna-pp-cli teach --query "<question>" --resource <id> --resource-type <type> &` in the background - teaching is unconditional and is the anchor that triggers playbook synthesis. Teach the structural question with identifiers stripped (no names, emails, phone numbers, account ids); the CLI warns on obvious PII shapes but does not block.
 4. Use `learnings list` to inspect taught rows, `learnings forget "<question>"` to undo a bad teach, `learnings candidates` for the full open candidate set, and `learnings stats` for the loop's local metrics. `teach-pattern` and `teach-lookup` install manual generalization rules when one teach should cover a whole family (e.g. one country alias unlocks every per-country query).
 5. If `learnings confirm` is an unknown command, you are driving an older binary - ignore the candidates guidance and keep the rest of the flow.
 

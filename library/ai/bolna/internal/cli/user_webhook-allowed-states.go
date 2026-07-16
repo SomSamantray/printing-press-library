@@ -16,7 +16,7 @@ func newUserWebhookAllowedStatesCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "webhook-allowed-states",
 		Short:       "List webhook allowed states",
-		Example:     "  bolna-pp-cli-pp-cli user webhook-allowed-states",
+		Example:     "  bolna-pp-cli user webhook-allowed-states",
 		Annotations: map[string]string{"pp:endpoint": "user.webhook-allowed-states", "pp:method": "GET", "pp:path": "/user/webhook/allowed-states", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/user/webhook/allowed-states"

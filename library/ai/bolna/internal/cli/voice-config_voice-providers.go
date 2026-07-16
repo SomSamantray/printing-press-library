@@ -17,7 +17,7 @@ func newVoiceConfigVoiceProvidersCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "voice-providers",
 		Short:       "List TTS providers and models",
-		Example:     "  bolna-pp-cli-pp-cli voice-config voice-providers --language en",
+		Example:     "  bolna-pp-cli voice-config voice-providers --language en",
 		Annotations: map[string]string{"pp:endpoint": "voice-config.voice-providers", "pp:method": "GET", "pp:path": "/api/v1/voice-config/tts", "pp:happy-args": "--language=en", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/api/v1/voice-config/tts"

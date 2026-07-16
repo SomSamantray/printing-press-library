@@ -17,7 +17,7 @@ func newAmbientSoundsPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "ambient-sounds",
 		Short:       "List available ambient sounds",
 		Long:        "List available ambient sounds",
-		Example:     "  bolna-pp-cli-pp-cli ambient-sounds",
+		Example:     "  bolna-pp-cli ambient-sounds",
 		Annotations: map[string]string{"pp:endpoint": "ambient-sounds.list", "pp:method": "GET", "pp:path": "/ambient-sounds", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

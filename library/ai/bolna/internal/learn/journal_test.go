@@ -45,7 +45,7 @@ func withJournalHome(t *testing.T) string {
 func runCLI(t *testing.T, args ...string) error {
 	t.Helper()
 	oldArgs := os.Args
-	os.Args = append([]string{"bolna-pp-cli-pp-cli"}, args...)
+	os.Args = append([]string{"bolna-pp-cli"}, args...)
 	defer func() { os.Args = oldArgs }()
 	return cli.Execute()
 }

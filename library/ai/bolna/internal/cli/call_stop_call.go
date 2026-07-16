@@ -19,7 +19,7 @@ func newCallStopCallCmd(flags *rootFlags) *cobra.Command {
 		Use:         "call <execution_id>",
 		Aliases:     []string{"create"},
 		Short:       "Stop a queued or scheduled call",
-		Example:     "  bolna-pp-cli-pp-cli call stop call 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli call stop call 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "stop.call", "pp:method": "POST", "pp:path": "/call/{execution_id}/stop"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

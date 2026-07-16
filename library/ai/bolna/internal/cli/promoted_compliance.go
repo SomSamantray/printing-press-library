@@ -17,7 +17,7 @@ func newCompliancePromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "compliance",
 		Short:       "List phone-number compliance records",
 		Long:        "List phone-number compliance records",
-		Example:     "  bolna-pp-cli-pp-cli compliance",
+		Example:     "  bolna-pp-cli compliance",
 		Annotations: map[string]string{"pp:endpoint": "compliance.list", "pp:method": "GET", "pp:path": "/compliance/list", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

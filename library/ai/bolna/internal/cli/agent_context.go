@@ -137,7 +137,7 @@ func buildAgentContext(rootCmd *cobra.Command) agentContext {
 	return agentContext{
 		SchemaVersion: agentContextSchemaVersion,
 		CLI: agentContextCLI{
-			Name:        "bolna-pp-cli-pp-cli",
+			Name:        "bolna-pp-cli",
 			Description: "Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities.",
 			Version:     rootCmd.Version,
 		},

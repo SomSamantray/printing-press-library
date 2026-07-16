@@ -18,7 +18,7 @@ func newSipTrunksUpdateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "update <trunk_id>",
 		Short:       "Update a SIP trunk",
-		Example:     "  bolna-pp-cli-pp-cli sip-trunks update 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli sip-trunks update 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "sip-trunks.update", "pp:method": "PATCH", "pp:path": "/sip-trunks/trunks/{trunk_id}"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

@@ -17,7 +17,7 @@ func newBatchesBatchDeleteCmd(flags *rootFlags) *cobra.Command {
 		Use:         "batch-delete <batch_id>",
 		Aliases:     []string{"delete"},
 		Short:       "Delete a batch",
-		Example:     "  bolna-pp-cli-pp-cli batches batch-delete 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli batches batch-delete 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "batches.batch-delete", "pp:method": "DELETE", "pp:path": "/batches/{batch_id}"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

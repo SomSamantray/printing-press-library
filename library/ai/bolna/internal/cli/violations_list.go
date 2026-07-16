@@ -16,7 +16,7 @@ func newViolationsListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List account violations",
-		Example:     "  bolna-pp-cli-pp-cli violations list",
+		Example:     "  bolna-pp-cli violations list",
 		Annotations: map[string]string{"pp:endpoint": "violations.list", "pp:method": "GET", "pp:path": "/violations/list", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/violations/list"

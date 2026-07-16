@@ -204,7 +204,7 @@ func LegacyConfigPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("resolve legacy config path: %w", err)
 	}
-	return filepath.Join(home, ".config", "bolna-pp-cli-pp-cli", "config.toml"), nil
+	return filepath.Join(home, ".config", "bolna-pp-cli", "config.toml"), nil
 }
 
 func readConfigFile(path string, cfg *Config, owner string) error {

@@ -16,7 +16,7 @@ func newSipTrunksGetCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "get <trunk_id>",
 		Short:       "Get a SIP trunk",
-		Example:     "  bolna-pp-cli-pp-cli sip-trunks get 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli sip-trunks get 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "sip-trunks.get", "pp:method": "GET", "pp:path": "/sip-trunks/trunks/{trunk_id}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

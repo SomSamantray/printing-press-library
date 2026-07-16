@@ -20,7 +20,7 @@ func newAgentExecutionsAgentCmd(flags *rootFlags) *cobra.Command {
 		Use:         "agent <agent_id>",
 		Aliases:     []string{"get"},
 		Short:       "List agent executions",
-		Example:     "  bolna-pp-cli-pp-cli agent executions agent 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli agent executions agent 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "executions.agent", "pp:method": "GET", "pp:path": "/v2/agent/{agent_id}/executions", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

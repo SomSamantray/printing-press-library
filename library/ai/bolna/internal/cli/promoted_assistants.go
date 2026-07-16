@@ -17,7 +17,7 @@ func newAssistantsPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "assistants",
 		Short:       "List GPT assistants available to the account",
 		Long:        "List GPT assistants available to the account",
-		Example:     "  bolna-pp-cli-pp-cli assistants",
+		Example:     "  bolna-pp-cli assistants",
 		Annotations: map[string]string{"pp:endpoint": "assistants.list", "pp:method": "GET", "pp:path": "/assistants/get_gpt_assistants", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

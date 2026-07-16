@@ -443,16 +443,16 @@ func TestTeachLookup_RejectsComputedKind(t *testing.T) {
 
 func TestSkipLearnHook_FrameworkCommandsSkipped(t *testing.T) {
 	cases := []string{
-		"bolna-pp-cli-pp-cli auth login",
-		"bolna-pp-cli-pp-cli doctor",
-		"bolna-pp-cli-pp-cli help items",
-		"bolna-pp-cli-pp-cli sync",
-		"bolna-pp-cli-pp-cli profile list",
-		"bolna-pp-cli-pp-cli feedback list",
-		"bolna-pp-cli-pp-cli which",
-		"bolna-pp-cli-pp-cli agent-context",
-		"bolna-pp-cli-pp-cli completion bash",
-		"bolna-pp-cli-pp-cli version",
+		"bolna-pp-cli auth login",
+		"bolna-pp-cli doctor",
+		"bolna-pp-cli help items",
+		"bolna-pp-cli sync",
+		"bolna-pp-cli profile list",
+		"bolna-pp-cli feedback list",
+		"bolna-pp-cli which",
+		"bolna-pp-cli agent-context",
+		"bolna-pp-cli completion bash",
+		"bolna-pp-cli version",
 	}
 	for _, commandPath := range cases {
 		if !shouldSkipLearnHook(commandPath) {
@@ -463,12 +463,12 @@ func TestSkipLearnHook_FrameworkCommandsSkipped(t *testing.T) {
 
 func TestSkipLearnHook_NovelCommandsNotSkipped(t *testing.T) {
 	novel := []string{
-		"bolna-pp-cli-pp-cli teach",
-		"bolna-pp-cli-pp-cli recall",
-		"bolna-pp-cli-pp-cli learnings",
-		"bolna-pp-cli-pp-cli teach-pattern",
-		"bolna-pp-cli-pp-cli teach-lookup",
-		"bolna-pp-cli-pp-cli items list",
+		"bolna-pp-cli teach",
+		"bolna-pp-cli recall",
+		"bolna-pp-cli learnings",
+		"bolna-pp-cli teach-pattern",
+		"bolna-pp-cli teach-lookup",
+		"bolna-pp-cli items list",
 	}
 	for _, commandPath := range novel {
 		if shouldSkipLearnHook(commandPath) {
@@ -490,7 +490,7 @@ func TestSkipLearnHook_FrameworkCommandsDoNotCreateDefaultDB(t *testing.T) {
 	}
 	for _, args := range cases {
 		_, _, _ = runRootArgs(t, args...)
-		if _, err := os.Stat(defaultDBPath("bolna-pp-cli-pp-cli")); err == nil {
+		if _, err := os.Stat(defaultDBPath("bolna-pp-cli")); err == nil {
 			t.Fatalf("%s created default DB under %s", strings.Join(args, " "), home)
 		} else if !os.IsNotExist(err) {
 			t.Fatalf("%s stat default DB: %v", strings.Join(args, " "), err)

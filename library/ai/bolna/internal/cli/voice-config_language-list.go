@@ -17,7 +17,7 @@ func newVoiceConfigLanguageListCmd(flags *rootFlags) *cobra.Command {
 		Use:         "language-list",
 		Aliases:     []string{"list"},
 		Short:       "List supported languages",
-		Example:     "  bolna-pp-cli-pp-cli voice-config language-list",
+		Example:     "  bolna-pp-cli voice-config language-list",
 		Annotations: map[string]string{"pp:endpoint": "voice-config.language-list", "pp:method": "GET", "pp:path": "/api/v1/voice-config/languages", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/api/v1/voice-config/languages"

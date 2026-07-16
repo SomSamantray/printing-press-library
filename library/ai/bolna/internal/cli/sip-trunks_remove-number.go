@@ -16,7 +16,7 @@ func newSipTrunksRemoveNumberCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "remove-number <trunk_id> <phone_number_id>",
 		Short:       "Remove a number from a SIP trunk",
-		Example:     "  bolna-pp-cli-pp-cli sip-trunks remove-number 550e8400-e29b-41d4-a716-446655440000 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli sip-trunks remove-number 550e8400-e29b-41d4-a716-446655440000 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "sip-trunks.remove-number", "pp:method": "DELETE", "pp:path": "/sip-trunks/trunks/{trunk_id}/numbers/{phone_number_id}"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

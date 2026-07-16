@@ -19,7 +19,7 @@ func newBolnaAnalyticsPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "bolna-analytics",
 		Short:       "List analytics dashboards",
 		Long:        "List analytics dashboards",
-		Example:     "  bolna-pp-cli-pp-cli bolna-analytics --sub-account-id <uuid> --requester-email <email>",
+		Example:     "  bolna-pp-cli bolna-analytics --sub-account-id <uuid> --requester-email <email>",
 		Annotations: map[string]string{"pp:endpoint": "bolna-analytics.dashboard-list", "pp:method": "GET", "pp:path": "/analytics/dashboards", "pp:interactive": "true", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

@@ -19,7 +19,7 @@ func newAgentListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List all voice AI agents",
-		Example:     "  bolna-pp-cli-pp-cli agent list",
+		Example:     "  bolna-pp-cli agent list",
 		Annotations: map[string]string{"pp:endpoint": "agent.list", "pp:method": "GET", "pp:path": "/v2/agent/all", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/v2/agent/all"

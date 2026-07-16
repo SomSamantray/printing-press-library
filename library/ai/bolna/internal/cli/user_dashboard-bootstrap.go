@@ -18,7 +18,7 @@ func newUserDashboardBootstrapCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "dashboard-bootstrap",
 		Short:       "Get authenticated dashboard bootstrap context",
-		Example:     "  bolna-pp-cli-pp-cli user dashboard-bootstrap",
+		Example:     "  bolna-pp-cli user dashboard-bootstrap",
 		Annotations: map[string]string{"pp:endpoint": "user.dashboard-bootstrap", "pp:method": "POST", "pp:path": "/user"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

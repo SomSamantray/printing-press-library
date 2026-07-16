@@ -1,5 +1,5 @@
 {
-  "api_name": "bolna-pp-cli",
+  "api_name": "bolna",
   "base_url": "https://api.bolna.ai",
   "description": "Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities.",
   "mcp_ready": "full",

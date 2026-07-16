@@ -19,7 +19,7 @@ func newProvidersAddCmd(flags *rootFlags) *cobra.Command {
 		Use:         "add",
 		Aliases:     []string{"create"},
 		Short:       "Add a provider credential",
-		Example:     "  bolna-pp-cli-pp-cli providers add",
+		Example:     "  bolna-pp-cli providers add",
 		Annotations: map[string]string{"pp:endpoint": "providers.add", "pp:method": "POST", "pp:path": "/providers"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

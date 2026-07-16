@@ -16,7 +16,7 @@ func newSubAccountsListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List all subaccounts",
-		Example:     "  bolna-pp-cli-pp-cli sub-accounts list",
+		Example:     "  bolna-pp-cli sub-accounts list",
 		Annotations: map[string]string{"pp:endpoint": "sub-accounts.list", "pp:method": "GET", "pp:path": "/sub-accounts/all", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/sub-accounts/all"

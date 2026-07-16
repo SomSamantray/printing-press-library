@@ -23,7 +23,7 @@ func newGetCurrentPricePromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "get-current-price",
 		Short:       "Calculate current call price for a provider configuration",
 		Long:        "Calculate current call price for a provider configuration",
-		Example:     "  bolna-pp-cli-pp-cli get-current-price",
+		Example:     "  bolna-pp-cli get-current-price",
 		Annotations: map[string]string{"pp:endpoint": "get-current-price.price-get", "pp:method": "GET", "pp:path": "/get_current_price", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

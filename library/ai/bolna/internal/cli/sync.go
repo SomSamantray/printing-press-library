@@ -104,22 +104,22 @@ Resource scoping:
   the dependent by name; the parent table must already be populated
   from a prior sync.`,
 		Example: `  # Sync all resources
-  bolna-pp-cli-pp-cli sync
+  bolna-pp-cli sync
 
   # Sync specific resources only
-  bolna-pp-cli-pp-cli sync --resources channels,messages
+  bolna-pp-cli sync --resources channels,messages
 
   # Full resync (ignore previous checkpoint)
-  bolna-pp-cli-pp-cli sync --full
+  bolna-pp-cli sync --full
 
   # Incremental sync: only records from the last 7 days
-  bolna-pp-cli-pp-cli sync --since 7d
+  bolna-pp-cli sync --since 7d
 
   # Parallel sync with 8 workers
-  bolna-pp-cli-pp-cli sync --concurrency 8
+  bolna-pp-cli sync --concurrency 8
 
   # Latest-only: refresh head of each resource, no historical backfill
-  bolna-pp-cli-pp-cli sync --latest-only`,
+  bolna-pp-cli sync --latest-only`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			userParams, err := parseSyncUserParams(paramFlags, resourceParamFlags, globalParamFlags)
 			if err != nil {
@@ -163,7 +163,7 @@ Resource scoping:
 			}
 
 			if dbPath == "" {
-				dbPath = defaultDBPath("bolna-pp-cli-pp-cli")
+				dbPath = defaultDBPath("bolna-pp-cli")
 			}
 
 			db, err := store.OpenWithContext(cmd.Context(), dbPath)

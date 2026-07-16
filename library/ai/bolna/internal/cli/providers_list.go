@@ -16,7 +16,7 @@ func newProvidersListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List configured providers",
-		Example:     "  bolna-pp-cli-pp-cli providers list",
+		Example:     "  bolna-pp-cli providers list",
 		Annotations: map[string]string{"pp:endpoint": "providers.list", "pp:method": "GET", "pp:path": "/providers", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/providers"

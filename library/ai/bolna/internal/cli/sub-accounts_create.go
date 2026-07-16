@@ -18,7 +18,7 @@ func newSubAccountsCreateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "create",
 		Short:       "Create a subaccount",
-		Example:     "  bolna-pp-cli-pp-cli sub-accounts create",
+		Example:     "  bolna-pp-cli sub-accounts create",
 		Annotations: map[string]string{"pp:endpoint": "sub-accounts.create", "pp:method": "POST", "pp:path": "/sub-accounts/create"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

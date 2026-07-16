@@ -18,7 +18,7 @@ func newSipTrunksCreateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "create",
 		Short:       "Create a SIP trunk",
-		Example:     "  bolna-pp-cli-pp-cli sip-trunks create",
+		Example:     "  bolna-pp-cli sip-trunks create",
 		Annotations: map[string]string{"pp:endpoint": "sip-trunks.create", "pp:method": "POST", "pp:path": "/sip-trunks/trunks"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

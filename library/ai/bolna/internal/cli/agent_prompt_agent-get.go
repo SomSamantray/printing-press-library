@@ -17,7 +17,7 @@ func newAgentPromptAgentGetCmd(flags *rootFlags) *cobra.Command {
 		Use:         "agent-get <agent_id>",
 		Aliases:     []string{"get"},
 		Short:       "Get agent prompt configuration",
-		Example:     "  bolna-pp-cli-pp-cli agent prompt agent-get 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli agent prompt agent-get 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "prompt.agent-get", "pp:method": "GET", "pp:path": "/agent/{agent_id}/prompt", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

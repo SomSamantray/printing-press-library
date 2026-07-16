@@ -20,7 +20,7 @@ func newKnowledgebaseListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List knowledge bases",
-		Example:     "  bolna-pp-cli-pp-cli knowledgebase list",
+		Example:     "  bolna-pp-cli knowledgebase list",
 		Annotations: map[string]string{"pp:endpoint": "knowledgebase.list", "pp:method": "GET", "pp:path": "/knowledgebase/all", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/knowledgebase/all"

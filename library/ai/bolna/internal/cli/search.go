@@ -94,14 +94,14 @@ otherwise searches local data. Falls back to local on network failure.
 In live mode: uses the API search endpoint only.
 In local mode: searches locally synced data only.`,
 		Example: `  # Search (uses API endpoint if available, local FTS otherwise)
-  bolna-pp-cli-pp-cli search "error timeout"
+  bolna-pp-cli search "error timeout"
 
   # Force local search only
-  bolna-pp-cli-pp-cli search "status" --data-source local
+  bolna-pp-cli search "status" --data-source local
   # Search a specific resource type locally
-  bolna-pp-cli-pp-cli search "status" --type agent --data-source local
+  bolna-pp-cli search "status" --type agent --data-source local
   # JSON output for piping
-  bolna-pp-cli-pp-cli search "critical" --json --limit 20`,
+  bolna-pp-cli search "critical" --json --limit 20`,
 		Annotations: map[string]string{"mcp:hidden": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
@@ -133,12 +133,12 @@ In local mode: searches locally synced data only.`,
 
 			// Local FTS search
 			if dbPath == "" {
-				dbPath = defaultDBPath("bolna-pp-cli-pp-cli")
+				dbPath = defaultDBPath("bolna-pp-cli")
 			}
 
 			db, err := store.OpenWithContext(cmd.Context(), dbPath)
 			if err != nil {
-				return fmt.Errorf("opening local database: %w\nRun 'bolna-pp-cli-pp-cli sync' first to populate the local database.", err)
+				return fmt.Errorf("opening local database: %w\nRun 'bolna-pp-cli sync' first to populate the local database.", err)
 			}
 			defer db.Close()
 

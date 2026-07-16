@@ -568,18 +568,18 @@ func classifyAPIError(err error, flags *rootFlags) error {
 		return authErr(err)
 	case strings.Contains(msg, "HTTP 400") && cliutil.LooksLikeAuthError(msg):
 		return authErr(fmt.Errorf("%w\nhint: the API rejected the request — this usually means auth is missing or invalid."+
-			"\n      Set it with: bolna-pp-cli-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""+
-			"\n      Run 'bolna-pp-cli-pp-cli doctor' to check auth status."+
+			"\n      Set it with: bolna-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""+
+			"\n      Run 'bolna-pp-cli doctor' to check auth status."+
 			"\n      Response: "+cliutil.SanitizeErrorBody(msg), err))
 	case strings.Contains(msg, "HTTP 401"):
 		return authErr(fmt.Errorf("%w\nhint: check your token."+
-			"\n      Set it with: bolna-pp-cli-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""+
-			"\n      Run 'bolna-pp-cli-pp-cli doctor' to check auth status.", err))
+			"\n      Set it with: bolna-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""+
+			"\n      Run 'bolna-pp-cli doctor' to check auth status.", err))
 	case strings.Contains(msg, "HTTP 403"):
 		return authErr(fmt.Errorf("%w\nhint: permission denied. Your credentials are valid but lack access to this resource."+
 			"\n      Check that your credentials have the required permissions and match the API's expected auth scheme."+
-			"\n      Set it with: bolna-pp-cli-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""+
-			"\n      Run 'bolna-pp-cli-pp-cli doctor' to check auth status.", err))
+			"\n      Set it with: bolna-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""+
+			"\n      Run 'bolna-pp-cli doctor' to check auth status.", err))
 	case strings.Contains(msg, "HTTP 404"):
 		return notFoundErr(fmt.Errorf("%w\nhint: resource not found. Run the 'list' command to see available items", err))
 	case strings.Contains(msg, "HTTP 429"):
@@ -2130,7 +2130,7 @@ func printProvenance(cmd *cobra.Command, count int, prov DataProvenance) {
 func nonJSONPayloadError(data json.RawMessage) error {
 	trimmed := bytes.TrimSpace(data)
 	if len(trimmed) > 0 && trimmed[0] == '<' {
-		return authErr(fmt.Errorf("not authenticated or session expired; API returned HTML instead of JSON. " + "Set it with: bolna-pp-cli-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""))
+		return authErr(fmt.Errorf("not authenticated or session expired; API returned HTML instead of JSON. " + "Set it with: bolna-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\""))
 	}
 	if len(trimmed) == 0 {
 		return apiErr(fmt.Errorf("API returned an empty response body; expected JSON"))

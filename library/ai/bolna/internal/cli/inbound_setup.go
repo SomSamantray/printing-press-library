@@ -19,7 +19,7 @@ func newInboundSetupCmd(flags *rootFlags) *cobra.Command {
 		Use:         "setup",
 		Aliases:     []string{"create"},
 		Short:       "Link an agent to a phone number for inbound calls",
-		Example:     "  bolna-pp-cli-pp-cli inbound setup",
+		Example:     "  bolna-pp-cli inbound setup",
 		Annotations: map[string]string{"pp:endpoint": "inbound.setup", "pp:method": "POST", "pp:path": "/inbound/setup"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

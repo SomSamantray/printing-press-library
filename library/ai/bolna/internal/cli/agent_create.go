@@ -18,7 +18,7 @@ func newAgentCreateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "create",
 		Short:       "Create a voice AI agent",
-		Example:     "  bolna-pp-cli-pp-cli agent create",
+		Example:     "  bolna-pp-cli agent create",
 		Annotations: map[string]string{"pp:endpoint": "agent.create", "pp:method": "POST", "pp:path": "/v2/agent"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

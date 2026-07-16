@@ -18,7 +18,7 @@ func newPromptLibraryPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "prompt-library",
 		Short:       "List published prompt modules",
 		Long:        "List published prompt modules",
-		Example:     "  bolna-pp-cli-pp-cli prompt-library",
+		Example:     "  bolna-pp-cli prompt-library",
 		Annotations: map[string]string{"pp:endpoint": "prompt-library.prompt-module-list", "pp:method": "GET", "pp:path": "/prompt-library/modules", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

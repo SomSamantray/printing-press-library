@@ -19,7 +19,7 @@ func newPhoneNumbersBuyCmd(flags *rootFlags) *cobra.Command {
 		Use:         "buy",
 		Aliases:     []string{"create"},
 		Short:       "Buy a phone number",
-		Example:     "  bolna-pp-cli-pp-cli phone-numbers buy",
+		Example:     "  bolna-pp-cli phone-numbers buy",
 		Annotations: map[string]string{"pp:endpoint": "phone-numbers.buy", "pp:method": "POST", "pp:path": "/phone-numbers/buy"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

@@ -6,7 +6,7 @@ Turn the documented Bolna API and stable dashboard-discovered routes into agent-
 
 ## Install
 
-The recommended path installs both the `bolna-pp-cli-pp-cli` binary and the `pp-bolna-pp-cli` agent skill (Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, and other agents supported by the upstream [`skills`](https://github.com/vercel-labs/skills) CLI) in one shot:
+The recommended path installs both the `bolna-pp-cli` binary and the `pp-bolna` agent skill (Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, and other agents supported by the upstream [`skills`](https://github.com/vercel-labs/skills) CLI) in one shot:
 
 ```bash
 npx -y @mvanhorn/printing-press-library install bolna-pp-cli
@@ -53,13 +53,13 @@ Then install the focused Hermes skill.
 From the Hermes CLI:
 
 ```bash
-hermes skills install mvanhorn/printing-press-library/cli-skills/pp-bolna-pp-cli --force
+hermes skills install mvanhorn/printing-press-library/cli-skills/pp-bolna --force
 ```
 
 Inside a Hermes chat session:
 
 ```bash
-/skills install mvanhorn/printing-press-library/cli-skills/pp-bolna-pp-cli --force
+/skills install mvanhorn/printing-press-library/cli-skills/pp-bolna --force
 ```
 
 Restart the Hermes session or gateway if the newly installed skill is not visible immediately.
@@ -99,7 +99,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 {
   "mcpServers": {
     "bolna-pp-cli": {
-      "command": "bolna-pp-cli-pp-mcp",
+      "command": "bolna-pp-mcp",
       "env": {
         "BOLNA_PP_CLI_BATCH_ID": "<batch_id>",
         "BOLNA_PP_CLI_BEARER_AUTH": "<your-key>"
@@ -167,7 +167,7 @@ Read organization-wide subaccount usage.
 
 ## Usage
 
-Run `bolna-pp-cli-pp-cli --help` for the full command reference and flag list.
+Run `bolna-pp-cli --help` for the full command reference and flag list.
 
 ## Paths & environment variables
 
@@ -192,7 +192,7 @@ For containers and agent sandboxes, prefer a single relocated root:
 
 ```bash
 export BOLNA_PP_CLI_HOME=/srv/bolna-pp-cli
-bolna-pp-cli-pp-cli doctor
+bolna-pp-cli doctor
 ```
 
 Under `BOLNA_PP_CLI_HOME=/srv/bolna-pp-cli`, the four dirs resolve to `/srv/bolna-pp-cli/config`, `/srv/bolna-pp-cli/data`, `/srv/bolna-pp-cli/state`, and `/srv/bolna-pp-cli/cache`.
@@ -203,7 +203,7 @@ MCP servers do not receive CLI flags from the host. Put relocation in the host `
 {
   "mcpServers": {
     "bolna-pp-cli": {
-      "command": "bolna-pp-cli-pp-mcp",
+      "command": "bolna-pp-mcp",
       "env": {
         "BOLNA_PP_CLI_HOME": "/srv/bolna-pp-cli"
       }
@@ -216,7 +216,7 @@ Precedence matters in fleets: an ambient per-kind variable such as `BOLNA_PP_CLI
 
 Relocation is one-way. Unsetting `BOLNA_PP_CLI_HOME` does not move files back to platform defaults, and `doctor` cannot find credentials left under a former root. Move the files manually before unsetting relocation variables.
 
-Existing installs keep working because the platform-default rung matches the legacy layout. On the first auth write, stored secrets leave `config.toml` and are consolidated into `credentials.toml` under the data directory. Run `bolna-pp-cli-pp-cli doctor --fail-on warn` to check path and credential-location warnings in automation.
+Existing installs keep working because the platform-default rung matches the legacy layout. On the first auth write, stored secrets leave `config.toml` and are consolidated into `credentials.toml` under the data directory. Run `bolna-pp-cli doctor --fail-on warn` to check path and credential-location warnings in automation.
 
 ## Commands
 
@@ -224,53 +224,53 @@ Existing installs keep working because the platform-default rung matches the leg
 
 Manage agent
 
-- **`bolna-pp-cli-pp-cli agent create`** - Create a voice AI agent
-- **`bolna-pp-cli-pp-cli agent dashboard-list`** - Dashboard agent list with pagination
-- **`bolna-pp-cli-pp-cli agent delete`** - Delete an agent and related data
-- **`bolna-pp-cli-pp-cli agent get`** - Get agent details
-- **`bolna-pp-cli-pp-cli agent legacy-dashboard-list`** - Legacy dashboard agent list
-- **`bolna-pp-cli-pp-cli agent list`** - List all voice AI agents
-- **`bolna-pp-cli-pp-cli agent patch`** - Partially update an agent
-- **`bolna-pp-cli-pp-cli agent update`** - Replace an agent configuration
+- **`bolna-pp-cli agent create`** - Create a voice AI agent
+- **`bolna-pp-cli agent dashboard-list`** - Dashboard agent list with pagination
+- **`bolna-pp-cli agent delete`** - Delete an agent and related data
+- **`bolna-pp-cli agent get`** - Get agent details
+- **`bolna-pp-cli agent legacy-dashboard-list`** - Legacy dashboard agent list
+- **`bolna-pp-cli agent list`** - List all voice AI agents
+- **`bolna-pp-cli agent patch`** - Partially update an agent
+- **`bolna-pp-cli agent update`** - Replace an agent configuration
 
 ### ambient-sounds
 
 Manage ambient sounds
 
-- **`bolna-pp-cli-pp-cli ambient-sounds`** - List available ambient sounds
+- **`bolna-pp-cli ambient-sounds`** - List available ambient sounds
 
 ### assistants
 
 Manage assistants
 
-- **`bolna-pp-cli-pp-cli assistants`** - List GPT assistants available to the account
+- **`bolna-pp-cli assistants`** - List GPT assistants available to the account
 
 ### batches
 
 Manage batches
 
-- **`bolna-pp-cli-pp-cli batches batch-create`** - Create a CSV batch
-- **`bolna-pp-cli-pp-cli batches batch-delete`** - Delete a batch
-- **`bolna-pp-cli-pp-cli batches batch-get`** - Get batch details
+- **`bolna-pp-cli batches batch-create`** - Create a CSV batch
+- **`bolna-pp-cli batches batch-delete`** - Delete a batch
+- **`bolna-pp-cli batches batch-get`** - Get batch details
 
 ### bolna-analytics
 
 Manage bolna analytics
 
-- **`bolna-pp-cli-pp-cli bolna-analytics`** - List analytics dashboards
+- **`bolna-pp-cli bolna-analytics`** - List analytics dashboards
 
 ### analytics
 
 Cross-account call-history analytics
 
-- **`bolna-pp-cli-pp-cli analytics report`** - Compare accounts and agents over a date range
+- **`bolna-pp-cli analytics report`** - Compare accounts and agents over a date range
 
 Use one environment variable per bearer key. Values never enter the report:
 
 ```bash
 export BOLNA_SUB1_KEY='your-subaccount-key'
 export BOLNA_SUB2_KEY='your-subaccount-key'
-bolna-pp-cli-pp-cli analytics report \
+bolna-pp-cli analytics report \
   --source account-a=BOLNA_SUB1_KEY \
   --source account-b=BOLNA_SUB2_KEY \
   --from 2026-06-01 --to 2026-07-16 \
@@ -283,179 +283,179 @@ The report includes account and agent rollups, daily/weekly/status/provider tren
 
 Manage call
 
-- **`echo '{\"agent_id\":\"<agent-id>\",\"recipient_phone_number\":\"+15551234567\"}' | bolna-pp-cli-pp-cli call --stdin --json`** - Make an outbound voice AI call from a JSON request body
+- **`echo '{\"agent_id\":\"<agent-id>\",\"recipient_phone_number\":\"+15551234567\"}' | bolna-pp-cli call --stdin --json`** - Make an outbound voice AI call from a JSON request body
 
 ### compliance
 
 Manage compliance
 
-- **`bolna-pp-cli-pp-cli compliance`** - List phone-number compliance records
+- **`bolna-pp-cli compliance`** - List phone-number compliance records
 
 ### dispositions
 
 Manage dispositions
 
-- **`bolna-pp-cli-pp-cli dispositions bulk-create`** - Bulk create and link dispositions
-- **`bolna-pp-cli-pp-cli dispositions create`** - Create and link a disposition
-- **`bolna-pp-cli-pp-cli dispositions delete`** - Delete a disposition
-- **`bolna-pp-cli-pp-cli dispositions get`** - Get a disposition
-- **`bolna-pp-cli-pp-cli dispositions list`** - List dispositions
-- **`bolna-pp-cli-pp-cli dispositions update`** - Update a disposition
+- **`bolna-pp-cli dispositions bulk-create`** - Bulk create and link dispositions
+- **`bolna-pp-cli dispositions create`** - Create and link a disposition
+- **`bolna-pp-cli dispositions delete`** - Delete a disposition
+- **`bolna-pp-cli dispositions get`** - Get a disposition
+- **`bolna-pp-cli dispositions list`** - List dispositions
+- **`bolna-pp-cli dispositions update`** - Update a disposition
 
 ### executions
 
 Manage executions
 
-- **`bolna-pp-cli-pp-cli executions <execution_id>`** - Get execution details
+- **`bolna-pp-cli executions <execution_id>`** - Get execution details
 
 ### get-current-price
 
 Manage get current price
 
-- **`bolna-pp-cli-pp-cli get-current-price`** - Calculate current call price for a provider configuration
+- **`bolna-pp-cli get-current-price`** - Calculate current call price for a provider configuration
 
 ### inbound
 
 Manage inbound
 
-- **`bolna-pp-cli-pp-cli inbound setup`** - Link an agent to a phone number for inbound calls
-- **`bolna-pp-cli-pp-cli inbound unlink`** - Unlink an inbound agent
+- **`bolna-pp-cli inbound setup`** - Link an agent to a phone number for inbound calls
+- **`bolna-pp-cli inbound unlink`** - Unlink an inbound agent
 
 ### invoices
 
 Manage invoices
 
-- **`bolna-pp-cli-pp-cli invoices`** - List account invoices
+- **`bolna-pp-cli invoices`** - List account invoices
 
 ### keys
 
 Manage keys
 
-- **`bolna-pp-cli-pp-cli keys`** - List API keys visible to the account
+- **`bolna-pp-cli keys`** - List API keys visible to the account
 
 ### knowledgebase
 
 Manage knowledgebase
 
-- **`bolna-pp-cli-pp-cli knowledgebase create`** - Create a knowledge base from PDF or URL
-- **`bolna-pp-cli-pp-cli knowledgebase delete`** - Delete a knowledge base
-- **`bolna-pp-cli-pp-cli knowledgebase get`** - Get a knowledge base
-- **`bolna-pp-cli-pp-cli knowledgebase list`** - List knowledge bases
+- **`bolna-pp-cli knowledgebase create`** - Create a knowledge base from PDF or URL
+- **`bolna-pp-cli knowledgebase delete`** - Delete a knowledge base
+- **`bolna-pp-cli knowledgebase get`** - Get a knowledge base
+- **`bolna-pp-cli knowledgebase list`** - List knowledge bases
 
 ### phone-numbers
 
 Manage phone numbers
 
-- **`bolna-pp-cli-pp-cli phone-numbers buy`** - Buy a phone number
-- **`bolna-pp-cli-pp-cli phone-numbers delete`** - Delete a purchased phone number
-- **`bolna-pp-cli-pp-cli phone-numbers list`** - List phone numbers
-- **`bolna-pp-cli-pp-cli phone-numbers search`** - Search available phone numbers
+- **`bolna-pp-cli phone-numbers buy`** - Buy a phone number
+- **`bolna-pp-cli phone-numbers delete`** - Delete a purchased phone number
+- **`bolna-pp-cli phone-numbers list`** - List phone numbers
+- **`bolna-pp-cli phone-numbers search`** - Search available phone numbers
 
 ### prompt-library
 
 Manage prompt library
 
-- **`bolna-pp-cli-pp-cli prompt-library`** - List published prompt modules
+- **`bolna-pp-cli prompt-library`** - List published prompt modules
 
 ### providers
 
 Manage providers
 
-- **`bolna-pp-cli-pp-cli providers add`** - Add a provider credential
-- **`bolna-pp-cli-pp-cli providers list`** - List configured providers
-- **`bolna-pp-cli-pp-cli providers remove`** - Remove a provider
+- **`bolna-pp-cli providers add`** - Add a provider credential
+- **`bolna-pp-cli providers list`** - List configured providers
+- **`bolna-pp-cli providers remove`** - Remove a provider
 
 ### reports
 
 Manage reports
 
-- **`bolna-pp-cli-pp-cli reports`** - List report jobs
+- **`bolna-pp-cli reports`** - List report jobs
 
 ### sip-trunks
 
 Manage sip trunks
 
-- **`bolna-pp-cli-pp-cli sip-trunks add-number`** - Add a DID to a SIP trunk
-- **`bolna-pp-cli-pp-cli sip-trunks create`** - Create a SIP trunk
-- **`bolna-pp-cli-pp-cli sip-trunks delete`** - Delete a SIP trunk
-- **`bolna-pp-cli-pp-cli sip-trunks get`** - Get a SIP trunk
-- **`bolna-pp-cli-pp-cli sip-trunks list`** - List SIP trunks
-- **`bolna-pp-cli-pp-cli sip-trunks numbers`** - List phone numbers on a SIP trunk
-- **`bolna-pp-cli-pp-cli sip-trunks remove-number`** - Remove a number from a SIP trunk
-- **`bolna-pp-cli-pp-cli sip-trunks update`** - Update a SIP trunk
+- **`bolna-pp-cli sip-trunks add-number`** - Add a DID to a SIP trunk
+- **`bolna-pp-cli sip-trunks create`** - Create a SIP trunk
+- **`bolna-pp-cli sip-trunks delete`** - Delete a SIP trunk
+- **`bolna-pp-cli sip-trunks get`** - Get a SIP trunk
+- **`bolna-pp-cli sip-trunks list`** - List SIP trunks
+- **`bolna-pp-cli sip-trunks numbers`** - List phone numbers on a SIP trunk
+- **`bolna-pp-cli sip-trunks remove-number`** - Remove a number from a SIP trunk
+- **`bolna-pp-cli sip-trunks update`** - Update a SIP trunk
 
 ### sub-accounts
 
 Manage sub accounts
 
-- **`bolna-pp-cli-pp-cli sub-accounts all-usage`** - Get usage for all subaccounts
-- **`bolna-pp-cli-pp-cli sub-accounts concurrency`** - Get organization concurrency envelope
-- **`bolna-pp-cli-pp-cli sub-accounts create`** - Create a subaccount
-- **`bolna-pp-cli-pp-cli sub-accounts delete`** - Delete a subaccount and its data
-- **`bolna-pp-cli-pp-cli sub-accounts list`** - List all subaccounts
-- **`bolna-pp-cli-pp-cli sub-accounts main-patch`** - Update main organization concurrency settings
-- **`bolna-pp-cli-pp-cli sub-accounts patch`** - Update subaccount name or concurrency
+- **`bolna-pp-cli sub-accounts all-usage`** - Get usage for all subaccounts
+- **`bolna-pp-cli sub-accounts concurrency`** - Get organization concurrency envelope
+- **`bolna-pp-cli sub-accounts create`** - Create a subaccount
+- **`bolna-pp-cli sub-accounts delete`** - Delete a subaccount and its data
+- **`bolna-pp-cli sub-accounts list`** - List all subaccounts
+- **`bolna-pp-cli sub-accounts main-patch`** - Update main organization concurrency settings
+- **`bolna-pp-cli sub-accounts patch`** - Update subaccount name or concurrency
 
 ### user
 
 Manage user
 
-- **`bolna-pp-cli-pp-cli user add-custom-model`** - Add a custom LLM model
-- **`bolna-pp-cli-pp-cli user dashboard-bootstrap`** - Get authenticated dashboard bootstrap context
-- **`bolna-pp-cli-pp-cli user get`** - Get account information
-- **`bolna-pp-cli-pp-cli user list-models`** - List custom and available models
-- **`bolna-pp-cli-pp-cli user webhook-allowed-states`** - List webhook allowed states
+- **`bolna-pp-cli user add-custom-model`** - Add a custom LLM model
+- **`bolna-pp-cli user dashboard-bootstrap`** - Get authenticated dashboard bootstrap context
+- **`bolna-pp-cli user get`** - Get account information
+- **`bolna-pp-cli user list-models`** - List custom and available models
+- **`bolna-pp-cli user webhook-allowed-states`** - List webhook allowed states
 
 ### violations
 
 Manage violations
 
-- **`bolna-pp-cli-pp-cli violations list`** - List account violations
-- **`bolna-pp-cli-pp-cli violations submit`** - Submit a violation report
+- **`bolna-pp-cli violations list`** - List account violations
+- **`bolna-pp-cli violations submit`** - Submit a violation report
 
 ### voice-config
 
 Manage voice config
 
-- **`bolna-pp-cli-pp-cli voice-config language-list`** - List supported languages
-- **`bolna-pp-cli-pp-cli voice-config voice-list`** - List voices for a TTS provider and model
-- **`bolna-pp-cli-pp-cli voice-config voice-providers`** - List TTS providers and models
+- **`bolna-pp-cli voice-config language-list`** - List supported languages
+- **`bolna-pp-cli voice-config voice-list`** - List voices for a TTS provider and model
+- **`bolna-pp-cli voice-config voice-providers`** - List TTS providers and models
 
 
 ### Self-learning loop
 
 This CLI caches per-question discovery so repeat queries skip the walk and structurally similar queries get answered via entity substitution. The loop also self-captures: every invocation is journaled locally, and failed-flag corrections plus fresh teaches surface as candidates on the next `recall` for confirm/reject judgment. Agents call `recall` before discovery and fire `teach &` after answering. See the `## Automatic learning` section in `SKILL.md` for the full protocol.
 
-- **`bolna-pp-cli-pp-cli recall <query>`** - Look up cached resources for a query before running discovery
-- **`bolna-pp-cli-pp-cli teach`** - Record a query -> resource mapping (silent on success, safe to background with `&`)
-- **`bolna-pp-cli-pp-cli learnings list`** - Inspect taught rows
-- **`bolna-pp-cli-pp-cli learnings forget <query>`** - Undo a teach
-- **`bolna-pp-cli-pp-cli learnings candidates`** - List auto-captured candidates awaiting confirm/reject
-- **`bolna-pp-cli-pp-cli learnings stats`** - Local loop metrics: recall hit rate, teach-to-reuse, playbook resolution, candidate counts
-- **`bolna-pp-cli-pp-cli teach-pattern`** - Install a query/resource template up front
-- **`bolna-pp-cli-pp-cli teach-lookup`** - Add an entity mapping (e.g. country code, team alias) for pattern substitution
+- **`bolna-pp-cli recall <query>`** - Look up cached resources for a query before running discovery
+- **`bolna-pp-cli teach`** - Record a query -> resource mapping (silent on success, safe to background with `&`)
+- **`bolna-pp-cli learnings list`** - Inspect taught rows
+- **`bolna-pp-cli learnings forget <query>`** - Undo a teach
+- **`bolna-pp-cli learnings candidates`** - List auto-captured candidates awaiting confirm/reject
+- **`bolna-pp-cli learnings stats`** - Local loop metrics: recall hit rate, teach-to-reuse, playbook resolution, candidate counts
+- **`bolna-pp-cli teach-pattern`** - Install a query/resource template up front
+- **`bolna-pp-cli teach-lookup`** - Add an entity mapping (e.g. country code, team alias) for pattern substitution
 
 Pass `--no-learn` or set `BOLNA_PP_CLI_NO_LEARN=true` to disable the loop for deterministic flows.
 
-The local store's schema version stamp is one-way: once this version of `bolna-pp-cli-pp-cli` opens the database, older binaries refuse it with a version error — upgrade the binary rather than downgrading.
+The local store's schema version stamp is one-way: once this version of `bolna-pp-cli` opens the database, older binaries refuse it with a version error — upgrade the binary rather than downgrading.
 
 ## Output Formats
 
 ```bash
 # Human-readable table (default in terminal, JSON when piped)
-bolna-pp-cli-pp-cli agent list
+bolna-pp-cli agent list
 
 # JSON for scripting and agents
-bolna-pp-cli-pp-cli agent list --json
+bolna-pp-cli agent list --json
 
 # Filter to specific fields
-bolna-pp-cli-pp-cli agent list --json --select id,name,status
+bolna-pp-cli agent list --json --select id,name,status
 
 # Dry run — show the request without sending
-bolna-pp-cli-pp-cli agent list --dry-run
+bolna-pp-cli agent list --dry-run
 
 # Agent mode — JSON + compact + no prompts in one flag
-bolna-pp-cli-pp-cli agent list --agent
+bolna-pp-cli agent list --agent
 ```
 
 ## Agent Usage
@@ -486,14 +486,14 @@ Base URL: `https://api.bolna.ai`
 ## Health Check
 
 ```bash
-bolna-pp-cli-pp-cli doctor
+bolna-pp-cli doctor
 ```
 
 Verifies configuration, credentials, and connectivity to the API.
 
 ## Configuration
 
-Run `bolna-pp-cli-pp-cli doctor` to see the resolved config, data, state, and cache directories. The platform-default config path is `~/.config/bolna-pp-cli/config.toml`; `--home`, `BOLNA_PP_CLI_HOME`, and per-kind env vars can relocate it.
+Run `bolna-pp-cli doctor` to see the resolved config, data, state, and cache directories. The platform-default config path is `~/.config/bolna-pp-cli/config.toml`; `--home`, `BOLNA_PP_CLI_HOME`, and per-kind env vars can relocate it.
 
 Static request headers can be configured under `headers`; per-command header overrides take precedence.
 
@@ -506,11 +506,11 @@ Environment variables:
 
 ### agentcookie (optional)
 
-If you use agentcookie to sync secrets across machines, this CLI auto-adopts agentcookie-managed credentials with no extra setup. When the daemon writes to this CLI's config, `bolna-pp-cli-pp-cli doctor` reports `agentcookie: detected` and `auth-status` labels the source as `agentcookie`. Skip this section if you don't use agentcookie - the CLI works the same as any other.
+If you use agentcookie to sync secrets across machines, this CLI auto-adopts agentcookie-managed credentials with no extra setup. When the daemon writes to this CLI's config, `bolna-pp-cli doctor` reports `agentcookie: detected` and `auth-status` labels the source as `agentcookie`. Skip this section if you don't use agentcookie - the CLI works the same as any other.
 
 ## Troubleshooting
 **Authentication errors (exit code 4)**
-- Run `bolna-pp-cli-pp-cli doctor` to check credentials
+- Run `bolna-pp-cli doctor` to check credentials
 - Verify the environment variable is set: `echo $BOLNA_PP_CLI_BEARER_AUTH`
 **Not found errors (exit code 3)**
 - Check the resource ID is correct

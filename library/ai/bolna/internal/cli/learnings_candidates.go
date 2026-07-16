@@ -128,9 +128,9 @@ func newLearningsCandidatesCmd(flags *rootFlags) *cobra.Command {
 shapes the CLI derived from observed usage. Candidates are quarantined
 until an explicit 'learnings confirm <id>' materializes them; they never
 alter command behavior or recall's verified results on their own.`,
-		Example: `  bolna-pp-cli-pp-cli learnings candidates
-  bolna-pp-cli-pp-cli learnings candidates --class flag_alias
-  bolna-pp-cli-pp-cli learnings candidates --status rejected`,
+		Example: `  bolna-pp-cli learnings candidates
+  bolna-pp-cli learnings candidates --class flag_alias
+  bolna-pp-cli learnings candidates --status rejected`,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dryRunOK(flags) {
@@ -198,7 +198,7 @@ is per class:
                       to the query family's playbook notes
 
 Usage errors (unknown id, non-open status) exit 2.`,
-		Example: `  bolna-pp-cli-pp-cli learnings confirm 3`,
+		Example: `  bolna-pp-cli learnings confirm 3`,
 		// Usage errors here exit 2 by design; declare it so
 		// `cli-printing-press verify` scores the Execute cell honestly.
 		// Confirm materializes into the CLI's own local store only, so it
@@ -405,7 +405,7 @@ its correction note already lives in the family playbook, so repair the
 guidance with 'playbook amend' instead.
 
 Usage errors (unknown id, no-reject-path candidates) exit 2.`,
-		Example: `  bolna-pp-cli-pp-cli learnings reject 3`,
+		Example: `  bolna-pp-cli learnings reject 3`,
 		// Usage errors here exit 2 by design; declare it so
 		// `cli-printing-press verify` scores the Execute cell honestly.
 		Annotations: map[string]string{"pp:typed-exit-codes": "0,2"},
@@ -432,7 +432,7 @@ Usage errors (unknown id, no-reject-path candidates) exit 2.`,
 			}
 			rejected, err := s.RejectCandidate(id)
 			if errors.Is(err, store.ErrConfirmedFlagAliasReject) {
-				return usageErr(fmt.Errorf("learnings reject: candidate %d is a confirmed flag correction with no reject path; repair the guidance with \"bolna-pp-cli-pp-cli playbook amend\" instead", id))
+				return usageErr(fmt.Errorf("learnings reject: candidate %d is a confirmed flag correction with no reject path; repair the guidance with \"bolna-pp-cli playbook amend\" instead", id))
 			}
 			if err != nil {
 				return usageErr(fmt.Errorf("learnings reject: %w", err))
@@ -484,8 +484,8 @@ signatures. Open rows are never purged.
 
 Open rows past the unseen TTL are swept to expired first, so a single
 purge also clears stale candidates nobody judged.`,
-		Example: `  bolna-pp-cli-pp-cli learnings purge
-  bolna-pp-cli-pp-cli learnings purge --tombstones`,
+		Example: `  bolna-pp-cli learnings purge
+  bolna-pp-cli learnings purge --tombstones`,
 		Annotations: map[string]string{"mcp:hidden": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dryRunOK(flags) {

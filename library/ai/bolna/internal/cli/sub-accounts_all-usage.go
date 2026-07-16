@@ -18,7 +18,7 @@ func newSubAccountsAllUsageCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "all-usage",
 		Short:       "Get usage for all subaccounts",
-		Example:     "  bolna-pp-cli-pp-cli sub-accounts all-usage --from 2026-07-16 --to 2026-07-17",
+		Example:     "  bolna-pp-cli sub-accounts all-usage --from 2026-07-16 --to 2026-07-17",
 		Annotations: map[string]string{"pp:endpoint": "sub-accounts.all-usage", "pp:method": "GET", "pp:path": "/sub-accounts/all/usage", "pp:happy-args": "--from=2026-07-16;--to=2026-07-17", "pp:interactive": "true", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/sub-accounts/all/usage"

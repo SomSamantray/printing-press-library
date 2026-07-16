@@ -19,7 +19,7 @@ func newAgentLegacyDashboardListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "legacy-dashboard-list",
 		Short:       "Legacy dashboard agent list",
-		Example:     "  bolna-pp-cli-pp-cli agent legacy-dashboard-list",
+		Example:     "  bolna-pp-cli agent legacy-dashboard-list",
 		Annotations: map[string]string{"pp:endpoint": "agent.legacy-dashboard-list", "pp:method": "GET", "pp:path": "/agent/list", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/agent/list"

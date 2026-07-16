@@ -17,7 +17,7 @@ func newDispositionsListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List dispositions",
-		Example:     "  bolna-pp-cli-pp-cli dispositions list",
+		Example:     "  bolna-pp-cli dispositions list",
 		Annotations: map[string]string{"pp:endpoint": "dispositions.list", "pp:method": "GET", "pp:path": "/dispositions/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/dispositions/"

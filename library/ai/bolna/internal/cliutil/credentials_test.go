@@ -41,7 +41,7 @@ func resetCredentialEnv(t *testing.T) (home, configPath string) {
 	} else {
 		t.Fatalf("reset home override: %v", err)
 	}
-	return home, filepath.Join(home, ".config", "bolna-pp-cli-pp-cli", "config.toml")
+	return home, filepath.Join(home, ".config", "bolna-pp-cli", "config.toml")
 }
 
 func TestCredentialsFileWinsWhenLegacyConfigAlsoHasSecrets(t *testing.T) {
@@ -74,7 +74,7 @@ func TestCorruptCredentialsFallsBackToLegacyConfig(t *testing.T) {
 	if err := os.WriteFile(configPath, []byte("base_url = \"https://legacy.example\"\n"+legacyCredentialTOML("legacy-secret")), 0o600); err != nil {
 		t.Fatalf("write legacy config: %v", err)
 	}
-	credentialsPath := filepath.Join(home, ".local", "share", "bolna-pp-cli-pp-cli", "credentials.toml")
+	credentialsPath := filepath.Join(home, ".local", "share", "bolna-pp-cli", "credentials.toml")
 	if err := os.MkdirAll(filepath.Dir(credentialsPath), 0o700); err != nil {
 		t.Fatalf("mkdir credentials dir: %v", err)
 	}
@@ -99,7 +99,7 @@ func TestCorruptCredentialsFallsBackToLegacyConfig(t *testing.T) {
 func TestCorruptCredentialsFallsBackToEnvCredential(t *testing.T) {
 	home, _ := resetCredentialEnv(t)
 	t.Setenv("BOLNA_PP_CLI_BEARER_AUTH", "env-secret")
-	credentialsPath := filepath.Join(home, ".local", "share", "bolna-pp-cli-pp-cli", "credentials.toml")
+	credentialsPath := filepath.Join(home, ".local", "share", "bolna-pp-cli", "credentials.toml")
 	if err := os.MkdirAll(filepath.Dir(credentialsPath), 0o700); err != nil {
 		t.Fatalf("mkdir credentials dir: %v", err)
 	}
@@ -129,7 +129,7 @@ func TestEmptyCredentialsFileDoesNotClearLegacyConfig(t *testing.T) {
 	if err := os.WriteFile(configPath, []byte("base_url = \"https://legacy.example\"\n"+legacyCredentialTOML("legacy-secret")), 0o600); err != nil {
 		t.Fatalf("write legacy config: %v", err)
 	}
-	credentialsPath := filepath.Join(home, ".local", "share", "bolna-pp-cli-pp-cli", "credentials.toml")
+	credentialsPath := filepath.Join(home, ".local", "share", "bolna-pp-cli", "credentials.toml")
 	if err := os.MkdirAll(filepath.Dir(credentialsPath), 0o700); err != nil {
 		t.Fatalf("mkdir credentials dir: %v", err)
 	}
@@ -217,7 +217,7 @@ func TestAuthWriteScrubsLegacyConfigWhenRelocated(t *testing.T) {
 	}
 
 	// Active config at relocated path should also be secret-free.
-	activeConfigPath := filepath.Join(newConfigDir, "bolna-pp-cli-pp-cli", "config.toml")
+	activeConfigPath := filepath.Join(newConfigDir, "bolna-pp-cli", "config.toml")
 	activeData, err := os.ReadFile(activeConfigPath)
 	if err != nil {
 		t.Fatalf("read active config: %v", err)
@@ -231,7 +231,7 @@ func TestAuthWriteScrubsLegacyConfigWhenRelocated(t *testing.T) {
 	}
 
 	// Credentials file should exist in the new data dir.
-	credsPath := filepath.Join(newDataDir, "bolna-pp-cli-pp-cli", "credentials.toml")
+	credsPath := filepath.Join(newDataDir, "bolna-pp-cli", "credentials.toml")
 	if _, err := os.Stat(credsPath); err != nil {
 		t.Fatalf("credentials file not found at relocated data dir: %v", err)
 	}

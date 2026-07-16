@@ -20,7 +20,7 @@ func newReportsPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "reports",
 		Short:       "List report jobs",
 		Long:        "List report jobs",
-		Example:     "  bolna-pp-cli-pp-cli reports",
+		Example:     "  bolna-pp-cli reports",
 		Annotations: map[string]string{"pp:endpoint": "reports.job-list", "pp:method": "GET", "pp:path": "/reports/jobs", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

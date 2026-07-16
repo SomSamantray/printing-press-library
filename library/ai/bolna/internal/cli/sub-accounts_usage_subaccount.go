@@ -19,7 +19,7 @@ func newSubAccountsUsageSubaccountCmd(flags *rootFlags) *cobra.Command {
 		Use:         "subaccount <sub_account_id>",
 		Aliases:     []string{"get"},
 		Short:       "Get subaccount usage and billing",
-		Example:     "  bolna-pp-cli-pp-cli sub-accounts usage subaccount 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli sub-accounts usage subaccount 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "usage.subaccount", "pp:method": "GET", "pp:path": "/sub-accounts/{sub_account_id}/usage", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

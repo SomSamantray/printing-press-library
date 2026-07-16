@@ -19,7 +19,7 @@ func newUserAddCustomModelCmd(flags *rootFlags) *cobra.Command {
 		Use:         "add-custom-model",
 		Aliases:     []string{"create"},
 		Short:       "Add a custom LLM model",
-		Example:     "  bolna-pp-cli-pp-cli user add-custom-model",
+		Example:     "  bolna-pp-cli user add-custom-model",
 		Annotations: map[string]string{"pp:endpoint": "user.add-custom-model", "pp:method": "POST", "pp:path": "/user/model/custom"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

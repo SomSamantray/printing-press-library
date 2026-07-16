@@ -26,13 +26,13 @@ func newExportCmd(flags *rootFlags) *cobra.Command {
 per line, streaming-friendly) and JSON (array). JSONL is recommended for
 large datasets as it has no memory pressure.`,
 		Example: `  # Export all items as JSONL (streaming, recommended for large datasets)
-  bolna-pp-cli-pp-cli export <resource> --format jsonl --output data.jsonl
+  bolna-pp-cli export <resource> --format jsonl --output data.jsonl
 
   # Export with limit
-  bolna-pp-cli-pp-cli export <resource> --format jsonl --limit 1000
+  bolna-pp-cli export <resource> --format jsonl --limit 1000
 
   # Pipe to another tool
-  bolna-pp-cli-pp-cli export <resource> --format jsonl | jq '.id'`,
+  bolna-pp-cli export <resource> --format jsonl | jq '.id'`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			validResources := map[string]bool{

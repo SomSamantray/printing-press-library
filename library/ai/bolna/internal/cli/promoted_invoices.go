@@ -18,7 +18,7 @@ func newInvoicesPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "invoices",
 		Short:       "List account invoices",
 		Long:        "List account invoices",
-		Example:     "  bolna-pp-cli-pp-cli invoices",
+		Example:     "  bolna-pp-cli invoices",
 		Annotations: map[string]string{"pp:endpoint": "invoices.list", "pp:method": "GET", "pp:path": "/invoices", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

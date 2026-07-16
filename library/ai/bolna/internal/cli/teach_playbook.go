@@ -60,7 +60,7 @@ notes verbatim.
 At least one of --playbook-json/--playbook-file and --notes/--notes-file
 must be set. --playbook-json takes the playbook body inline so MCP-only
 agents can record playbooks without a file on disk.`,
-		Example: `  bolna-pp-cli-pp-cli teach-playbook \
+		Example: `  bolna-pp-cli teach-playbook \
     --query "<question that anchors the family>" \
     --playbook-file ~/playbooks/recipe.json \
     --notes-file ~/playbooks/recipe-notes.md`,
@@ -201,7 +201,7 @@ drift). Same fire-and-forget posture as teach: silent on success,
 errors to teach.log, safe to background with &.
 
 Disabling: pass --no-learn or set ` + noLearnEnvVar + `=true.`,
-		Example: `  bolna-pp-cli-pp-cli playbook amend \
+		Example: `  bolna-pp-cli playbook amend \
     --query "<exact recall query>" \
     --add-note "summary endpoint envelope: data lives at .results.header, not .header"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -289,7 +289,7 @@ func newPlaybookListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "list",
 		Short:       "List stored playbooks (query_family, content presence, last observed)",
-		Example:     `  bolna-pp-cli-pp-cli playbook list --agent`,
+		Example:     `  bolna-pp-cli playbook list --agent`,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dryRunOK(flags) {

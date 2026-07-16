@@ -19,7 +19,7 @@ func newBatchesBatchCreateCmd(flags *rootFlags) *cobra.Command {
 		Use:         "batch-create",
 		Aliases:     []string{"create"},
 		Short:       "Create a CSV batch",
-		Example:     "  bolna-pp-cli-pp-cli batches batch-create",
+		Example:     "  bolna-pp-cli batches batch-create",
 		Annotations: map[string]string{"pp:endpoint": "batches.batch-create", "pp:method": "POST", "pp:path": "/batches"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

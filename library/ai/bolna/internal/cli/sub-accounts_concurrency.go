@@ -17,7 +17,7 @@ func newSubAccountsConcurrencyCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "concurrency",
 		Short:       "Get organization concurrency envelope",
-		Example:     "  bolna-pp-cli-pp-cli sub-accounts concurrency",
+		Example:     "  bolna-pp-cli sub-accounts concurrency",
 		Annotations: map[string]string{"pp:endpoint": "sub-accounts.concurrency", "pp:method": "GET", "pp:path": "/sub-accounts/concurrency", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/sub-accounts/concurrency"

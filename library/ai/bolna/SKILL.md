@@ -1,5 +1,5 @@
 ---
-name: pp-bolna-pp-cli
+name: pp-bolna
 description: "Printing Press CLI for Bolna Pp Cli. Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities."
 author: "Som Samantray"
 license: "Apache-2.0"
@@ -9,20 +9,20 @@ metadata:
   openclaw:
     requires:
       bins:
-        - bolna-pp-cli-pp-cli
+        - bolna-pp-cli
 ---
 
 # Bolna Pp Cli — Printing Press CLI
 
 ## Prerequisites: Install the CLI
 
-This skill drives the `bolna-pp-cli-pp-cli` binary. **You must verify the CLI is installed before invoking any command from this skill.** If it is missing, install it first:
+This skill drives the `bolna-pp-cli` binary. **You must verify the CLI is installed before invoking any command from this skill.** If it is missing, install it first:
 
 1. Install via the Printing Press installer. It defaults binaries to `$HOME/.local/bin` on macOS/Linux and `%LOCALAPPDATA%\Programs\PrintingPress\bin` on Windows:
    ```bash
-   npx -y @mvanhorn/printing-press-library install bolna-pp-cli --cli-only
+   npx -y @mvanhorn/printing-press-library install bolna --cli-only
    ```
-2. Verify: `bolna-pp-cli-pp-cli --version`
+2. Verify: `bolna-pp-cli --version`
 3. Ensure the reported install directory is on `$PATH` for the agent/runtime that will invoke this skill.
 
 If the `npx` install fails before this CLI has a public-library category, install Node or use the category-specific Go fallback after publish.
@@ -41,7 +41,7 @@ These capabilities aren't available in any other tool for this API.
   _Use for multi-customer or multi-team Bolna organizations._
 
   ```bash
-  bolna-pp-cli sub-accounts list --json
+  bolna sub-accounts list --json
   ```
 
 ### Voice operations
@@ -50,7 +50,7 @@ These capabilities aren't available in any other tool for this API.
   _Use for reliable outbound calling automation._
 
   ```bash
-  bolna-pp-cli call --stdin --json
+  bolna call --stdin --json
   ```
 
 ## Recipes
@@ -58,7 +58,7 @@ These capabilities aren't available in any other tool for this API.
 ### List subaccounts
 
 ```bash
-bolna-pp-cli sub-accounts list --json
+bolna sub-accounts list --json
 ```
 
 Read the organization subaccount inventory.
@@ -66,7 +66,7 @@ Read the organization subaccount inventory.
 ### Inspect usage
 
 ```bash
-bolna-pp-cli sub-accounts all-usage --json
+bolna sub-accounts all-usage --json
 ```
 
 Read organization-wide subaccount usage.
@@ -75,144 +75,144 @@ Read organization-wide subaccount usage.
 
 **agent** — Manage agent
 
-- `bolna-pp-cli-pp-cli agent create` — Create a voice AI agent
-- `bolna-pp-cli-pp-cli agent dashboard-list` — Dashboard agent list with pagination
-- `bolna-pp-cli-pp-cli agent delete` — Delete an agent and related data
-- `bolna-pp-cli-pp-cli agent get` — Get agent details
-- `bolna-pp-cli-pp-cli agent legacy-dashboard-list` — Legacy dashboard agent list
-- `bolna-pp-cli-pp-cli agent list` — List all voice AI agents
-- `bolna-pp-cli-pp-cli agent patch` — Partially update an agent
-- `bolna-pp-cli-pp-cli agent update` — Replace an agent configuration
+- `bolna-pp-cli agent create` — Create a voice AI agent
+- `bolna-pp-cli agent dashboard-list` — Dashboard agent list with pagination
+- `bolna-pp-cli agent delete` — Delete an agent and related data
+- `bolna-pp-cli agent get` — Get agent details
+- `bolna-pp-cli agent legacy-dashboard-list` — Legacy dashboard agent list
+- `bolna-pp-cli agent list` — List all voice AI agents
+- `bolna-pp-cli agent patch` — Partially update an agent
+- `bolna-pp-cli agent update` — Replace an agent configuration
 
 **ambient-sounds** — Manage ambient sounds
 
-- `bolna-pp-cli-pp-cli ambient-sounds` — List available ambient sounds
+- `bolna-pp-cli ambient-sounds` — List available ambient sounds
 
 **assistants** — Manage assistants
 
-- `bolna-pp-cli-pp-cli assistants` — List GPT assistants available to the account
+- `bolna-pp-cli assistants` — List GPT assistants available to the account
 
 **batches** — Manage batches
 
-- `bolna-pp-cli-pp-cli batches batch-create` — Create a CSV batch
-- `bolna-pp-cli-pp-cli batches batch-delete` — Delete a batch
-- `bolna-pp-cli-pp-cli batches batch-get` — Get batch details
+- `bolna-pp-cli batches batch-create` — Create a CSV batch
+- `bolna-pp-cli batches batch-delete` — Delete a batch
+- `bolna-pp-cli batches batch-get` — Get batch details
 
 **bolna-analytics** — Manage bolna analytics
 
-- `bolna-pp-cli-pp-cli bolna-analytics` — List analytics dashboards
+- `bolna-pp-cli bolna-analytics` — List analytics dashboards
 
 **analytics** — Cross-account call-history analytics
 
-- `bolna-pp-cli-pp-cli analytics report` — Compare accounts and agents over a date range
+- `bolna-pp-cli analytics report` — Compare accounts and agents over a date range
 
 For multi-account reports, pass `--source LABEL=ENV_VAR` for each bearer key. The command reads key values from the named environment variables and never includes them in report output. Required filters are `--from YYYY-MM-DD` and `--to YYYY-MM-DD`; use `--metric all`, `--group-by day|week|status|provider`, `--agent-id`, `--agent-name`, `--provider`, `--status`, and `--max-pages` as needed.
 
 **call** — Manage call
 
-- `echo '{"agent_id":"<agent-id>","recipient_phone_number":"+15551234567"}' | bolna-pp-cli-pp-cli call --stdin --json` — Make an outbound voice AI call from a JSON request body
+- `echo '{"agent_id":"<agent-id>","recipient_phone_number":"+15551234567"}' | bolna-pp-cli call --stdin --json` — Make an outbound voice AI call from a JSON request body
 
 **compliance** — Manage compliance
 
-- `bolna-pp-cli-pp-cli compliance` — List phone-number compliance records
+- `bolna-pp-cli compliance` — List phone-number compliance records
 
 **dispositions** — Manage dispositions
 
-- `bolna-pp-cli-pp-cli dispositions bulk-create` — Bulk create and link dispositions
-- `bolna-pp-cli-pp-cli dispositions create` — Create and link a disposition
-- `bolna-pp-cli-pp-cli dispositions delete` — Delete a disposition
-- `bolna-pp-cli-pp-cli dispositions get` — Get a disposition
-- `bolna-pp-cli-pp-cli dispositions list` — List dispositions
-- `bolna-pp-cli-pp-cli dispositions update` — Update a disposition
+- `bolna-pp-cli dispositions bulk-create` — Bulk create and link dispositions
+- `bolna-pp-cli dispositions create` — Create and link a disposition
+- `bolna-pp-cli dispositions delete` — Delete a disposition
+- `bolna-pp-cli dispositions get` — Get a disposition
+- `bolna-pp-cli dispositions list` — List dispositions
+- `bolna-pp-cli dispositions update` — Update a disposition
 
 **executions** — Manage executions
 
-- `bolna-pp-cli-pp-cli executions <execution_id>` — Get execution details
+- `bolna-pp-cli executions <execution_id>` — Get execution details
 
 **get-current-price** — Manage get current price
 
-- `bolna-pp-cli-pp-cli get-current-price` — Calculate current call price for a provider configuration
+- `bolna-pp-cli get-current-price` — Calculate current call price for a provider configuration
 
 **inbound** — Manage inbound
 
-- `bolna-pp-cli-pp-cli inbound setup` — Link an agent to a phone number for inbound calls
-- `bolna-pp-cli-pp-cli inbound unlink` — Unlink an inbound agent
+- `bolna-pp-cli inbound setup` — Link an agent to a phone number for inbound calls
+- `bolna-pp-cli inbound unlink` — Unlink an inbound agent
 
 **invoices** — Manage invoices
 
-- `bolna-pp-cli-pp-cli invoices` — List account invoices
+- `bolna-pp-cli invoices` — List account invoices
 
 **keys** — Manage keys
 
-- `bolna-pp-cli-pp-cli keys` — List API keys visible to the account
+- `bolna-pp-cli keys` — List API keys visible to the account
 
 **knowledgebase** — Manage knowledgebase
 
-- `bolna-pp-cli-pp-cli knowledgebase create` — Create a knowledge base from PDF or URL
-- `bolna-pp-cli-pp-cli knowledgebase delete` — Delete a knowledge base
-- `bolna-pp-cli-pp-cli knowledgebase get` — Get a knowledge base
-- `bolna-pp-cli-pp-cli knowledgebase list` — List knowledge bases
+- `bolna-pp-cli knowledgebase create` — Create a knowledge base from PDF or URL
+- `bolna-pp-cli knowledgebase delete` — Delete a knowledge base
+- `bolna-pp-cli knowledgebase get` — Get a knowledge base
+- `bolna-pp-cli knowledgebase list` — List knowledge bases
 
 **phone-numbers** — Manage phone numbers
 
-- `bolna-pp-cli-pp-cli phone-numbers buy` — Buy a phone number
-- `bolna-pp-cli-pp-cli phone-numbers delete` — Delete a purchased phone number
-- `bolna-pp-cli-pp-cli phone-numbers list` — List phone numbers
-- `bolna-pp-cli-pp-cli phone-numbers search` — Search available phone numbers
+- `bolna-pp-cli phone-numbers buy` — Buy a phone number
+- `bolna-pp-cli phone-numbers delete` — Delete a purchased phone number
+- `bolna-pp-cli phone-numbers list` — List phone numbers
+- `bolna-pp-cli phone-numbers search` — Search available phone numbers
 
 **prompt-library** — Manage prompt library
 
-- `bolna-pp-cli-pp-cli prompt-library` — List published prompt modules
+- `bolna-pp-cli prompt-library` — List published prompt modules
 
 **providers** — Manage providers
 
-- `bolna-pp-cli-pp-cli providers add` — Add a provider credential
-- `bolna-pp-cli-pp-cli providers list` — List configured providers
-- `bolna-pp-cli-pp-cli providers remove` — Remove a provider
+- `bolna-pp-cli providers add` — Add a provider credential
+- `bolna-pp-cli providers list` — List configured providers
+- `bolna-pp-cli providers remove` — Remove a provider
 
 **reports** — Manage reports
 
-- `bolna-pp-cli-pp-cli reports` — List report jobs
+- `bolna-pp-cli reports` — List report jobs
 
 **sip-trunks** — Manage sip trunks
 
-- `bolna-pp-cli-pp-cli sip-trunks add-number` — Add a DID to a SIP trunk
-- `bolna-pp-cli-pp-cli sip-trunks create` — Create a SIP trunk
-- `bolna-pp-cli-pp-cli sip-trunks delete` — Delete a SIP trunk
-- `bolna-pp-cli-pp-cli sip-trunks get` — Get a SIP trunk
-- `bolna-pp-cli-pp-cli sip-trunks list` — List SIP trunks
-- `bolna-pp-cli-pp-cli sip-trunks numbers` — List phone numbers on a SIP trunk
-- `bolna-pp-cli-pp-cli sip-trunks remove-number` — Remove a number from a SIP trunk
-- `bolna-pp-cli-pp-cli sip-trunks update` — Update a SIP trunk
+- `bolna-pp-cli sip-trunks add-number` — Add a DID to a SIP trunk
+- `bolna-pp-cli sip-trunks create` — Create a SIP trunk
+- `bolna-pp-cli sip-trunks delete` — Delete a SIP trunk
+- `bolna-pp-cli sip-trunks get` — Get a SIP trunk
+- `bolna-pp-cli sip-trunks list` — List SIP trunks
+- `bolna-pp-cli sip-trunks numbers` — List phone numbers on a SIP trunk
+- `bolna-pp-cli sip-trunks remove-number` — Remove a number from a SIP trunk
+- `bolna-pp-cli sip-trunks update` — Update a SIP trunk
 
 **sub-accounts** — Manage sub accounts
 
-- `bolna-pp-cli-pp-cli sub-accounts all-usage` — Get usage for all subaccounts
-- `bolna-pp-cli-pp-cli sub-accounts concurrency` — Get organization concurrency envelope
-- `bolna-pp-cli-pp-cli sub-accounts create` — Create a subaccount
-- `bolna-pp-cli-pp-cli sub-accounts delete` — Delete a subaccount and its data
-- `bolna-pp-cli-pp-cli sub-accounts list` — List all subaccounts
-- `bolna-pp-cli-pp-cli sub-accounts main-patch` — Update main organization concurrency settings
-- `bolna-pp-cli-pp-cli sub-accounts patch` — Update subaccount name or concurrency
+- `bolna-pp-cli sub-accounts all-usage` — Get usage for all subaccounts
+- `bolna-pp-cli sub-accounts concurrency` — Get organization concurrency envelope
+- `bolna-pp-cli sub-accounts create` — Create a subaccount
+- `bolna-pp-cli sub-accounts delete` — Delete a subaccount and its data
+- `bolna-pp-cli sub-accounts list` — List all subaccounts
+- `bolna-pp-cli sub-accounts main-patch` — Update main organization concurrency settings
+- `bolna-pp-cli sub-accounts patch` — Update subaccount name or concurrency
 
 **user** — Manage user
 
-- `bolna-pp-cli-pp-cli user add-custom-model` — Add a custom LLM model
-- `bolna-pp-cli-pp-cli user dashboard-bootstrap` — Get authenticated dashboard bootstrap context
-- `bolna-pp-cli-pp-cli user get` — Get account information
-- `bolna-pp-cli-pp-cli user list-models` — List custom and available models
-- `bolna-pp-cli-pp-cli user webhook-allowed-states` — List webhook allowed states
+- `bolna-pp-cli user add-custom-model` — Add a custom LLM model
+- `bolna-pp-cli user dashboard-bootstrap` — Get authenticated dashboard bootstrap context
+- `bolna-pp-cli user get` — Get account information
+- `bolna-pp-cli user list-models` — List custom and available models
+- `bolna-pp-cli user webhook-allowed-states` — List webhook allowed states
 
 **violations** — Manage violations
 
-- `bolna-pp-cli-pp-cli violations list` — List account violations
-- `bolna-pp-cli-pp-cli violations submit` — Submit a violation report
+- `bolna-pp-cli violations list` — List account violations
+- `bolna-pp-cli violations submit` — Submit a violation report
 
 **voice-config** — Manage voice config
 
-- `bolna-pp-cli-pp-cli voice-config language-list` — List supported languages
-- `bolna-pp-cli-pp-cli voice-config voice-list` — List voices for a TTS provider and model
-- `bolna-pp-cli-pp-cli voice-config voice-providers` — List TTS providers and models
+- `bolna-pp-cli voice-config language-list` — List supported languages
+- `bolna-pp-cli voice-config voice-list` — List voices for a TTS provider and model
+- `bolna-pp-cli voice-config voice-providers` — List TTS providers and models
 
 
 ### Finding the right command
@@ -220,22 +220,22 @@ For multi-account reports, pass `--source LABEL=ENV_VAR` for each bearer key. Th
 When you know what you want to do but not which command does it, ask the CLI directly:
 
 ```bash
-bolna-pp-cli-pp-cli which "<capability in your own words>"
+bolna-pp-cli which "<capability in your own words>"
 ```
 
 `which` resolves a natural-language capability query to the best matching command from this CLI's curated feature index. Exit code `0` means at least one match; exit code `2` means no confident match — fall back to `--help` or use a narrower query.
 
 ## Auth Setup
 
-Run `bolna-pp-cli-pp-cli auth setup` for the URL and steps to obtain a token (add `--launch` to open the URL). Then store it:
+Run `bolna-pp-cli auth setup` for the URL and steps to obtain a token (add `--launch` to open the URL). Then store it:
 
 ```bash
-bolna-pp-cli-pp-cli auth set-token YOUR_TOKEN_HERE
+bolna-pp-cli auth set-token YOUR_TOKEN_HERE
 ```
 
 Or set `BOLNA_PP_CLI_BEARER_AUTH` as an environment variable.
 
-Run `bolna-pp-cli-pp-cli doctor` to verify setup.
+Run `bolna-pp-cli doctor` to verify setup.
 
 ## Agent Mode
 
@@ -245,7 +245,7 @@ Add `--agent` to any command. Expands to: `--json --compact --no-input --no-colo
 - **Filterable** — `--select` keeps a subset of fields. Dotted paths descend into nested structures; arrays traverse element-wise. Critical for keeping context small on verbose APIs:
 
   ```bash
-  bolna-pp-cli-pp-cli agent list --agent --select id,name,status
+  bolna-pp-cli agent list --agent --select id,name,status
   ```
 - **Previewable** — `--dry-run` shows the request without sending
 - **Offline-friendly** — sync/search commands can use the local SQLite store when available
@@ -274,14 +274,14 @@ Agents should treat the CLI's path resolver as part of the runtime contract:
 - Resolution order is per-kind env var, `--home`, `BOLNA_PP_CLI_HOME`, XDG (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME`), then platform defaults.
 - `config` contains settings like `config.toml` and profiles. `data` contains `credentials.toml`, `data.db`, cookies, and auth sidecars. `state` contains persisted queries, jobs, and `teach.log`. `cache` contains regenerable HTTP/cache files.
 - Stored secrets live in `credentials.toml` under the data dir. Existing legacy `config.toml` secrets are read for compatibility and leave `config.toml` on the first auth write.
-- Run `bolna-pp-cli-pp-cli doctor --fail-on warn` to surface path and credential-location warnings. `agent-context` exposes a schema v4 `paths` block for agents that need the resolved dirs.
+- Run `bolna-pp-cli doctor --fail-on warn` to surface path and credential-location warnings. `agent-context` exposes a schema v4 `paths` block for agents that need the resolved dirs.
 - For MCP, pass relocation through the MCP host config. The MCP binary does not inherit CLI flags:
 
   ```json
   {
     "mcpServers": {
       "bolna-pp-cli": {
-        "command": "bolna-pp-cli-pp-mcp",
+        "command": "bolna-pp-mcp",
         "env": {
           "BOLNA_PP_CLI_HOME": "/srv/bolna-pp-cli"
         }
@@ -301,7 +301,7 @@ This CLI ships a self-capturing learning loop. The CLI does its own bookkeeping:
 Before list/search/drill commands on a new user question, run:
 
 ```bash
-bolna-pp-cli-pp-cli recall "<user's question>" --agent
+bolna-pp-cli recall "<user's question>" --agent
 ```
 
 The response envelope:
@@ -324,7 +324,7 @@ The response envelope:
     { "id": 12, "class": "flag_alias | playbook_candidate",
       "summary": "...", "sightings": 3, "last_seen": "...",
       "rationale": "...",
-      "next_action": ["<trial command>", "bolna-pp-cli-pp-cli learnings confirm 12"] }
+      "next_action": ["<trial command>", "bolna-pp-cli learnings confirm 12"] }
   ],
   "playbook": {
     "query_family": "...",
@@ -363,7 +363,7 @@ if Playbook present:
        for the entity slot tokens. If a step's slot is unresolved, fall back to
        discovery for that step only.
     -> the Playbook's expected_tool_calls is a budget; if you find yourself running
-       materially more, record the divergence via `bolna-pp-cli-pp-cli playbook amend`
+       materially more, record the divergence via `bolna-pp-cli playbook amend`
        at end-of-session.
 
 elif Notes present (no Playbook):
@@ -389,7 +389,7 @@ else:  // Found == false, no playbook, no notes
 
 Playbook and Notes are orthogonal to the per-resource path. A recall response can carry both a Playbook AND a `Results[]` hit - use both: the Playbook tells you which choreography to run; the resource hits short-circuit specific steps. Default to skipping `mismatches`; pass `--debug-mismatches` only when investigating cold-start surprises.
 
-Candidate judgment details: `learnings confirm <id>` prints the candidate's full payload before materializing it - check that the printed payload matches the behavior you verified. `learnings reject <id>` tombstones the derivation signature so the same candidate does not resurface. The envelope carries only the few candidates worth acting on now; `bolna-pp-cli-pp-cli learnings candidates` lists the full open set.
+Candidate judgment details: `learnings confirm <id>` prints the candidate's full payload before materializing it - check that the printed payload matches the behavior you verified. `learnings reject <id>` tombstones the derivation signature so the same candidate does not resurface. The envelope carries only the few candidates worth acting on now; `bolna-pp-cli learnings candidates` lists the full open set.
 
 Graceful degradation: if `learnings confirm` is an unknown command, you are driving an older binary - ignore the candidates guidance and follow the rest of the protocol.
 
@@ -401,7 +401,7 @@ Graceful degradation: if `learnings confirm` is an unknown command, you are driv
 - `similar_shape_different_entity:<canonical>` (top-level): a structurally matching row exists but its canonical entity differs from the live query's. Treated as cold start; the warning carries the conflicting canonical as a hint, but the row is NOT promoted into Results.
 - `ambiguous_alias` (top-level): a single query entity resolved to multiple canonicals (e.g., "Cards" → Arizona Cardinals + St. Louis Cardinals). Surface the ambiguity from context before committing to a resource.
 - `candidates_present` (top-level): the envelope carries a `candidates` section. Handle it via the candidates branch in Step 2 before anything else.
-- `lookup_refresh_available` (top-level): an entity in the query has no lookup row yet, but synced data could provide one. Run `bolna-pp-cli-pp-cli sync` to refresh entity lookups.
+- `lookup_refresh_available` (top-level): an entity in the query has no lookup row yet, but synced data could provide one. Run `bolna-pp-cli sync` to refresh entity lookups.
 - Top-level `no_learnings_for_query_family`: the table had no rows above the Jaccard floor. Pure cold start.
 
 ### Step 4: `teach &` after finalizing your response - always
@@ -409,7 +409,7 @@ Graceful degradation: if `learnings confirm` is an unknown command, you are driv
 Teaching is unconditional. After resolving a query the store could not answer, background-teach the final resource mapping - no call-count threshold, no judging whether it was "worth" learning. The teach is the anchor of the loop: it triggers playbook synthesis for a family without a playbook, and same-referent phrasings fold into one family so near-duplicate teaches do not fragment the store. Fire it after assembling your user-facing response but BEFORE emitting it, with a shell `&` so the call returns immediately:
 
 ```bash
-bolna-pp-cli-pp-cli teach --query "<user's question>" --resource-type <type> --resource <id1> --resource <id2>
+bolna-pp-cli teach --query "<user's question>" --resource-type <type> --resource <id1> --resource <id2>
 # (append shell `&` to background it)
 ```
 
@@ -423,7 +423,7 @@ You do not need to decide whether a session "deserves" a playbook: a teach on a 
 
 ```bash
 # Common case: record both the resource learning AND the playbook in one call.
-bolna-pp-cli-pp-cli teach \
+bolna-pp-cli teach \
   --query "<user's question>" \
   --resource <id> \
   --playbook-file ~/playbooks/<shape>.json \
@@ -431,7 +431,7 @@ bolna-pp-cli-pp-cli teach \
 # (append shell `&` to background it)
 
 # Alternate: playbook-only (no resource to record alongside).
-bolna-pp-cli-pp-cli teach-playbook \
+bolna-pp-cli teach-playbook \
   --query "<user's question>" \
   --playbook-file ~/playbooks/<shape>.json \
   --notes-file ~/playbooks/<shape>-notes.md
@@ -446,7 +446,7 @@ When you DO find a playbook on a future recall, treat it as ground truth: replay
 If your debug-protocol response identifies a concrete correction the notes or playbook should know — a workaround, an undocumented endpoint shape, a stale field name, observed schema drift, an empty-payload fallback — fire `playbook amend` BEFORE emitting your user-facing response. Same fire-and-forget posture as `teach`.
 
 ```bash
-bolna-pp-cli-pp-cli playbook amend \
+bolna-pp-cli playbook amend \
   --query "<exact recall query string>" \
   --add-note "<your concrete correction>"
 # (append shell `&` to background it)
@@ -477,7 +477,7 @@ If a correction is only meaningful with user-specific context, it belongs in a p
 
 ### Measuring the loop
 
-`bolna-pp-cli-pp-cli learnings stats` reports recall hit rate, teach-to-reuse, playbook resolution rate, and candidate confirm/reject counts from the local `learn_events` table. Rates are null until they have a denominator; everything stays on this machine. Use it to check whether the loop is earning its keep for this CLI.
+`bolna-pp-cli learnings stats` reports recall hit rate, teach-to-reuse, playbook resolution rate, and candidate confirm/reject counts from the local `learn_events` table. Rates are null until they have a denominator; everything stays on this machine. Use it to check whether the loop is earning its keep for this CLI.
 
 ### Disabling learning
 
@@ -489,9 +489,9 @@ If a correction is only meaningful with user-specific context, it belongs in a p
 When you (or the agent) notice something off about this CLI, record it:
 
 ```
-bolna-pp-cli-pp-cli feedback "the --since flag is inclusive but docs say exclusive"
-bolna-pp-cli-pp-cli feedback --stdin < notes.txt
-bolna-pp-cli-pp-cli feedback list --json --limit 10
+bolna-pp-cli feedback "the --since flag is inclusive but docs say exclusive"
+bolna-pp-cli feedback --stdin < notes.txt
+bolna-pp-cli feedback list --json --limit 10
 ```
 
 Entries are stored locally as `feedback.jsonl` under the resolved data dir. They are never POSTed unless `BOLNA_PP_CLI_FEEDBACK_ENDPOINT` is set AND either `--send` is passed or `BOLNA_PP_CLI_FEEDBACK_AUTO_SEND=true`. Default behavior is local-only.
@@ -515,11 +515,11 @@ Unknown schemes are refused with a structured error naming the supported set. We
 A profile is a saved set of flag values, reused across invocations. Use it when a scheduled or recurring agent reuses the same saved flags while providing different input each run.
 
 ```
-bolna-pp-cli-pp-cli profile save briefing --json
-bolna-pp-cli-pp-cli --profile briefing agent list
-bolna-pp-cli-pp-cli profile list --json
-bolna-pp-cli-pp-cli profile show briefing
-bolna-pp-cli-pp-cli profile delete briefing --yes
+bolna-pp-cli profile save briefing --json
+bolna-pp-cli --profile briefing agent list
+bolna-pp-cli profile list --json
+bolna-pp-cli profile show briefing
+bolna-pp-cli profile delete briefing --yes
 ```
 
 Explicit flags always win over profile values; profile values win over defaults. `agent-context` lists all available profiles under `available_profiles` so introspecting agents discover them at runtime.
@@ -540,7 +540,7 @@ Explicit flags always win over profile values; profile values win over defaults.
 
 Parse `$ARGUMENTS`:
 
-1. **Empty, `help`, or `--help`** → show `bolna-pp-cli-pp-cli --help` output
+1. **Empty, `help`, or `--help`** → show `bolna-pp-cli --help` output
 2. **Starts with `install`** → ends with `mcp` → MCP installation; otherwise → see Prerequisites above
 3. **Anything else** → Direct Use (execute as CLI command with `--agent`)
 
@@ -549,18 +549,18 @@ Parse `$ARGUMENTS`:
 Install the MCP binary from this CLI's published public-library entry or pre-built release, then register it:
 
 ```bash
-claude mcp add bolna-pp-cli-pp-mcp -- bolna-pp-cli-pp-mcp
+claude mcp add bolna-pp-mcp -- bolna-pp-mcp
 ```
 
 Verify: `claude mcp list`
 
 ## Direct Use
 
-1. Check if installed: `which bolna-pp-cli-pp-cli`
+1. Check if installed: `which bolna-pp-cli`
    If not found, offer to install (see Prerequisites at the top of this skill).
 2. Match the user query to the best command from the Unique Capabilities and Command Reference above.
 3. Execute with the `--agent` flag:
    ```bash
-   bolna-pp-cli-pp-cli <command> [subcommand] [args] --agent
+   bolna-pp-cli <command> [subcommand] [args] --agent
    ```
-4. If ambiguous, drill into subcommand help: `bolna-pp-cli-pp-cli <command> --help`.
+4. If ambiguous, drill into subcommand help: `bolna-pp-cli <command> --help`.

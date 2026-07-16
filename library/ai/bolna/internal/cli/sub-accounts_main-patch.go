@@ -19,7 +19,7 @@ func newSubAccountsMainPatchCmd(flags *rootFlags) *cobra.Command {
 		Use:         "main-patch",
 		Aliases:     []string{"update"},
 		Short:       "Update main organization concurrency settings",
-		Example:     "  bolna-pp-cli-pp-cli sub-accounts main-patch",
+		Example:     "  bolna-pp-cli sub-accounts main-patch",
 		Annotations: map[string]string{"pp:endpoint": "sub-accounts.main-patch", "pp:method": "PATCH", "pp:path": "/sub-accounts/main"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

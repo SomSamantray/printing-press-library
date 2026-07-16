@@ -35,10 +35,10 @@ func newWorkflowArchiveCmd(flags *rootFlags) *cobra.Command {
 local SQLite database. Supports incremental sync (only new data since last run)
 and full resync. After archiving, use 'search' for instant full-text search.`,
 		Example: `  # Archive all resources
-  bolna-pp-cli-pp-cli workflow archive
+  bolna-pp-cli workflow archive
 
   # Full re-archive (ignore previous sync state)
-  bolna-pp-cli-pp-cli workflow archive --full`,
+  bolna-pp-cli workflow archive --full`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
@@ -47,7 +47,7 @@ and full resync. After archiving, use 'search' for instant full-text search.`,
 			c.NoCache = true
 
 			if dbPath == "" {
-				dbPath = defaultDBPath("bolna-pp-cli-pp-cli")
+				dbPath = defaultDBPath("bolna-pp-cli")
 			}
 			s, err := store.OpenWithContext(cmd.Context(), dbPath)
 			if err != nil {
@@ -115,13 +115,13 @@ func newWorkflowStatusCmd(flags *rootFlags) *cobra.Command {
 		Short:       "Show local archive status and sync state for all resources",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		Example: `  # Show archive status
-  bolna-pp-cli-pp-cli workflow status
+  bolna-pp-cli workflow status
 
   # Show status as JSON
-  bolna-pp-cli-pp-cli workflow status --json`,
+  bolna-pp-cli workflow status --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dbPath == "" {
-				dbPath = defaultDBPath("bolna-pp-cli-pp-cli")
+				dbPath = defaultDBPath("bolna-pp-cli")
 			}
 			s, err := store.OpenWithContext(cmd.Context(), dbPath)
 			if err != nil {

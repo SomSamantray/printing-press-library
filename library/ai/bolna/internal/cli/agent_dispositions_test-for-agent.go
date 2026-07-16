@@ -19,7 +19,7 @@ func newAgentDispositionsTestForAgentCmd(flags *rootFlags) *cobra.Command {
 		Use:         "test-for-agent <agent_id>",
 		Aliases:     []string{"create"},
 		Short:       "Test dispositions against a transcript",
-		Example:     "  bolna-pp-cli-pp-cli agent dispositions test-for-agent 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli agent dispositions test-for-agent 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "dispositions.test-for-agent", "pp:method": "POST", "pp:path": "/v2/agent/{agent_id}/dispositions/test"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

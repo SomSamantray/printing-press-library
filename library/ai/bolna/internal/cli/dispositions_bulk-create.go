@@ -18,7 +18,7 @@ func newDispositionsBulkCreateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "bulk-create",
 		Short:       "Bulk create and link dispositions",
-		Example:     "  bolna-pp-cli-pp-cli dispositions bulk-create",
+		Example:     "  bolna-pp-cli dispositions bulk-create",
 		Annotations: map[string]string{"pp:endpoint": "dispositions.bulk-create", "pp:method": "POST", "pp:path": "/dispositions/bulk"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

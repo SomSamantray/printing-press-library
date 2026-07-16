@@ -16,7 +16,7 @@ func newAgentDeleteCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "delete <agent_id>",
 		Short:       "Delete an agent and related data",
-		Example:     "  bolna-pp-cli-pp-cli agent delete 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli agent delete 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "agent.delete", "pp:method": "DELETE", "pp:path": "/v2/agent/{agent_id}"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

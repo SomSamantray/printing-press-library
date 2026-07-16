@@ -16,7 +16,7 @@ func newDispositionsDeleteCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "delete <disposition_id>",
 		Short:       "Delete a disposition",
-		Example:     "  bolna-pp-cli-pp-cli dispositions delete 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli dispositions delete 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "dispositions.delete", "pp:method": "DELETE", "pp:path": "/dispositions/{disposition_id}"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

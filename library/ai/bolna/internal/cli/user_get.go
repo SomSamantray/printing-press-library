@@ -17,7 +17,7 @@ func newUserGetCmd(flags *rootFlags) *cobra.Command {
 		Use:         "get",
 		Aliases:     []string{"list"},
 		Short:       "Get account information",
-		Example:     "  bolna-pp-cli-pp-cli user get",
+		Example:     "  bolna-pp-cli user get",
 		Annotations: map[string]string{"pp:endpoint": "user.get", "pp:method": "GET", "pp:path": "/user/me", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/user/me"

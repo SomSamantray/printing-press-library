@@ -19,7 +19,7 @@ func newAgentDashboardListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "dashboard-list",
 		Short:       "Dashboard agent list with pagination",
-		Example:     "  bolna-pp-cli-pp-cli agent dashboard-list",
+		Example:     "  bolna-pp-cli agent dashboard-list",
 		Annotations: map[string]string{"pp:endpoint": "agent.dashboard-list", "pp:method": "GET", "pp:path": "/v2/agent/list", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/v2/agent/list"

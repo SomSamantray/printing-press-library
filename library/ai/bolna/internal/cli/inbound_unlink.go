@@ -18,7 +18,7 @@ func newInboundUnlinkCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "unlink",
 		Short:       "Unlink an inbound agent",
-		Example:     "  bolna-pp-cli-pp-cli inbound unlink",
+		Example:     "  bolna-pp-cli inbound unlink",
 		Annotations: map[string]string{"pp:endpoint": "inbound.unlink", "pp:method": "POST", "pp:path": "/inbound/unlink"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

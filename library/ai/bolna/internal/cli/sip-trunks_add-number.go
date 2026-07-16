@@ -18,7 +18,7 @@ func newSipTrunksAddNumberCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "add-number <trunk_id>",
 		Short:       "Add a DID to a SIP trunk",
-		Example:     "  bolna-pp-cli-pp-cli sip-trunks add-number 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli sip-trunks add-number 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "sip-trunks.add-number", "pp:method": "POST", "pp:path": "/sip-trunks/trunks/{trunk_id}/numbers"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

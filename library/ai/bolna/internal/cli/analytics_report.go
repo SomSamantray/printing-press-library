@@ -96,7 +96,7 @@ The environment variable contains the bearer key and is never written to the rep
 Date boundaries are inclusive and interpreted as UTC dates. Use --metric all for
 the complete metric set, --group-by day for daily trends, and --agent-id or
 --agent-name to focus the report on selected agents.`,
-		Example: `  bolna-pp-cli-pp-cli analytics report \
+		Example: `  bolna-pp-cli analytics report \
     --source account-a=BOLNA_ACCOUNT_A_KEY \
     --source account-b=BOLNA_ACCOUNT_B_KEY \
     --from 2026-06-01 --to 2026-07-16 --metric all --group-by day --agent --no-cache`,

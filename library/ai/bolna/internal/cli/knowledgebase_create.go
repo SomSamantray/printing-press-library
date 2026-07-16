@@ -18,7 +18,7 @@ func newKnowledgebaseCreateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "create",
 		Short:       "Create a knowledge base from PDF or URL",
-		Example:     "  bolna-pp-cli-pp-cli knowledgebase create",
+		Example:     "  bolna-pp-cli knowledgebase create",
 		Annotations: map[string]string{"pp:endpoint": "knowledgebase.create", "pp:method": "POST", "pp:path": "/knowledgebase"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

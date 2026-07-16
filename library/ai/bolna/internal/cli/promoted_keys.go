@@ -17,7 +17,7 @@ func newKeysPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "keys",
 		Short:       "List API keys visible to the account",
 		Long:        "List API keys visible to the account",
-		Example:     "  bolna-pp-cli-pp-cli keys",
+		Example:     "  bolna-pp-cli keys",
 		Annotations: map[string]string{"pp:endpoint": "keys.list", "pp:method": "GET", "pp:path": "/keys", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

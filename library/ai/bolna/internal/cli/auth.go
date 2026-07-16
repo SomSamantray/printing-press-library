@@ -35,14 +35,14 @@ func newAuthSetupCmd(_ *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "setup",
 		Short:   "Print steps for obtaining a credential (use --launch to open the URL)",
-		Example: "  bolna-pp-cli-pp-cli auth setup\n  bolna-pp-cli-pp-cli auth setup --launch",
+		Example: "  bolna-pp-cli auth setup\n  bolna-pp-cli auth setup --launch",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w := cmd.OutOrStdout()
 			fmt.Fprintln(w, "No setup URL is configured for this CLI; check the API's docs.")
 			fmt.Fprintln(w, "")
 			fmt.Fprintln(w, "Then set:")
 			fmt.Fprintln(w, "  export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"")
-			fmt.Fprintln(w, "  bolna-pp-cli-pp-cli auth set-token <token>")
+			fmt.Fprintln(w, "  bolna-pp-cli auth set-token <token>")
 			if !launch {
 				return nil
 			}
@@ -58,7 +58,7 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 	return &cobra.Command{
 		Use:     "status",
 		Short:   "Show authentication status",
-		Example: "  bolna-pp-cli-pp-cli auth status",
+		Example: "  bolna-pp-cli auth status",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load(flags.configPath)
 			if err != nil {
@@ -91,7 +91,7 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 				fmt.Fprintln(w, "")
 				fmt.Fprintln(w, "Set your token:")
 				fmt.Fprintln(w, "  export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"")
-				fmt.Fprintf(w, "  bolna-pp-cli-pp-cli auth set-token <token>\n")
+				fmt.Fprintf(w, "  bolna-pp-cli auth set-token <token>\n")
 				return authErr(fmt.Errorf("no credentials configured"))
 			}
 
@@ -107,7 +107,7 @@ func newAuthSetTokenCmd(flags *rootFlags) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-token <token>",
 		Short:   "Save an API token to the credentials file",
-		Example: "  bolna-pp-cli-pp-cli auth set-token YOUR_TOKEN_HERE",
+		Example: "  bolna-pp-cli auth set-token YOUR_TOKEN_HERE",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load(flags.configPath)
@@ -161,7 +161,7 @@ func newAuthLogoutCmd(flags *rootFlags) *cobra.Command {
 	return &cobra.Command{
 		Use:     "logout",
 		Short:   "Clear stored credentials",
-		Example: "  bolna-pp-cli-pp-cli auth logout",
+		Example: "  bolna-pp-cli auth logout",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load(flags.configPath)
 			if err != nil {

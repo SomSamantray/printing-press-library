@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-const appName = "bolna-pp-cli-pp-cli"
+const appName = "bolna-pp-cli"
 const envPrefix = "BOLNA_PP_CLI"
 
 type PathKind int

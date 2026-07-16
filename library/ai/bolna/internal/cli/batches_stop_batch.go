@@ -19,7 +19,7 @@ func newBatchesStopBatchCmd(flags *rootFlags) *cobra.Command {
 		Use:         "batch <batch_id>",
 		Aliases:     []string{"create"},
 		Short:       "Stop a running batch",
-		Example:     "  bolna-pp-cli-pp-cli batches stop batch 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli batches stop batch 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "stop.batch", "pp:method": "POST", "pp:path": "/batches/{batch_id}/stop"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

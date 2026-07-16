@@ -16,7 +16,7 @@ func newSubAccountsDeleteCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "delete <sub_account_id>",
 		Short:       "Delete a subaccount and its data",
-		Example:     "  bolna-pp-cli-pp-cli sub-accounts delete 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli sub-accounts delete 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "sub-accounts.delete", "pp:method": "DELETE", "pp:path": "/sub-accounts/{sub_account_id}"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

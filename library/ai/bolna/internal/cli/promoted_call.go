@@ -19,7 +19,7 @@ func newCallPromotedCmd(flags *rootFlags) *cobra.Command {
 		Use:         "call",
 		Short:       "Make an outbound voice AI call",
 		Long:        "Make an outbound voice AI call",
-		Example:     "  echo '{\"agent_id\":\"<agent-id>\",\"recipient_phone_number\":\"+15551234567\"}' | bolna-pp-cli-pp-cli call --stdin --json",
+		Example:     "  echo '{\"agent_id\":\"<agent-id>\",\"recipient_phone_number\":\"+15551234567\"}' | bolna-pp-cli call --stdin --json",
 		Annotations: map[string]string{"pp:endpoint": "call.make", "pp:method": "POST", "pp:path": "/call"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

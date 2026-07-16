@@ -171,7 +171,7 @@ func isCobraUsageError(err error) bool {
 
 func newRootCmd(flags *rootFlags) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "bolna-pp-cli-pp-cli",
+		Use:   "bolna-pp-cli",
 		Short: "Operate Bolna Voice AI agents, calls, campaigns, telephony, and enterprise subaccounts from one machine-readable CLI.",
 		Long: `Manage bolna-pp-cli resources via the bolna-pp-cli API.
 
@@ -180,11 +180,11 @@ Highlights (not in the official API docs):
   • workflow   Combine agent configuration, outbound calls, execution polling, transcript retrieval, and raw-log inspection.
 
 Add --agent to any command for JSON output + non-interactive mode.
-Run 'bolna-pp-cli-pp-cli doctor' to verify auth and connectivity.`,
+Run 'bolna-pp-cli doctor' to verify auth and connectivity.`,
 		SilenceUsage: true,
 		Version:      version,
 	}
-	rootCmd.SetVersionTemplate("bolna-pp-cli-pp-cli {{ .Version }}\n")
+	rootCmd.SetVersionTemplate("bolna-pp-cli {{ .Version }}\n")
 
 	rootCmd.PersistentFlags().BoolVar(&flags.asJSON, "json", false, "Output as JSON")
 	rootCmd.PersistentFlags().BoolVar(&flags.compact, "compact", false, "Return only key fields (id, name, status, timestamps) for minimal token usage")
@@ -208,7 +208,7 @@ Run 'bolna-pp-cli-pp-cli doctor' to verify auth and connectivity.`,
 	rootCmd.PersistentFlags().BoolVar(&flags.allowPartialFailure, "allow-partial-failure", false, "Downgrade response-body partial-failure (e.g. partialFailureError) to a warning instead of a non-zero exit")
 	rootCmd.PersistentFlags().StringVar(&flags.dataSource, "data-source", "auto", "Data source for read commands: auto (live with local fallback), live (API only), local (synced data only)")
 	rootCmd.PersistentFlags().DurationVar(&flags.maxAge, "max-age", 30*time.Minute, "Maximum acceptable age of local-store data before a stderr hint suggests sync; 0 disables")
-	rootCmd.PersistentFlags().StringVar(&flags.profileName, "profile", "", "Apply values from a saved profile (see 'bolna-pp-cli-pp-cli profile list')")
+	rootCmd.PersistentFlags().StringVar(&flags.profileName, "profile", "", "Apply values from a saved profile (see 'bolna-pp-cli profile list')")
 	rootCmd.PersistentFlags().StringVar(&flags.deliverSpec, "deliver", "", "Route output to a sink: stdout (default), file:<path>, webhook:<url>")
 	rootCmd.PersistentFlags().Float64Var(&flags.rateLimit, "rate-limit", 0, "Max requests per second (0 to disable)")
 

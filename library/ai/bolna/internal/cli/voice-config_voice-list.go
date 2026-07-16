@@ -19,7 +19,7 @@ func newVoiceConfigVoiceListCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "voice-list",
 		Short:       "List voices for a TTS provider and model",
-		Example:     "  bolna-pp-cli-pp-cli voice-config voice-list --provider-id 7a3f4573-7548-5b34-80f9-5edf23bed79b --model-id f1b5c9cc-72e1-56a4-be8c-f3ee37d38309 --language en",
+		Example:     "  bolna-pp-cli voice-config voice-list --provider-id 7a3f4573-7548-5b34-80f9-5edf23bed79b --model-id f1b5c9cc-72e1-56a4-be8c-f3ee37d38309 --language en",
 		Annotations: map[string]string{"pp:endpoint": "voice-config.voice-list", "pp:method": "GET", "pp:path": "/api/v1/voice-config/tts/voices", "pp:happy-args": "--provider-id=7a3f4573-7548-5b34-80f9-5edf23bed79b;--model-id=f1b5c9cc-72e1-56a4-be8c-f3ee37d38309;--language=en", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/api/v1/voice-config/tts/voices"

@@ -20,7 +20,7 @@ func newBatchesExecutionsBatchCmd(flags *rootFlags) *cobra.Command {
 		Use:         "batch <batch_id>",
 		Aliases:     []string{"get"},
 		Short:       "List batch executions",
-		Example:     "  bolna-pp-cli-pp-cli batches executions batch 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  bolna-pp-cli batches executions batch 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "executions.batch", "pp:method": "GET", "pp:path": "/batches/{batch_id}/executions", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

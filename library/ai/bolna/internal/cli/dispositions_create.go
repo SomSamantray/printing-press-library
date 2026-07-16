@@ -18,7 +18,7 @@ func newDispositionsCreateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "create",
 		Short:       "Create and link a disposition",
-		Example:     "  bolna-pp-cli-pp-cli dispositions create",
+		Example:     "  bolna-pp-cli dispositions create",
 		Annotations: map[string]string{"pp:endpoint": "dispositions.create", "pp:method": "POST", "pp:path": "/dispositions/"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {

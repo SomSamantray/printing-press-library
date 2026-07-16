@@ -273,18 +273,18 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 			case strings.Contains(msg, "HTTP 400") && cliutil.LooksLikeAuthError(msg):
 				return mcplib.NewToolResultError("authentication error: " + cliutil.SanitizeErrorBody(msg) +
 					"\nhint: the API rejected the request — this usually means auth is missing or invalid." +
-					"\n      Set it with: bolna-pp-cli-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"" +
-					"\n      Run 'bolna-pp-cli-pp-cli doctor' to check auth status."), nil
+					"\n      Set it with: bolna-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"" +
+					"\n      Run 'bolna-pp-cli doctor' to check auth status."), nil
 			case strings.Contains(msg, "HTTP 401"):
 				return mcplib.NewToolResultError("authentication failed: " + cliutil.SanitizeErrorBody(msg) +
 					"\nhint: check your token." +
-					"\n      Set it with: bolna-pp-cli-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"" +
-					"\n      Run 'bolna-pp-cli-pp-cli doctor' to check auth status."), nil
+					"\n      Set it with: bolna-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"" +
+					"\n      Run 'bolna-pp-cli doctor' to check auth status."), nil
 			case strings.Contains(msg, "HTTP 403"):
 				return mcplib.NewToolResultError("permission denied: " + cliutil.SanitizeErrorBody(msg) +
 					"\nhint: your credentials are valid but lack access to this resource. Check that they have the required permissions and match the API's expected auth scheme." +
-					"\n      Set it with: bolna-pp-cli-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"" +
-					"\n      Run 'bolna-pp-cli-pp-cli doctor' to check auth status."), nil
+					"\n      Set it with: bolna-pp-cli auth set-token <token> or export BOLNA_PP_CLI_BEARER_AUTH=\"your-token-here\"" +
+					"\n      Run 'bolna-pp-cli doctor' to check auth status."), nil
 			case strings.Contains(msg, "HTTP 404"):
 				if method == "DELETE" {
 					return mcplib.NewToolResultText("already deleted (no-op)"), nil
@@ -382,13 +382,13 @@ func openMCPReadOnlyStore(path string) (*store.Store, *mcplib.CallToolResult) {
 	}
 	db, err := store.OpenReadOnly(path)
 	if err != nil {
-		return nil, mcplib.NewToolResultError(fmt.Sprintf("opening local data store %s: %v. Run bolna-pp-cli-pp-cli sync to refresh the store, or use live endpoint MCP tools for unsynced data.", path, err))
+		return nil, mcplib.NewToolResultError(fmt.Sprintf("opening local data store %s: %v. Run bolna-pp-cli sync to refresh the store, or use live endpoint MCP tools for unsynced data.", path, err))
 	}
 	return db, nil
 }
 
 func mcpMissingStoreMessage(path string) string {
-	return fmt.Sprintf("No local data store found at %s. Run bolna-pp-cli-pp-cli sync before using MCP search/sql, or use live endpoint MCP tools for unsynced data.", path)
+	return fmt.Sprintf("No local data store found at %s. Run bolna-pp-cli sync before using MCP search/sql, or use live endpoint MCP tools for unsynced data.", path)
 }
 
 func mcpStoreStatus(db *store.Store) (mcpStoreStatusKind, error) {
@@ -403,7 +403,7 @@ func mcpStoreStatus(db *store.Store) (mcpStoreStatusKind, error) {
 }
 
 func mcpEmptyStoreNextStep() string {
-	return "Run bolna-pp-cli-pp-cli sync to populate the local SQLite store before using MCP search/sql."
+	return "Run bolna-pp-cli sync to populate the local SQLite store before using MCP search/sql."
 }
 
 func handleSearch(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
@@ -730,7 +730,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 		"tool_count":  78,
 		"paths":       paths,
 		// tool_surface tells agents which surface a capability lives on.
-		"tool_surface": "MCP exposes typed endpoint tools plus a runtime mirror of user-facing CLI commands. Endpoint tools keep typed schemas; command-mirror tools shell out to the companion bolna-pp-cli-pp-cli binary.",
+		"tool_surface": "MCP exposes typed endpoint tools plus a runtime mirror of user-facing CLI commands. Endpoint tools keep typed schemas; command-mirror tools shell out to the companion bolna-pp-cli binary.",
 		// learn_protocol is generated from the single shared source of
 		// truth (the exported constant internal/learn.RecallFirstProtocol)
 		// also consumed by the CLI agent-context command, so the MCP and

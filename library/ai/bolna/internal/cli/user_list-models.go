@@ -17,7 +17,7 @@ func newUserListModelsCmd(flags *rootFlags) *cobra.Command {
 		Use:         "list-models",
 		Aliases:     []string{"details"},
 		Short:       "Get current user details",
-		Example:     "  bolna-pp-cli-pp-cli user list-models",
+		Example:     "  bolna-pp-cli user list-models",
 		Annotations: map[string]string{"pp:endpoint": "user.details", "pp:method": "GET", "pp:path": "/user/me", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := "/user/me"

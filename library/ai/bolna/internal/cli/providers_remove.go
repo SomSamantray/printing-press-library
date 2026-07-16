@@ -17,7 +17,7 @@ func newProvidersRemoveCmd(flags *rootFlags) *cobra.Command {
 		Use:         "remove <provider_key_name>",
 		Aliases:     []string{"delete"},
 		Short:       "Remove a provider",
-		Example:     "  bolna-pp-cli-pp-cli providers remove example-resource",
+		Example:     "  bolna-pp-cli providers remove example-resource",
 		Annotations: map[string]string{"pp:endpoint": "providers.remove", "pp:method": "DELETE", "pp:path": "/providers/{provider_key_name}"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

@@ -27,22 +27,22 @@ func newAnalyticsCmd(flags *rootFlags) *cobra.Command {
 		Long: `Analyze locally synced data with count, group-by, and summary operations.
 Data must be synced first with the sync command.`,
 		Example: `  # Count records by type
-  bolna-pp-cli-pp-cli analytics --type messages
+  bolna-pp-cli analytics --type messages
 
   # Group by a field
-  bolna-pp-cli-pp-cli analytics --type messages --group-by author_id
+  bolna-pp-cli analytics --type messages --group-by author_id
 
   # Top 10 most frequent values
-  bolna-pp-cli-pp-cli analytics --type messages --group-by channel_id --limit 10 --json`,
+  bolna-pp-cli analytics --type messages --group-by channel_id --limit 10 --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
 			if dbPath == "" {
-				dbPath = defaultDBPath("bolna-pp-cli-pp-cli")
+				dbPath = defaultDBPath("bolna-pp-cli")
 			}
 
 			db, err := store.OpenWithContext(cmd.Context(), dbPath)
 			if err != nil {
-				return fmt.Errorf("opening local database: %w\nRun 'bolna-pp-cli-pp-cli sync' first.", err)
+				return fmt.Errorf("opening local database: %w\nRun 'bolna-pp-cli sync' first.", err)
 			}
 			defer db.Close()
 

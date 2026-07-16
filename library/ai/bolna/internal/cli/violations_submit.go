@@ -19,7 +19,7 @@ func newViolationsSubmitCmd(flags *rootFlags) *cobra.Command {
 		Use:         "submit",
 		Aliases:     []string{"create"},
 		Short:       "Submit a violation report",
-		Example:     "  bolna-pp-cli-pp-cli violations submit",
+		Example:     "  bolna-pp-cli violations submit",
 		Annotations: map[string]string{"pp:endpoint": "violations.submit", "pp:method": "POST", "pp:path": "/violations"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !stdinBody {
