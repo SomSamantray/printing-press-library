@@ -1,0 +1,51 @@
+version: 2
+project_name: bolna-pp-cli-pp-cli
+changelog:
+  disable: true
+builds:
+  - id: bolna-pp-cli-pp-cli
+    main: ./cmd/bolna-pp-cli-pp-cli
+    binary: bolna-pp-cli-pp-cli
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X bolna-pp-cli/internal/cli.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+  - id: bolna-pp-cli-pp-mcp
+    main: ./cmd/bolna-pp-cli-pp-mcp
+    binary: bolna-pp-cli-pp-mcp
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+brews:
+  - name: bolna-pp-cli-pp-cli
+    repository:
+      owner: somsamantray
+      name: homebrew-tap
+    homepage: "https://github.com/somsamantray/bolna-pp-cli-pp-cli"
+    description: "Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities."
+    install: |
+      bin.install "bolna-pp-cli-pp-cli"
+      bin.install "bolna-pp-cli-pp-mcp"

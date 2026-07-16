@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: Bolna API
+  version: 1.0.0
+  description: Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities.
+servers:
+  - url: https://api.bolna.ai
+security:
+  - bearerAuth: []
+paths:
+  /user/me: { get: { operationId: userGet, summary: Get account information, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /user/model/all: { get: { operationId: userListModels, summary: List custom and available models, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /user/model/custom: { post: { operationId: userAddCustomModel, summary: Add a custom LLM model, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /user/webhook/allowed-states: { get: { operationId: userWebhookAllowedStates, summary: List webhook allowed states, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /v2/agent: { post: { operationId: agentCreate, summary: Create a voice AI agent, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '201': { $ref: '#/components/responses/JSON' } } } }
+  /v2/agent/all: { get: { operationId: agentList, summary: List all voice AI agents, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /v2/agent/list: { get: { operationId: agentDashboardList, summary: Dashboard agent list with pagination, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /agent/list: { get: { operationId: agentLegacyDashboardList, summary: Legacy dashboard agent list, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /v2/agent/{agent_id}: { parameters: [{ $ref: '#/components/parameters/AgentID' }], get: { operationId: agentGet, summary: Get agent details, responses: { '200': { $ref: '#/components/responses/JSON' } } }, put: { operationId: agentUpdate, summary: Replace an agent configuration, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } }, patch: { operationId: agentPatch, summary: Partially update an agent, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } }, delete: { operationId: agentDelete, summary: Delete an agent and related data, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /v2/agent/{agent_id}/executions: { parameters: [{ $ref: '#/components/parameters/AgentID' }], get: { operationId: agentExecutions, summary: List agent executions, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /agent/{agent_id}/execution/{execution_id}: { parameters: [{ $ref: '#/components/parameters/AgentID' }, { $ref: '#/components/parameters/ExecutionID' }], get: { operationId: agentExecutionGet, summary: Get a specific agent execution, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /v2/agent/{agent_id}/dispositions/test: { parameters: [{ $ref: '#/components/parameters/AgentID' }], post: { operationId: dispositionTestForAgent, summary: Test dispositions against a transcript, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /v2/agent/{agent_id}/stop: { parameters: [{ $ref: '#/components/parameters/AgentID' }], post: { operationId: agentStopQueuedCalls, summary: Stop queued calls for an agent, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /agent/{agent_id}/prompt: { parameters: [{ $ref: '#/components/parameters/AgentID' }], get: { operationId: agentPromptGet, summary: Get agent prompt configuration, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /call: { post: { operationId: callMake, summary: Make an outbound voice AI call, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /call/{execution_id}/stop: { parameters: [{ $ref: '#/components/parameters/ExecutionID' }], post: { operationId: callStop, summary: Stop a queued or scheduled call, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /executions/{execution_id}: { parameters: [{ $ref: '#/components/parameters/ExecutionID' }], get: { operationId: executionGet, summary: Get execution details, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /executions/{execution_id}/log: { parameters: [{ $ref: '#/components/parameters/ExecutionID' }], get: { operationId: executionRawLogs, summary: Get raw execution logs, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /batches: { post: { operationId: batchCreate, summary: Create a CSV batch, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '201': { $ref: '#/components/responses/JSON' } } } }
+  /batches/{batch_id}: { parameters: [{ $ref: '#/components/parameters/BatchID' }], get: { operationId: batchGet, summary: Get batch details, responses: { '200': { $ref: '#/components/responses/JSON' } } }, delete: { operationId: batchDelete, summary: Delete a batch, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /batches/{agent_id}/all: { parameters: [{ $ref: '#/components/parameters/AgentID' }], get: { operationId: batchList, summary: List batches for an agent, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /batches/{batch_id}/schedule: { parameters: [{ $ref: '#/components/parameters/BatchID' }], post: { operationId: batchSchedule, summary: Schedule a batch, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /batches/{batch_id}/stop: { parameters: [{ $ref: '#/components/parameters/BatchID' }], post: { operationId: batchStop, summary: Stop a running batch, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /batches/{batch_id}/executions: { parameters: [{ $ref: '#/components/parameters/BatchID' }], get: { operationId: batchExecutions, summary: List batch executions, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /knowledgebase: { post: { operationId: knowledgebaseCreate, summary: Create a knowledge base from PDF or URL, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /knowledgebase/all: { get: { operationId: knowledgebaseList, summary: List knowledge bases, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }, { $ref: '#/components/parameters/Status' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /knowledgebase/{rag_id}: { parameters: [{ $ref: '#/components/parameters/RAGID' }], get: { operationId: knowledgebaseGet, summary: Get a knowledge base, responses: { '200': { $ref: '#/components/responses/JSON' } } }, delete: { operationId: knowledgebaseDelete, summary: Delete a knowledge base, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /inbound/setup: { post: { operationId: inboundSetup, summary: Link an agent to a phone number for inbound calls, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /inbound/unlink: { post: { operationId: inboundUnlink, summary: Unlink an inbound agent, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /phone-numbers/all: { get: { operationId: phoneNumberList, summary: List phone numbers, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /phone-numbers/search: { get: { operationId: phoneNumberSearch, summary: Search available phone numbers, parameters: [{ $ref: '#/components/parameters/CountryCode' }, { $ref: '#/components/parameters/AreaCode' }, { $ref: '#/components/parameters/Pattern' }, { $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /phone-numbers/buy: { post: { operationId: phoneNumberBuy, summary: Buy a phone number, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /phone-numbers/{phone_number_id}: { parameters: [{ $ref: '#/components/parameters/PhoneNumberID' }], delete: { operationId: phoneNumberDelete, summary: Delete a purchased phone number, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /providers: { get: { operationId: providerList, summary: List configured providers, responses: { '200': { $ref: '#/components/responses/JSON' } } }, post: { operationId: providerAdd, summary: Add a provider credential, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /providers/{provider_key_name}: { parameters: [{ $ref: '#/components/parameters/ProviderKey' }], delete: { operationId: providerRemove, summary: Remove a provider, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /api/v1/voice-config/tts: { get: { operationId: voiceProviders, summary: List TTS providers and models, parameters: [{ $ref: '#/components/parameters/Language' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /api/v1/voice-config/tts/voices: { get: { operationId: voiceList, summary: List voices for a TTS provider and model, parameters: [{ $ref: '#/components/parameters/ProviderID' }, { $ref: '#/components/parameters/ModelID' }, { $ref: '#/components/parameters/Language' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /api/v1/voice-config/languages: { get: { operationId: languageList, summary: List supported languages, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sip-trunks/trunks: { get: { operationId: sipTrunkList, summary: List SIP trunks, responses: { '200': { $ref: '#/components/responses/JSON' } } }, post: { operationId: sipTrunkCreate, summary: Create a SIP trunk, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sip-trunks/trunks/{trunk_id}: { parameters: [{ $ref: '#/components/parameters/TrunkID' }], get: { operationId: sipTrunkGet, summary: Get a SIP trunk, responses: { '200': { $ref: '#/components/responses/JSON' } } }, patch: { operationId: sipTrunkUpdate, summary: Update a SIP trunk, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } }, delete: { operationId: sipTrunkDelete, summary: Delete a SIP trunk, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sip-trunks/trunks/{trunk_id}/numbers: { parameters: [{ $ref: '#/components/parameters/TrunkID' }], get: { operationId: sipTrunkNumbers, summary: List phone numbers on a SIP trunk, responses: { '200': { $ref: '#/components/responses/JSON' } } }, post: { operationId: sipTrunkAddNumber, summary: Add a DID to a SIP trunk, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sip-trunks/trunks/{trunk_id}/numbers/{phone_number_id}: { parameters: [{ $ref: '#/components/parameters/TrunkID' }, { $ref: '#/components/parameters/PhoneNumberID' }], delete: { operationId: sipTrunkRemoveNumber, summary: Remove a number from a SIP trunk, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /dispositions/: { get: { operationId: dispositionList, summary: List dispositions, parameters: [{ $ref: '#/components/parameters/AgentFilter' }], responses: { '200': { $ref: '#/components/responses/JSON' } } }, post: { operationId: dispositionCreate, summary: Create and link a disposition, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /dispositions/bulk: { post: { operationId: dispositionBulkCreate, summary: Bulk create and link dispositions, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /dispositions/{disposition_id}: { parameters: [{ $ref: '#/components/parameters/DispositionID' }], get: { operationId: dispositionGet, summary: Get a disposition, responses: { '200': { $ref: '#/components/responses/JSON' } } }, put: { operationId: dispositionUpdate, summary: Update a disposition, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } }, delete: { operationId: dispositionDelete, summary: Delete a disposition, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sub-accounts/all: { get: { operationId: subaccountList, summary: List all subaccounts, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sub-accounts/create: { post: { operationId: subaccountCreate, summary: Create a subaccount, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '201': { $ref: '#/components/responses/JSON' } } } }
+  /sub-accounts/{sub_account_id}: { parameters: [{ $ref: '#/components/parameters/SubaccountID' }], patch: { operationId: subaccountPatch, summary: Update subaccount name or concurrency, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } }, delete: { operationId: subaccountDelete, summary: Delete a subaccount and its data, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sub-accounts/{sub_account_id}/usage: { parameters: [{ $ref: '#/components/parameters/SubaccountID' }], get: { operationId: subaccountUsage, summary: Get subaccount usage and billing, parameters: [{ $ref: '#/components/parameters/From' }, { $ref: '#/components/parameters/To' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sub-accounts/all/usage: { get: { operationId: subaccountAllUsage, summary: Get usage for all subaccounts, parameters: [{ $ref: '#/components/parameters/From' }, { $ref: '#/components/parameters/To' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sub-accounts/concurrency: { get: { operationId: subaccountConcurrency, summary: Get organization concurrency envelope, parameters: [{ $ref: '#/components/parameters/OrganizationID' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /sub-accounts/main: { patch: { operationId: subaccountMainPatch, summary: Update main organization concurrency settings, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /violations: { get: { operationId: violationList, summary: List account violations, responses: { '200': { $ref: '#/components/responses/JSON' } } }, post: { operationId: violationSubmit, summary: Submit a violation report, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /ambient-sounds: { get: { operationId: ambientSoundList, summary: List available ambient sounds, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /prompt-library/modules: { get: { operationId: promptModuleList, summary: List published prompt modules, parameters: [{ $ref: '#/components/parameters/Status' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /assistants/get_gpt_assistants: { get: { operationId: assistantList, summary: List GPT assistants available to the account, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /get_current_price: { get: { operationId: priceGet, summary: Calculate current call price for a provider configuration, parameters: [{ $ref: '#/components/parameters/ASRModel' }, { $ref: '#/components/parameters/ASRProvider' }, { $ref: '#/components/parameters/LLMModel' }, { $ref: '#/components/parameters/TTSProvider' }, { $ref: '#/components/parameters/TTSModel' }, { $ref: '#/components/parameters/Telephony' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /user: { post: { operationId: dashboardUserBootstrap, summary: Get authenticated dashboard bootstrap context, requestBody: { $ref: '#/components/requestBodies/JSON' }, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /keys: { get: { operationId: apiKeyList, summary: List API keys visible to the account, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /invoices: { get: { operationId: invoiceList, summary: List account invoices, parameters: [{ $ref: '#/components/parameters/Status' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /reports/jobs: { get: { operationId: reportJobList, summary: List report jobs, parameters: [{ $ref: '#/components/parameters/PageNumber' }, { $ref: '#/components/parameters/PageSize' }], responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /analytics/dashboards: { get: { operationId: analyticsDashboardList, summary: List analytics dashboards, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+  /compliance/list: { get: { operationId: complianceList, summary: List phone-number compliance records, responses: { '200': { $ref: '#/components/responses/JSON' } } } }
+components:
+  securitySchemes: { bearerAuth: { type: http, scheme: bearer, description: API key from Bolna Dashboard > Developers. Subaccount keys start with sa-. } }
+  requestBodies: { JSON: { required: false, content: { application/json: { schema: { $ref: '#/components/schemas/AnyObject' } } } } }
+  responses: { JSON: { description: JSON response, content: { application/json: { schema: { $ref: '#/components/schemas/Any' } } } } }
+  schemas: { Any: { oneOf: [{ type: object, additionalProperties: true }, { type: array, items: { type: object, additionalProperties: true } }, { type: string }, { type: number }, { type: boolean }] }, AnyObject: { type: object, additionalProperties: true } }
+  parameters:
+    PageNumber: { name: page_number, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    PageSize: { name: page_size, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+    Status: { name: status, in: query, schema: { type: string } }
+    AgentFilter: { name: agent_id, in: query, schema: { type: string } }
+    From: { name: from, in: query, schema: { type: string, format: date } }
+    To: { name: to, in: query, schema: { type: string, format: date } }
+    OrganizationID: { name: organization_id, in: query, schema: { type: string } }
+    Language: { name: language, in: query, schema: { type: string } }
+    CountryCode: { name: country_code, in: query, schema: { type: string } }
+    AreaCode: { name: area_code, in: query, schema: { type: string } }
+    Pattern: { name: pattern, in: query, schema: { type: string } }
+    ProviderID: { name: provider_id, in: query, schema: { type: string } }
+    ModelID: { name: model_id, in: query, schema: { type: string } }
+    ASRModel: { name: asr_model, in: query, schema: { type: string } }
+    ASRProvider: { name: asr_provider, in: query, schema: { type: string } }
+    LLMModel: { name: llm_model, in: query, schema: { type: string } }
+    TTSProvider: { name: tts_provider, in: query, schema: { type: string } }
+    TTSModel: { name: tts_model, in: query, schema: { type: string } }
+    Telephony: { name: telephony, in: query, schema: { type: string } }
+    AgentID: { name: agent_id, in: path, required: true, schema: { type: string } }
+    ExecutionID: { name: execution_id, in: path, required: true, schema: { type: string } }
+    BatchID: { name: batch_id, in: path, required: true, schema: { type: string } }
+    RAGID: { name: rag_id, in: path, required: true, schema: { type: string } }
+    PhoneNumberID: { name: phone_number_id, in: path, required: true, schema: { type: string } }
+    ProviderKey: { name: provider_key_name, in: path, required: true, schema: { type: string } }
+    TrunkID: { name: trunk_id, in: path, required: true, schema: { type: string } }
+    DispositionID: { name: disposition_id, in: path, required: true, schema: { type: string } }
+    SubaccountID: { name: sub_account_id, in: path, required: true, schema: { type: string } }

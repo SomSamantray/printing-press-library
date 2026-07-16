@@ -1,0 +1,46 @@
+{
+  "manifest_version": "0.3",
+  "name": "bolna-pp-cli-pp-mcp",
+  "display_name": "Bolna",
+  "version": "1.0.0",
+  "description": "Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities.",
+  "author": {
+    "name": "CLI Printing Press"
+  },
+  "license": "Apache-2.0",
+  "server": {
+    "type": "binary",
+    "entry_point": "bin/bolna-pp-cli-pp-mcp",
+    "mcp_config": {
+      "command": "${__dirname}/bin/bolna-pp-cli-pp-mcp",
+      "args": [],
+      "env": {
+        "BOLNA_PP_CLI_BATCH_ID": "${user_config.bolna_pp_cli_batch_id}",
+        "BOLNA_PP_CLI_BEARER_AUTH": "${user_config.bolna_pp_cli_bearer_auth}"
+      }
+    }
+  },
+  "user_config": {
+    "bolna_pp_cli_batch_id": {
+      "type": "string",
+      "title": "BOLNA_PP_CLI_BATCH_ID",
+      "description": "Sets BOLNA_PP_CLI_BATCH_ID for the endpoint template variable {batch_id}.",
+      "required": true
+    },
+    "bolna_pp_cli_bearer_auth": {
+      "type": "string",
+      "title": "BOLNA_PP_CLI_BEARER_AUTH",
+      "description": "Sets BOLNA_PP_CLI_BEARER_AUTH for the Bolna MCP server.",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=1.0.0",
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ]
+  }
+}

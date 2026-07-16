@@ -1,0 +1,16 @@
+# agentcookie.toml: secrets-bus adoption manifest v2
+# See docs/spec-agentcookie-secrets-bus-v2-adoption.md
+schema_version = 2
+name = "bolna-pp-cli-pp-cli"
+display_name = "Bolna"
+description = "Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities."
+project_kind = "cli"
+
+[secrets.file]
+path = "~/.config/bolna-pp-cli-pp-cli/config.toml"
+
+[sync]
+default = false
+
+[sync.keys]
+BOLNA_PP_CLI_BEARER_AUTH = true

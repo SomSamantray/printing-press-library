@@ -1,0 +1,1116 @@
+{
+  "api_name": "bolna-pp-cli",
+  "base_url": "https://api.bolna.ai",
+  "description": "Agent-friendly surface for Bolna Voice AI, telephony, executions, enterprise subaccounts, and dashboard capabilities.",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "mcp": {
+    "endpoint_tools": "hidden",
+    "orchestration": "code"
+  },
+  "auth": {
+    "type": "bearer_token",
+    "header": "Authorization",
+    "env_vars": [
+      "BOLNA_PP_CLI_BEARER_AUTH"
+    ],
+    "env_var_specs": [
+      {
+        "name": "BOLNA_PP_CLI_BEARER_AUTH",
+        "kind": "per_call",
+        "required": true,
+        "sensitive": true,
+        "inferred": true
+      }
+    ]
+  },
+  "required_headers": [],
+  "tools": [
+    {
+      "name": "agent_create",
+      "description": "Create a voice AI agent.",
+      "method": "POST",
+      "path": "/v2/agent",
+      "params": []
+    },
+    {
+      "name": "agent_dashboard-list",
+      "description": "Dashboard agent list with pagination. Optional: page_number (default: 1), page_size (default: 20).",
+      "method": "GET",
+      "path": "/v2/agent/list",
+      "params": [
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "agent_delete",
+      "description": "Delete an agent and related data. Required: agent_id. Destructive.",
+      "method": "DELETE",
+      "path": "/v2/agent/{agent_id}",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "agent_get",
+      "description": "Get agent details. Required: agent_id.",
+      "method": "GET",
+      "path": "/v2/agent/{agent_id}",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "agent_legacy-dashboard-list",
+      "description": "Legacy dashboard agent list. Optional: page_number (default: 1), page_size (default: 20).",
+      "method": "GET",
+      "path": "/agent/list",
+      "params": [
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "agent_list",
+      "description": "List all voice AI agents. Optional: page_number (default: 1), page_size (default: 20).",
+      "method": "GET",
+      "path": "/v2/agent/all",
+      "params": [
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "agent_patch",
+      "description": "Partially update an agent. Required: agent_id. Partial update.",
+      "method": "PATCH",
+      "path": "/v2/agent/{agent_id}",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "agent_update",
+      "description": "Replace an agent configuration. Required: agent_id.",
+      "method": "PUT",
+      "path": "/v2/agent/{agent_id}",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "agent_dispositions_test-for-agent",
+      "description": "Test dispositions against a transcript. Required: agent_id.",
+      "method": "POST",
+      "path": "/v2/agent/{agent_id}/dispositions/test",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "agent_execution_agent-get",
+      "description": "Get a specific agent execution. Required: agent_id, execution_id.",
+      "method": "GET",
+      "path": "/agent/{agent_id}/execution/{execution_id}",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        },
+        {
+          "name": "execution_id",
+          "type": "string",
+          "location": "path",
+          "description": "Execution id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "agent_executions_agent",
+      "description": "List agent executions. Required: agent_id. Optional: page_number (default: 1), page_size (default: 20).",
+      "method": "GET",
+      "path": "/v2/agent/{agent_id}/executions",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        },
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "agent_prompt_agent-get",
+      "description": "Get agent prompt configuration. Required: agent_id.",
+      "method": "GET",
+      "path": "/agent/{agent_id}/prompt",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "agent_stop_agent-queued-calls",
+      "description": "Stop queued calls for an agent. Required: agent_id.",
+      "method": "POST",
+      "path": "/v2/agent/{agent_id}/stop",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "ambient-sounds_list",
+      "description": "List available ambient sounds.",
+      "method": "GET",
+      "path": "/ambient-sounds",
+      "params": []
+    },
+    {
+      "name": "assistants_list",
+      "description": "List GPT assistants available to the account.",
+      "method": "GET",
+      "path": "/assistants/get_gpt_assistants",
+      "params": []
+    },
+    {
+      "name": "batches_batch-create",
+      "description": "Create a CSV batch.",
+      "method": "POST",
+      "path": "/batches",
+      "params": []
+    },
+    {
+      "name": "batches_batch-delete",
+      "description": "Delete a batch. Required: batch_id. Destructive.",
+      "method": "DELETE",
+      "path": "/batches/{batch_id}",
+      "params": [
+        {
+          "name": "batch_id",
+          "type": "string",
+          "location": "path",
+          "description": "Batch id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "batches_batch-get",
+      "description": "Get batch details. Required: batch_id.",
+      "method": "GET",
+      "path": "/batches/{batch_id}",
+      "params": [
+        {
+          "name": "batch_id",
+          "type": "string",
+          "location": "path",
+          "description": "Batch id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "batches_all_batch-list",
+      "description": "List batches for an agent. Required: agent_id. Optional: page_number (default: 1), page_size (default: 20).",
+      "method": "GET",
+      "path": "/batches/{agent_id}/all",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "path",
+          "description": "Agent id",
+          "required": true
+        },
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "batches_executions_batch",
+      "description": "List batch executions. Required: batch_id. Optional: page_number (default: 1), page_size (default: 20).",
+      "method": "GET",
+      "path": "/batches/{batch_id}/executions",
+      "params": [
+        {
+          "name": "batch_id",
+          "type": "string",
+          "location": "path",
+          "description": "Batch id",
+          "required": true
+        },
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "batches_schedule_batch",
+      "description": "Schedule a batch. Required: batch_id.",
+      "method": "POST",
+      "path": "/batches/{batch_id}/schedule",
+      "params": [
+        {
+          "name": "batch_id",
+          "type": "string",
+          "location": "path",
+          "description": "Batch id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "batches_stop_batch",
+      "description": "Stop a running batch. Required: batch_id.",
+      "method": "POST",
+      "path": "/batches/{batch_id}/stop",
+      "params": [
+        {
+          "name": "batch_id",
+          "type": "string",
+          "location": "path",
+          "description": "Batch id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "bolna-analytics_dashboard-list",
+      "description": "List analytics dashboards.",
+      "method": "GET",
+      "path": "/analytics/dashboards",
+      "params": []
+    },
+    {
+      "name": "call_make",
+      "description": "Make an outbound voice AI call.",
+      "method": "POST",
+      "path": "/call",
+      "params": []
+    },
+    {
+      "name": "call_stop_call",
+      "description": "Stop a queued or scheduled call. Required: execution_id.",
+      "method": "POST",
+      "path": "/call/{execution_id}/stop",
+      "params": [
+        {
+          "name": "execution_id",
+          "type": "string",
+          "location": "path",
+          "description": "Execution id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "compliance_list",
+      "description": "List phone-number compliance records.",
+      "method": "GET",
+      "path": "/compliance/list",
+      "params": []
+    },
+    {
+      "name": "dispositions_bulk-create",
+      "description": "Bulk create and link dispositions.",
+      "method": "POST",
+      "path": "/dispositions/bulk",
+      "params": []
+    },
+    {
+      "name": "dispositions_create",
+      "description": "Create and link a disposition.",
+      "method": "POST",
+      "path": "/dispositions/",
+      "params": []
+    },
+    {
+      "name": "dispositions_delete",
+      "description": "Delete a disposition. Required: disposition_id. Destructive.",
+      "method": "DELETE",
+      "path": "/dispositions/{disposition_id}",
+      "params": [
+        {
+          "name": "disposition_id",
+          "type": "string",
+          "location": "path",
+          "description": "Disposition id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dispositions_get",
+      "description": "Get a disposition. Required: disposition_id.",
+      "method": "GET",
+      "path": "/dispositions/{disposition_id}",
+      "params": [
+        {
+          "name": "disposition_id",
+          "type": "string",
+          "location": "path",
+          "description": "Disposition id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dispositions_list",
+      "description": "List dispositions. Optional: agent_id.",
+      "method": "GET",
+      "path": "/dispositions/",
+      "params": [
+        {
+          "name": "agent_id",
+          "type": "string",
+          "location": "query",
+          "description": "Agent id"
+        }
+      ]
+    },
+    {
+      "name": "dispositions_update",
+      "description": "Update a disposition. Required: disposition_id.",
+      "method": "PUT",
+      "path": "/dispositions/{disposition_id}",
+      "params": [
+        {
+          "name": "disposition_id",
+          "type": "string",
+          "location": "path",
+          "description": "Disposition id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "executions_get",
+      "description": "Get execution details. Required: execution_id.",
+      "method": "GET",
+      "path": "/executions/{execution_id}",
+      "params": [
+        {
+          "name": "execution_id",
+          "type": "string",
+          "location": "path",
+          "description": "Execution id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "executions_log_execution-raw",
+      "description": "Get raw execution logs. Required: execution_id.",
+      "method": "GET",
+      "path": "/executions/{execution_id}/log",
+      "params": [
+        {
+          "name": "execution_id",
+          "type": "string",
+          "location": "path",
+          "description": "Execution id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get-current-price_price-get",
+      "description": "Calculate current call price for a provider configuration. Optional: asr_model, asr_provider, llm_model (plus 3 more).",
+      "method": "GET",
+      "path": "/get_current_price",
+      "params": [
+        {
+          "name": "asr_model",
+          "type": "string",
+          "location": "query",
+          "description": "Asr model"
+        },
+        {
+          "name": "asr_provider",
+          "type": "string",
+          "location": "query",
+          "description": "Asr provider"
+        },
+        {
+          "name": "llm_model",
+          "type": "string",
+          "location": "query",
+          "description": "Llm model"
+        },
+        {
+          "name": "tts_provider",
+          "type": "string",
+          "location": "query",
+          "description": "Tts provider"
+        },
+        {
+          "name": "tts_model",
+          "type": "string",
+          "location": "query",
+          "description": "Tts model"
+        },
+        {
+          "name": "telephony",
+          "type": "string",
+          "location": "query",
+          "description": "Telephony"
+        }
+      ]
+    },
+    {
+      "name": "inbound_setup",
+      "description": "Link an agent to a phone number for inbound calls.",
+      "method": "POST",
+      "path": "/inbound/setup",
+      "params": []
+    },
+    {
+      "name": "inbound_unlink",
+      "description": "Unlink an inbound agent.",
+      "method": "POST",
+      "path": "/inbound/unlink",
+      "params": []
+    },
+    {
+      "name": "invoices_list",
+      "description": "List account invoices. Optional: status.",
+      "method": "GET",
+      "path": "/invoices",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Status"
+        }
+      ]
+    },
+    {
+      "name": "keys_list",
+      "description": "List API keys visible to the account.",
+      "method": "GET",
+      "path": "/keys",
+      "params": []
+    },
+    {
+      "name": "knowledgebase_create",
+      "description": "Create a knowledge base from PDF or URL.",
+      "method": "POST",
+      "path": "/knowledgebase",
+      "params": []
+    },
+    {
+      "name": "knowledgebase_delete",
+      "description": "Delete a knowledge base. Required: rag_id. Destructive.",
+      "method": "DELETE",
+      "path": "/knowledgebase/{rag_id}",
+      "params": [
+        {
+          "name": "rag_id",
+          "type": "string",
+          "location": "path",
+          "description": "Rag id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "knowledgebase_get",
+      "description": "Get a knowledge base. Required: rag_id.",
+      "method": "GET",
+      "path": "/knowledgebase/{rag_id}",
+      "params": [
+        {
+          "name": "rag_id",
+          "type": "string",
+          "location": "path",
+          "description": "Rag id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "knowledgebase_list",
+      "description": "List knowledge bases. Optional: page_number (default: 1), page_size (default: 20), status.",
+      "method": "GET",
+      "path": "/knowledgebase/all",
+      "params": [
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Status"
+        }
+      ]
+    },
+    {
+      "name": "phone-numbers_buy",
+      "description": "Buy a phone number.",
+      "method": "POST",
+      "path": "/phone-numbers/buy",
+      "params": []
+    },
+    {
+      "name": "phone-numbers_delete",
+      "description": "Delete a purchased phone number. Required: phone_number_id. Destructive.",
+      "method": "DELETE",
+      "path": "/phone-numbers/{phone_number_id}",
+      "params": [
+        {
+          "name": "phone_number_id",
+          "type": "string",
+          "location": "path",
+          "description": "Phone number id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "phone-numbers_list",
+      "description": "List phone numbers.",
+      "method": "GET",
+      "path": "/phone-numbers/all",
+      "params": []
+    },
+    {
+      "name": "phone-numbers_search",
+      "description": "Search available phone numbers. Optional: country_code, area_code, pattern (plus 2 more).",
+      "method": "GET",
+      "path": "/phone-numbers/search",
+      "params": [
+        {
+          "name": "country_code",
+          "type": "string",
+          "location": "query",
+          "description": "Country code"
+        },
+        {
+          "name": "area_code",
+          "type": "string",
+          "location": "query",
+          "description": "Area code"
+        },
+        {
+          "name": "pattern",
+          "type": "string",
+          "location": "query",
+          "description": "Pattern"
+        },
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "prompt-library_prompt-module-list",
+      "description": "List published prompt modules. Optional: status.",
+      "method": "GET",
+      "path": "/prompt-library/modules",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Status"
+        }
+      ]
+    },
+    {
+      "name": "providers_add",
+      "description": "Add a provider credential.",
+      "method": "POST",
+      "path": "/providers",
+      "params": []
+    },
+    {
+      "name": "providers_list",
+      "description": "List configured providers.",
+      "method": "GET",
+      "path": "/providers",
+      "params": []
+    },
+    {
+      "name": "providers_remove",
+      "description": "Remove a provider. Required: provider_key_name. Destructive.",
+      "method": "DELETE",
+      "path": "/providers/{provider_key_name}",
+      "params": [
+        {
+          "name": "provider_key_name",
+          "type": "string",
+          "location": "path",
+          "description": "Provider key name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "reports_job-list",
+      "description": "List report jobs. Optional: page_number (default: 1), page_size (default: 20).",
+      "method": "GET",
+      "path": "/reports/jobs",
+      "params": [
+        {
+          "name": "page_number",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Page size"
+        }
+      ]
+    },
+    {
+      "name": "sip-trunks_add-number",
+      "description": "Add a DID to a SIP trunk. Required: trunk_id.",
+      "method": "POST",
+      "path": "/sip-trunks/trunks/{trunk_id}/numbers",
+      "params": [
+        {
+          "name": "trunk_id",
+          "type": "string",
+          "location": "path",
+          "description": "Trunk id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sip-trunks_create",
+      "description": "Create a SIP trunk.",
+      "method": "POST",
+      "path": "/sip-trunks/trunks",
+      "params": []
+    },
+    {
+      "name": "sip-trunks_delete",
+      "description": "Delete a SIP trunk. Required: trunk_id. Destructive.",
+      "method": "DELETE",
+      "path": "/sip-trunks/trunks/{trunk_id}",
+      "params": [
+        {
+          "name": "trunk_id",
+          "type": "string",
+          "location": "path",
+          "description": "Trunk id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sip-trunks_get",
+      "description": "Get a SIP trunk. Required: trunk_id.",
+      "method": "GET",
+      "path": "/sip-trunks/trunks/{trunk_id}",
+      "params": [
+        {
+          "name": "trunk_id",
+          "type": "string",
+          "location": "path",
+          "description": "Trunk id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sip-trunks_list",
+      "description": "List SIP trunks.",
+      "method": "GET",
+      "path": "/sip-trunks/trunks",
+      "params": []
+    },
+    {
+      "name": "sip-trunks_numbers",
+      "description": "List phone numbers on a SIP trunk. Required: trunk_id.",
+      "method": "GET",
+      "path": "/sip-trunks/trunks/{trunk_id}/numbers",
+      "params": [
+        {
+          "name": "trunk_id",
+          "type": "string",
+          "location": "path",
+          "description": "Trunk id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sip-trunks_remove-number",
+      "description": "Remove a number from a SIP trunk. Required: trunk_id, phone_number_id. Destructive.",
+      "method": "DELETE",
+      "path": "/sip-trunks/trunks/{trunk_id}/numbers/{phone_number_id}",
+      "params": [
+        {
+          "name": "trunk_id",
+          "type": "string",
+          "location": "path",
+          "description": "Trunk id",
+          "required": true
+        },
+        {
+          "name": "phone_number_id",
+          "type": "string",
+          "location": "path",
+          "description": "Phone number id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sip-trunks_update",
+      "description": "Update a SIP trunk. Required: trunk_id. Partial update.",
+      "method": "PATCH",
+      "path": "/sip-trunks/trunks/{trunk_id}",
+      "params": [
+        {
+          "name": "trunk_id",
+          "type": "string",
+          "location": "path",
+          "description": "Trunk id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sub-accounts_all-usage",
+      "description": "Get usage for all subaccounts. Optional: from, to.",
+      "method": "GET",
+      "path": "/sub-accounts/all/usage",
+      "params": [
+        {
+          "name": "from",
+          "type": "string",
+          "location": "query",
+          "description": "From"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "location": "query",
+          "description": "To"
+        }
+      ]
+    },
+    {
+      "name": "sub-accounts_concurrency",
+      "description": "Get organization concurrency envelope. Optional: organization_id.",
+      "method": "GET",
+      "path": "/sub-accounts/concurrency",
+      "params": [
+        {
+          "name": "organization_id",
+          "type": "string",
+          "location": "query",
+          "description": "Organization id"
+        }
+      ]
+    },
+    {
+      "name": "sub-accounts_create",
+      "description": "Create a subaccount.",
+      "method": "POST",
+      "path": "/sub-accounts/create",
+      "params": []
+    },
+    {
+      "name": "sub-accounts_delete",
+      "description": "Delete a subaccount and its data. Required: sub_account_id. Destructive.",
+      "method": "DELETE",
+      "path": "/sub-accounts/{sub_account_id}",
+      "params": [
+        {
+          "name": "sub_account_id",
+          "type": "string",
+          "location": "path",
+          "description": "Sub account id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sub-accounts_list",
+      "description": "List all subaccounts.",
+      "method": "GET",
+      "path": "/sub-accounts/all",
+      "params": []
+    },
+    {
+      "name": "sub-accounts_main-patch",
+      "description": "Update main organization concurrency settings. Partial update.",
+      "method": "PATCH",
+      "path": "/sub-accounts/main",
+      "params": []
+    },
+    {
+      "name": "sub-accounts_patch",
+      "description": "Update subaccount name or concurrency. Required: sub_account_id. Partial update.",
+      "method": "PATCH",
+      "path": "/sub-accounts/{sub_account_id}",
+      "params": [
+        {
+          "name": "sub_account_id",
+          "type": "string",
+          "location": "path",
+          "description": "Sub account id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sub-accounts_usage_subaccount",
+      "description": "Get subaccount usage and billing. Required: sub_account_id. Optional: from, to.",
+      "method": "GET",
+      "path": "/sub-accounts/{sub_account_id}/usage",
+      "params": [
+        {
+          "name": "sub_account_id",
+          "type": "string",
+          "location": "path",
+          "description": "Sub account id",
+          "required": true
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "location": "query",
+          "description": "From"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "location": "query",
+          "description": "To"
+        }
+      ]
+    },
+    {
+      "name": "user_add-custom-model",
+      "description": "Add a custom LLM model.",
+      "method": "POST",
+      "path": "/user/model/custom",
+      "params": []
+    },
+    {
+      "name": "user_dashboard-bootstrap",
+      "description": "Get authenticated dashboard bootstrap context.",
+      "method": "POST",
+      "path": "/user",
+      "params": []
+    },
+    {
+      "name": "user_get",
+      "description": "Get account information.",
+      "method": "GET",
+      "path": "/user/me",
+      "params": []
+    },
+    {
+      "name": "user_list-models",
+      "description": "List custom and available models.",
+      "method": "GET",
+      "path": "/user/model/all",
+      "params": []
+    },
+    {
+      "name": "user_webhook-allowed-states",
+      "description": "List webhook allowed states.",
+      "method": "GET",
+      "path": "/user/webhook/allowed-states",
+      "params": []
+    },
+    {
+      "name": "violations_list",
+      "description": "List account violations.",
+      "method": "GET",
+      "path": "/violations",
+      "params": []
+    },
+    {
+      "name": "violations_submit",
+      "description": "Submit a violation report.",
+      "method": "POST",
+      "path": "/violations",
+      "params": []
+    },
+    {
+      "name": "voice-config_language-list",
+      "description": "List supported languages.",
+      "method": "GET",
+      "path": "/api/v1/voice-config/languages",
+      "params": []
+    },
+    {
+      "name": "voice-config_voice-list",
+      "description": "List voices for a TTS provider and model. Optional: provider_id, model_id, language.",
+      "method": "GET",
+      "path": "/api/v1/voice-config/tts/voices",
+      "params": [
+        {
+          "name": "provider_id",
+          "type": "string",
+          "location": "query",
+          "description": "Provider id"
+        },
+        {
+          "name": "model_id",
+          "type": "string",
+          "location": "query",
+          "description": "Model id"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "location": "query",
+          "description": "Language"
+        }
+      ]
+    },
+    {
+      "name": "voice-config_voice-providers",
+      "description": "List TTS providers and models. Optional: language.",
+      "method": "GET",
+      "path": "/api/v1/voice-config/tts",
+      "params": [
+        {
+          "name": "language",
+          "type": "string",
+          "location": "query",
+          "description": "Language"
+        }
+      ]
+    }
+  ]
+}

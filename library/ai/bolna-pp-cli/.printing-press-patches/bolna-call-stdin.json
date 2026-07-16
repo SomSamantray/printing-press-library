@@ -1,0 +1,11 @@
+{
+  "schema_version": 2,
+  "id": "bolna-call-stdin",
+  "applied_at": "2026-07-17",
+  "base_run_id": "20260716-174837",
+  "base_printing_press_version": "4.28.0",
+  "summary": "Made call stdin examples and JSON input behavior explicit for agent use.",
+  "reason": "The generated call workflow needed a body-bearing stdin example to be reliable in machine-readable mode.",
+  "files": ["internal/cli/promoted_call.go"],
+  "validated_outcome": "Publish validation and live acceptance passed."
+}

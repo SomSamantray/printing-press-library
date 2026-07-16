@@ -1,0 +1,11 @@
+{
+  "schema_version": 2,
+  "id": "bolna-cross-account-analytics",
+  "applied_at": "2026-07-17",
+  "base_run_id": "20260716-174837",
+  "base_printing_press_version": "4.28.0",
+  "summary": "Added cross-account analytics reporting with comparison, trends, and insights.",
+  "reason": "The generated CLI did not expose a unified analytics workflow across main accounts and subaccounts.",
+  "files": ["internal/cli/analytics_report.go", "internal/cli/analytics_report_test.go"],
+  "validated_outcome": "Publish validation, focused tests, and live acceptance passed."
+}

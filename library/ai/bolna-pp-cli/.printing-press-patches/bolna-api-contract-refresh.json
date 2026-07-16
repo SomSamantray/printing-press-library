@@ -1,0 +1,25 @@
+{
+  "schema_version": 2,
+  "id": "bolna-api-contract-refresh",
+  "applied_at": "2026-07-17",
+  "base_run_id": "20260716-174837",
+  "base_printing_press_version": "4.28.0",
+  "summary": "Refreshed generated commands against the current Bolna API and platform request contract.",
+  "reason": "The live API had drifted from several generated paths and required tenant, country, language, and date parameters that the CLI did not send.",
+  "files": [
+    "internal/cli/promoted_bolna-analytics.go",
+    "internal/cli/violations_list.go",
+    "internal/cli/phone-numbers_search.go",
+    "internal/cli/voice-config_voice-providers.go",
+    "internal/cli/voice-config_voice-list.go",
+    "internal/cli/sub-accounts_all-usage.go",
+    "internal/cli/user_list-models.go",
+    "internal/cli/user.go",
+    "internal/cli/sync.go",
+    "internal/cli/teach.go",
+    "internal/cli/teach_playbook.go",
+    "internal/cli/root.go",
+    "internal/cli/promoted_bolna-analytics.go"
+  ],
+  "validated_outcome": "Focused Go tests pass and live verification passes 42/42 checks with zero failures."
+}
