@@ -1,0 +1,16 @@
+trivia-research-pp-cli
+Copyright 2026 Som Samantray
+
+This product includes software developed by the contributors of the
+Printing Press CLI generation framework (github.com/mvanhorn/cli-printing-press).
+
+This product includes software developed by the Go authors and contributors
+(golang.org), used under the BSD-style license available at
+https://golang.org/LICENSE.
+
+This product includes Cobra (github.com/spf13/cobra) and related packages,
+used under the Apache License 2.0.
+
+This product includes modernc.org/sqlite, used under the BSD-style license.
+
+This product includes mark3labs/mcp-go, used under the MIT License.

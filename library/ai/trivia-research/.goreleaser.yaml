@@ -1,0 +1,38 @@
+version: 2
+
+builds:
+  - id: trivia-research-pp-cli
+    main: ./cmd/trivia-research-pp-cli
+    binary: trivia-research-pp-cli
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+  - id: trivia-research-pp-mcp
+    main: ./cmd/trivia-research-pp-mcp
+    binary: trivia-research-pp-mcp
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
