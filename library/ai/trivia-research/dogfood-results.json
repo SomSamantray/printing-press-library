@@ -1,0 +1,20 @@
+{
+  "cli_name": "trivia-research-pp-cli",
+  "schema_version": 1,
+  "timestamp": "2026-07-19T17:00:00Z",
+  "verdict": "PASS",
+  "tests": [
+    {"command": "doctor", "status": "pass", "kind": "help"},
+    {"command": "doctor", "status": "pass", "kind": "dry-run"},
+    {"command": "doctor", "status": "pass", "kind": "execute"},
+    {"command": "research", "status": "pass", "kind": "help"},
+    {"command": "research", "status": "pass", "kind": "dry-run"},
+    {"command": "research", "status": "pass", "kind": "execute"},
+    {"command": "sync", "status": "pass", "kind": "help"},
+    {"command": "sync", "status": "pass", "kind": "dry-run"},
+    {"command": "sync", "status": "pass", "kind": "execute"},
+    {"command": "version", "status": "pass", "kind": "help"},
+    {"command": "list-sources", "status": "pass", "kind": "help"},
+    {"command": "stats", "status": "pass", "kind": "help"}
+  ]
+}
