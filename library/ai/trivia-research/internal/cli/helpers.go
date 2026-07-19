@@ -229,7 +229,10 @@ func outputCompact(cmd *cobra.Command, output types.ResearchOutput, outputFile, 
 
 func saveOutput(content, topic, outputFile, saveDir string) string {
 	if outputFile != "" {
-		os.WriteFile(outputFile, []byte(content), 0644)
+		if err := os.WriteFile(outputFile, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "[trivia-research] warning: failed to save output to %s: %v\n", outputFile, err)
+			return ""
+		}
 		return outputFile
 	}
 	dir := saveDir
@@ -245,7 +248,10 @@ func saveOutput(content, topic, outputFile, saveDir string) string {
 	slug := scrapers.SlugifyTopic(topic)
 	timestamp := time.Now().Format("20060102-150405")
 	filename := filepath.Join(dir, fmt.Sprintf("%s-%s-raw.md", slug, timestamp))
-	os.WriteFile(filename, []byte(content), 0644)
+	if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "[trivia-research] warning: failed to save output to %s: %v\n", filename, err)
+		return ""
+	}
 	return filename
 }
 

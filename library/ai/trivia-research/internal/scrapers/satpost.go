@@ -56,7 +56,11 @@ func (s *SatPostScraper) getPostList() ([]types.Episode, error) {
 			if isSkip || len(title) < 5 {
 				slug := strings.Replace(foundURL, "https://www.readtrung.com/p/", "", 1)
 				slug = strings.ReplaceAll(slug, "-", " ")
-				title = strings.Title(strings.ToLower(slug))
+				slug = strings.ToLower(slug)
+				if len(slug) > 0 {
+					slug = strings.ToUpper(slug[:1]) + slug[1:]
+				}
+				title = slug
 			}
 
 			posts = append(posts, types.Episode{

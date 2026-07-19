@@ -53,7 +53,10 @@ func (s *FreakonomicsScraper) getEpisodeList() ([]types.Episode, error) {
 			}
 		}
 		slugTitle := strings.ReplaceAll(slug, "-", " ")
-		slugTitle = strings.Title(strings.ToLower(slugTitle))
+		slugTitle = strings.ToLower(slugTitle)
+		if len(slugTitle) > 0 {
+			slugTitle = strings.ToUpper(slugTitle[:1]) + slugTitle[1:]
+		}
 
 		isLabel := regexp.MustCompile(`^(NO\.\s*\d+|EXTRA|PLUS|BONUS)$`).MatchString(rawText)
 

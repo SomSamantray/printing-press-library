@@ -79,8 +79,8 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 			for _, src := range types.AllSources {
 				if info, ok := sourceReport[src].(map[string]any); ok {
 					status := info["status"].(string)
-					eps := info["episodes"].(int)
 					if status == "ok" {
+						eps, _ := info["episodes"].(int)
 						fmt.Fprintf(w, "    %s %s: %d episodes\n", green("\u2713"), info["name"], eps)
 					} else {
 						fmt.Fprintf(w, "    %s %s: %s\n", red("\u2717"), info["name"], info["error"])

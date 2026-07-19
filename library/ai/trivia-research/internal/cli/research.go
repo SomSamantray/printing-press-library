@@ -34,11 +34,12 @@ func newResearchCmd(flags *rootFlags) *cobra.Command {
 				}
 				var buf [4096]byte
 				n, err := os.Stdin.Read(buf[:])
-				if err != nil || n == 0 {
+				if n == 0 {
 					return cmd.Help()
 				}
 				topic = string(buf[:n])
 				topic = scrapers.Capped(topic, 256)
+				_ = err
 			} else {
 				topic = args[0]
 			}
