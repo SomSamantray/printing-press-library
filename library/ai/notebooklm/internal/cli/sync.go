@@ -18,6 +18,23 @@ func fetchNotebookPage(ctx context.Context, client *nlm.Client) ([]nlm.Notebook,
 	return client.ListNotebooks(ctx)
 }
 
+func filterNotebooksByResources(batch []nlm.Notebook, resources []string) []nlm.Notebook {
+	if len(resources) == 0 {
+		return batch
+	}
+	want := make(map[string]bool, len(resources))
+	for _, r := range resources {
+		want[r] = true
+	}
+	filtered := make([]nlm.Notebook, 0, len(batch))
+	for _, nb := range batch {
+		if want["notebooks"] || want[nb.ID] {
+			filtered = append(filtered, nb)
+		}
+	}
+	return filtered
+}
+
 func newSyncCmd(flags *rootFlags) *cobra.Command {
 	var dbPath string
 	var resources []string
@@ -46,12 +63,7 @@ func newSyncCmd(flags *rootFlags) *cobra.Command {
 
 			client, err := newAPIClient(context.Background(), flags)
 			if err != nil {
-				if flags.asJSON {
-					return printJSON(map[string]any{"synced": 0, "warning": err.Error()})
-				}
-				fmt.Fprintf(os.Stderr, "warning: %v\n", err)
-				fmt.Println("synced 0 notebooks")
-				return nil
+				return err
 			}
 			_ = full
 			pageCursor := ""
@@ -68,19 +80,7 @@ func newSyncCmd(flags *rootFlags) *cobra.Command {
 					break
 				}
 				if len(resources) > 0 {
-					filtered := batch[:0]
-					want := map[string]bool{}
-					for _, r := range resources {
-						want[r] = true
-					}
-					for _, nb := range batch {
-						if want["notebooks"] || want[nb.ID] {
-							filtered = append(filtered, nb)
-						}
-					}
-					if len(want) > 0 && len(filtered) > 0 {
-						batch = filtered
-					}
+					batch = filterNotebooksByResources(batch, resources)
 				}
 				now := time.Now().UTC().Format(time.RFC3339)
 				for _, nb := range batch {

@@ -43,6 +43,19 @@ func (c *Client) GenerateQuiz(ctx context.Context, notebookID string, sourceIDs 
 	return Artifact{Type: "quiz", Status: "pending"}, nil
 }
 
+func artifactReady(status string) bool {
+	if status == "" {
+		return true
+	}
+	s := strings.ToLower(status)
+	return strings.EqualFold(status, "ready") || strings.Contains(s, "complete")
+}
+
+func artifactFailed(status string) bool {
+	s := strings.ToLower(status)
+	return strings.Contains(s, "fail") || strings.Contains(s, "error")
+}
+
 // WaitForArtifact polls until an artifact appears or timeout.
 func (c *Client) WaitForArtifact(ctx context.Context, notebookID, artifactID string, timeout time.Duration) (Artifact, error) {
 	deadline := time.Now().Add(timeout)
@@ -52,17 +65,14 @@ func (c *Client) WaitForArtifact(ctx context.Context, notebookID, artifactID str
 			return Artifact{}, err
 		}
 		for _, a := range arts {
-			if a.ID == artifactID || artifactID == "" {
-				if a.Status == "" || strings.EqualFold(a.Status, "ready") || strings.Contains(strings.ToLower(a.Status), "complete") {
-					return a, nil
-				}
+			if artifactID != "" && a.ID != artifactID {
+				continue
 			}
-		}
-		if artifactID != "" {
-			for _, a := range arts {
-				if a.ID == artifactID {
-					return a, nil
-				}
+			if artifactFailed(a.Status) {
+				return Artifact{}, fmt.Errorf("artifact %s failed: status %q", a.ID, a.Status)
+			}
+			if artifactReady(a.Status) {
+				return a, nil
 			}
 		}
 		if time.Now().After(deadline) {

@@ -26,5 +26,3 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.9.1 // indirect
 )
-
-replace github.com/mvanhorn/printing-press-library => /Users/apple/printing-press/.publish-repo-apple-0b5cfea6
