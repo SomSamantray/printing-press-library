@@ -1,0 +1,161 @@
+{
+  "captured_at": "2026-07-21T22:45:00+05:30",
+  "target_url": "https://notebooklm.google.com/",
+  "method": "chrome-devtools-mcp",
+  "auth_mode": "chrome_session_cookies",
+  "secrets_redacted": true,
+  "endpoint": {
+    "batchexecute": "https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute",
+    "build_label": "boq_labs-tailwind-frontend_20260719.02_p0",
+    "response_prefix": ")]}'"
+  },
+  "async_channel": {
+    "choose_server": "https://signaler-pa.clients6.google.com/punctual/v1/chooseServer",
+    "multi_watch": "https://signaler-pa.clients6.google.com/punctual/multi-watch/channel"
+  },
+  "rpcids_observed": [
+    "ZwVcOc",
+    "wXbhsf",
+    "ub2Bae",
+    "rLM1Ne",
+    "hPTbtc",
+    "JFMDGd",
+    "sqTeoe",
+    "I3xc3c",
+    "e3bVqc",
+    "gArtLc",
+    "VfAZjd",
+    "cFji9",
+    "ozz5Z",
+    "khqZz",
+    "otmP3b",
+    "ciyUvf"
+  ],
+  "flows_captured": [
+  {
+    "flow": "notebook_open",
+    "path": "/notebook/e8b57956-81d3-47ca-9003-3a7435a1023b",
+    "parallel_rpcids": [
+      "ZwVcOc",
+      "wXbhsf",
+      "ub2Bae",
+      "rLM1Ne",
+      "hPTbtc",
+      "JFMDGd",
+      "sqTeoe",
+      "I3xc3c",
+      "e3bVqc",
+      "gArtLc",
+      "VfAZjd",
+      "cFji9",
+      "ozz5Z",
+      "khqZz"
+    ],
+    "long_poll_started": true
+  },
+  {
+    "flow": "share_dialog",
+    "rpcids": [
+      "VfAZjd",
+      "otmP3b",
+      "ciyUvf"
+    ],
+    "side_effects": [
+      "peoplestack_autocomplete"
+    ]
+  },
+  {
+    "flow": "artifact_status_poll",
+    "rpcids": [
+      "cFji9",
+      "gArtLc",
+      "wXbhsf",
+      "rLM1Ne",
+      "JFMDGd"
+    ],
+    "interval": "repeating"
+  }
+  ],
+  "ui_regions_mapped": [
+    "home",
+    "notebook_sources",
+    "notebook_chat",
+    "notebook_studio",
+    "share",
+    "settings"
+  ],
+  "artifact_customization_captured": {
+    "audio_overview": {
+      "formats": [
+        "deep_dive",
+        "brief",
+        "critique",
+        "debate"
+      ],
+      "lengths": [
+        "short",
+        "default",
+        "long"
+      ],
+      "language": "combobox"
+    },
+    "slide_deck": {
+      "formats": [
+        "detailed_deck",
+        "presenter_slides"
+      ],
+      "lengths": [
+        "short",
+        "default"
+      ],
+      "language": "combobox"
+    },
+    "video_overview": {
+      "formats": [
+        "explainer",
+        "short"
+      ],
+      "visual_styles": [
+        "auto_select",
+        "custom",
+        "classic",
+        "whiteboard",
+        "kawaii",
+        "anime",
+        "watercolor",
+        "retro_print",
+        "heritage",
+        "paper_craft"
+      ],
+      "language": "combobox"
+    },
+    "configure_chat": {
+      "modes": [
+        "default",
+        "learning_guide",
+        "custom"
+      ],
+      "response_lengths": [
+        "default",
+        "verbose",
+        "concise"
+      ]
+    }
+  },
+  "discover_sources": {
+    "scope": [
+      "web",
+      "drive"
+    ],
+    "research_modes": [
+      "fast_research",
+      "deep_research"
+    ]
+  },
+  "gaps": [
+    "home_list_rpcids not isolated in this capture session",
+    "chat_submit payload not decoded (req body redacted)",
+    "per-artifact-type generation rpcids need action-triggered capture",
+    "analytics panel content not opened"
+  ]
+}
