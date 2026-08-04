@@ -78,13 +78,17 @@ func newNovelMessagesTailCmd(flags *rootFlags) *cobra.Command {
 			path := replacePathParam("/chats/{chatId}/messages", "chatId", chatID)
 
 			polled := 0
+			lastEmittedID := ""
+			lastEmittedStatus := ""
 			for {
 				if time.Now().After(deadline) {
+					timeoutErr := fmt.Errorf("timed out after %s; generation may still be running", timeout)
 					if !wantsHumanTable(cmd.OutOrStdout(), flags) {
-						return printJSONFiltered(cmd.OutOrStdout(), v0TailMessageView{ChatID: chatID, Status: "timeout", Polled: polled}, flags)
+						_ = printJSONFiltered(cmd.OutOrStdout(), v0TailMessageView{ChatID: chatID, Status: "timeout", Polled: polled}, flags)
+						return apiErr(timeoutErr)
 					}
-					fmt.Fprintf(cmd.ErrOrStderr(), "timed out after %s; generation may still be running\n", timeout)
-					return nil
+					fmt.Fprintln(cmd.ErrOrStderr(), timeoutErr.Error())
+					return apiErr(timeoutErr)
 				}
 				data, err := c.GetNoCache(ctx, path, map[string]string{"limit": "10"})
 				if err != nil {
@@ -136,6 +140,23 @@ func newNovelMessagesTailCmd(flags *rootFlags) *cobra.Command {
 					break
 				}
 				if view != nil {
+					// Deduplicate: with --follow, an unchanged finished (or
+					// still-running) newest message must not be re-rendered on
+					// every poll. Emit only when the observed message or its
+					// terminal state actually changed.
+					if view.MessageID == lastEmittedID && view.Status == lastEmittedStatus {
+						if view.Status == "finished" && !flagFollow {
+							return nil
+						}
+						select {
+						case <-ctx.Done():
+							return nil
+						case <-time.After(interval):
+						}
+						continue
+					}
+					lastEmittedID = view.MessageID
+					lastEmittedStatus = view.Status
 					if !wantsHumanTable(cmd.OutOrStdout(), flags) {
 						_ = printJSONFiltered(cmd.OutOrStdout(), *view, flags)
 					} else {
@@ -160,7 +181,7 @@ func newNovelMessagesTailCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagInterval, "interval", "3s", "Poll interval between checks")
-	cmd.Flags().StringVar(&flagTimeout, "timeout", "30m", "Give up after this long and exit 0")
+	cmd.Flags().StringVar(&flagTimeout, "timeout", "30m", "Give up after this long and exit 5 (generation still unfinished)")
 	cmd.Flags().BoolVar(&flagFollow, "follow", false, "Keep watching after a generation finishes")
 	return cmd
 }

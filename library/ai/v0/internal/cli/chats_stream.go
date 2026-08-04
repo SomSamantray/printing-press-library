@@ -76,26 +76,31 @@ func newNovelChatsStreamCmd(flags *rootFlags) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			data, _, err := c.PostWithParamsAndHeaders(ctx, "/chats/stream", map[string]string{}, body, map[string]string{"X-Printing-Press-Binary-Response": "true"})
+			streamBody, err := c.PostStream(ctx, "/chats/stream", body, map[string]string{"X-Printing-Press-Binary-Response": "true"})
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			defer streamBody.Close()
 
 			var chatID string
 			var sawError bool
 			events := 0
-			sc := bufio.NewScanner(strings.NewReader(string(data)))
+			sc := bufio.NewScanner(streamBody)
 			sc.Buffer(make([]byte, 1024*1024), 1024*1024)
+			// evtType is carried across lines within one SSE event block
+			// (event: <type> is followed by data: <payload> on the next line).
+			evtType := ""
 			for sc.Scan() {
 				line := strings.TrimSpace(sc.Text())
 				if line == "" {
+					evtType = ""
 					continue
 				}
-				var evtType, payload string
 				if strings.HasPrefix(line, "event:") {
 					evtType = strings.TrimSpace(strings.TrimPrefix(line, "event:"))
 					continue
 				}
+				var payload string
 				if strings.HasPrefix(line, "data:") {
 					payload = strings.TrimSpace(strings.TrimPrefix(line, "data:"))
 				} else {

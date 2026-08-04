@@ -666,6 +666,72 @@ func (c *Client) PostWithParamsAndHeaders(ctx context.Context, path string, para
 	return c.do(ctx, "POST", path, params, body, headers)
 }
 
+// PostStream issues a POST and returns the live response body reader so
+// callers can render Server-Sent Events (or other long-lived streams) as
+// they arrive instead of after io.ReadAll buffers the entire response.
+//
+// The returned body MUST be closed by the caller. A dedicated streaming
+// HTTP client is used without the request-level total timeout, because an
+// SSE generation can legitimately stay open for minutes; the caller's
+// context remains the cancellation signal. Retries are intentionally not
+// attempted for streaming responses (replaying a half-consumed stream is
+// meaningless), and the response cache is bypassed.
+func (c *Client) PostStream(ctx context.Context, path string, body any, headerOverrides map[string]string) (io.ReadCloser, error) {
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling body: %w", err)
+	}
+
+	authHeader, err := c.authHeader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	targetURL := strings.TrimRight(c.RequestBaseURL(), "/") + path
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, targetURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
+	if c.Config != nil {
+		for k, v := range c.Config.Headers {
+			req.Header.Set(k, v)
+		}
+	}
+	for k, v := range headerOverrides {
+		req.Header.Set(k, v)
+	}
+	if req.Header.Get("Accept") == "" {
+		req.Header.Set("Accept", "text/event-stream")
+	}
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", "v0-pp-cli/0.1.0")
+	}
+
+	// Streaming client without a total-request deadline: an SSE stream may
+	// stay open for minutes. Cancellation flows through ctx.
+	streamClient := &http.Client{Transport: http.DefaultTransport.(*http.Transport).Clone()}
+	resp, err := streamClient.Do(req)
+	if err != nil {
+		return nil, c.maskError(err, authHeader)
+	}
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		return nil, &APIError{
+			Method:     http.MethodPost,
+			Path:       c.displayURL(path, authHeader),
+			StatusCode: resp.StatusCode,
+			Body:       c.maskCredentialText(truncateBody(respBody), authHeader),
+		}
+	}
+	return resp.Body, nil
+}
+
+
 // PostQueryWithParams is a POST that does not mutate remote state — used
 // by read-only operations that ride a mutating verb on the wire (GraphQL
 // queries, JSON-RPC reads, POST-based search endpoints). The verify-mode
