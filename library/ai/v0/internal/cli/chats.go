@@ -35,6 +35,6 @@ func newChatsCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newChatsResumeStreamCmd(flags))
 	cmd.AddCommand(newChatsUpdateCmd(flags))
 	cmd.AddCommand(newChatsUpdateFilesCmd(flags))
-	addNovelCommandIfAbsent(cmd, newNovelChatsStreamCmd(flags))
+	cmd.AddCommand(newNovelChatsStreamCmd(flags))
 	return cmd
 }

@@ -398,7 +398,7 @@ See README.md or the bundled SKILL.md for recipes.`,
 	for _, hook := range novelCommandHooks {
 		hook(rootCmd, flags)
 	}
-	addNovelCommandIfAbsent(rootCmd, newNovelSpendCmd(flags))
+	rootCmd.AddCommand(newNovelSpendCmd(flags))
 	// Attach the conditional platform identity command last so ordinary,
 	// promoted, and novel API-owned `whoami` commands all win the name.
 	if registeredPlatformSource != nil {

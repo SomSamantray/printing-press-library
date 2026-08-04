@@ -24,6 +24,6 @@ func newMessagesCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newMessagesSendAsyncCmd(flags))
 	cmd.AddCommand(newMessagesSendStreamCmd(flags))
 	cmd.AddCommand(newMessagesStopCmd(flags))
-	addNovelCommandIfAbsent(cmd, newNovelMessagesTailCmd(flags))
+	cmd.AddCommand(newNovelMessagesTailCmd(flags))
 	return cmd
 }
