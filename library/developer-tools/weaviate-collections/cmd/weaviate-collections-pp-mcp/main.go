@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -65,8 +66,29 @@ func main() {
 			os.Exit(2)
 		}
 		httpSrv := server.NewStreamableHTTPServer(s)
-		fmt.Fprintf(os.Stderr, "weaviate-collections-pp-mcp serving MCP over streamable HTTP at %s (bearer token required)\n", *addr)
-		if err := http.ListenAndServe(*addr, requireBearerToken(token, httpSrv)); err != nil {
+		handler := requireBearerToken(token, httpSrv)
+		if isLoopbackAddr(*addr) {
+			fmt.Fprintf(os.Stderr, "weaviate-collections-pp-mcp serving MCP over streamable HTTP at %s (bearer token required)\n", *addr)
+			if err := http.ListenAndServe(*addr, handler); err != nil {
+				fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		}
+		// Non-loopback bind: the bearer token would otherwise cross the
+		// network in plaintext. Require the operator to supply a TLS
+		// cert/key pair; there is no plaintext fallback for this case.
+		certFile := os.Getenv("WEAVIATE_COLLECTIONS_MCP_TLS_CERT")
+		keyFile := os.Getenv("WEAVIATE_COLLECTIONS_MCP_TLS_KEY")
+		if certFile == "" || keyFile == "" {
+			fmt.Fprintf(os.Stderr, "MCP server error: --addr %q is not loopback-only.\n", *addr)
+			fmt.Fprintln(os.Stderr, "Binding to a non-loopback address without TLS would send the bearer token over the network in")
+			fmt.Fprintln(os.Stderr, "plaintext. Either drop --addr to keep the loopback-only default, or set both")
+			fmt.Fprintln(os.Stderr, "WEAVIATE_COLLECTIONS_MCP_TLS_CERT and WEAVIATE_COLLECTIONS_MCP_TLS_KEY to a PEM cert/key pair.")
+			os.Exit(2)
+		}
+		fmt.Fprintf(os.Stderr, "weaviate-collections-pp-mcp serving MCP over streamable HTTPS at %s (bearer token required)\n", *addr)
+		if err := http.ListenAndServeTLS(*addr, certFile, keyFile, handler); err != nil {
 			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
 			os.Exit(1)
 		}
@@ -91,6 +113,30 @@ func requireBearerToken(token string, next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// isLoopbackAddr reports whether addr (a "host:port" listen address) only
+// accepts connections from the local machine. An empty host (":7777") binds
+// every interface and is NOT loopback; "localhost", "127.0.0.1", and "::1"
+// are. Used to decide whether the HTTP transport may skip TLS: plaintext on
+// loopback exposes nothing beyond what already trusts this process (e.g. env
+// vars), while plaintext on any other address would send the bearer token
+// over the network.
+func isLoopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		// Not a valid host:port pair; treat conservatively as non-loopback
+		// so callers fail closed (require TLS) rather than fail open.
+		return false
+	}
+	switch host {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+	return false
 }
 
 // defaultTransport reads PP_MCP_TRANSPORT env when set, otherwise falls back

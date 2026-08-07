@@ -133,35 +133,29 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 
 func newAuthSetTokenCmd(flags *rootFlags) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-token [token]",
-		Short: "Save an API token to the credentials file",
+		Use:   "set-token",
+		Short: "Save an API token to the credentials file (reads the token from stdin)",
 		Long: "Save an API token to the credentials file.\n\n" +
-			"Prefer piping the token over passing it as an argument: a positional\n" +
-			"token is visible to other local users via the process list and is\n" +
-			"recorded in shell history. When no argument is given, the token is\n" +
-			"read from stdin instead:\n\n" +
+			"The token is always read from stdin, never from a command-line argument:\n" +
+			"a positional token would be visible to other local users via the process\n" +
+			"list and would be recorded in shell history.\n\n" +
 			"  echo \"$WEAVIATE_API_KEY\" | weaviate-collections-pp-cli auth set-token",
 		Example: "  weaviate-collections-pp-cli auth set-token < token.txt",
-		Args:    cobra.MaximumNArgs(1),
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load(flags.configPath)
 			if err != nil {
 				return configErr(err)
 			}
 
-			var token string
-			if len(args) == 1 {
-				token = args[0]
-			} else {
-				stdinBytes, readErr := io.ReadAll(cmd.InOrStdin())
-				if readErr != nil {
-					return fmt.Errorf("reading token from stdin: %w", readErr)
-				}
-				token = strings.TrimSpace(string(stdinBytes))
-				if token == "" {
-					_ = cmd.Usage()
-					return usageErr(fmt.Errorf("no token provided: pass it as an argument or pipe it via stdin"))
-				}
+			stdinBytes, readErr := io.ReadAll(cmd.InOrStdin())
+			if readErr != nil {
+				return fmt.Errorf("reading token from stdin: %w", readErr)
+			}
+			token := strings.TrimSpace(string(stdinBytes))
+			if token == "" {
+				_ = cmd.Usage()
+				return usageErr(fmt.Errorf("no token provided on stdin: echo \"$WEAVIATE_API_KEY\" | %s", cmd.CommandPath()))
 			}
 
 			// Clear any legacy auth_header so AuthHeader() falls through to
