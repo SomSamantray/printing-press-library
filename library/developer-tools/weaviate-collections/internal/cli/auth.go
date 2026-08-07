@@ -4,12 +4,14 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/mvanhorn/printing-press-library/library/developer-tools/weaviate-collections/internal/cliutil"
 	"github.com/mvanhorn/printing-press-library/library/developer-tools/weaviate-collections/internal/config"
@@ -148,11 +150,10 @@ func newAuthSetTokenCmd(flags *rootFlags) *cobra.Command {
 				return configErr(err)
 			}
 
-			stdinBytes, readErr := io.ReadAll(cmd.InOrStdin())
+			token, readErr := readStdinTokenLine(cmd.InOrStdin(), stdinTokenReadTimeout)
 			if readErr != nil {
 				return fmt.Errorf("reading token from stdin: %w", readErr)
 			}
-			token := strings.TrimSpace(string(stdinBytes))
 			if token == "" {
 				_ = cmd.Usage()
 				return usageErr(fmt.Errorf("no token provided on stdin: echo \"$WEAVIATE_API_KEY\" | %s", cmd.CommandPath()))
@@ -184,6 +185,42 @@ func newAuthSetTokenCmd(flags *rootFlags) *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "Token saved to %s\n", savePath)
 			return nil
 		},
+	}
+}
+
+// stdinTokenReadTimeout bounds how long auth set-token waits for a token on
+// stdin. Without a bound, an invocation that inherits an open stdin with no
+// data forthcoming (a bare interactive run with nothing typed, or a process
+// that inherited a pipe but never writes to or closes it) would hang
+// indefinitely. 60s is generous for a human typing or pasting a token, but
+// finite enough that an agent or script calling this non-interactively fails
+// fast with an actionable error instead of hanging the parent process.
+const stdinTokenReadTimeout = 60 * time.Second
+
+// readStdinTokenLine reads a single line from r (trimmed of surrounding
+// whitespace), bounded by timeout. A pipe or redirect (the intended usage:
+// `echo "$TOKEN" | ... auth set-token`) returns as soon as that line is
+// available. A bare interactive invocation with nothing typed and nothing
+// piped returns a timeout error instead of blocking forever.
+func readStdinTokenLine(r io.Reader, timeout time.Duration) (string, error) {
+	type result struct {
+		line string
+		err  error
+	}
+	done := make(chan result, 1)
+	go func() {
+		scanner := bufio.NewScanner(r)
+		if scanner.Scan() {
+			done <- result{line: strings.TrimSpace(scanner.Text())}
+			return
+		}
+		done <- result{err: scanner.Err()}
+	}()
+	select {
+	case res := <-done:
+		return res.line, res.err
+	case <-time.After(timeout):
+		return "", fmt.Errorf("timed out after %s waiting for a token on stdin; pipe or redirect it instead of running interactively with no input: echo \"$WEAVIATE_API_KEY\" | weaviate-collections-pp-cli auth set-token", timeout)
 	}
 }
 
