@@ -4,8 +4,10 @@
 package main
 
 import (
+	"crypto/subtle"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -18,9 +20,14 @@ import (
 // The flag surface lets one binary serve stdio locally and streamable HTTP
 // when hosted in a container or remote sandbox, matching the Anthropic
 // guidance that production agents need a remote option.
-
+//
+// http mode requires WEAVIATE_COLLECTIONS_MCP_TOKEN to be set: the registered
+// tool set includes destructive operations (collection/tenant delete) that run
+// with this process's own Weaviate credentials, so an unauthenticated listener
+// would let any network caller reach them. The default bind address is
+// loopback-only; --addr must be set explicitly to listen on other interfaces.
 const (
-	defaultHTTPAddr = ":7777"
+	defaultHTTPAddr = "127.0.0.1:7777"
 )
 
 // version is the printed MCP server's version, overridable at build time via ldflags.
@@ -49,9 +56,17 @@ func main() {
 			os.Exit(1)
 		}
 	case "http":
+		token := os.Getenv("WEAVIATE_COLLECTIONS_MCP_TOKEN")
+		if token == "" {
+			fmt.Fprintln(os.Stderr, "MCP server error: WEAVIATE_COLLECTIONS_MCP_TOKEN must be set to use --transport http.")
+			fmt.Fprintln(os.Stderr, "The registered tools include destructive operations (e.g. deleting a collection or tenant) that")
+			fmt.Fprintln(os.Stderr, "run with this process's own Weaviate credentials, so the HTTP listener requires a bearer token.")
+			fmt.Fprintln(os.Stderr, "Generate one yourself and set it, then send it as: Authorization: Bearer <token>")
+			os.Exit(2)
+		}
 		httpSrv := server.NewStreamableHTTPServer(s)
-		fmt.Fprintf(os.Stderr, "weaviate-collections-pp-mcp serving MCP over streamable HTTP at %s\n", *addr)
-		if err := httpSrv.Start(*addr); err != nil {
+		fmt.Fprintf(os.Stderr, "weaviate-collections-pp-mcp serving MCP over streamable HTTP at %s (bearer token required)\n", *addr)
+		if err := http.ListenAndServe(*addr, requireBearerToken(token, httpSrv)); err != nil {
 			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
 			os.Exit(1)
 		}
@@ -59,6 +74,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown --transport %q (supported: stdio, http)\n", *transport)
 		os.Exit(2)
 	}
+}
+
+// requireBearerToken wraps next so every request must present
+// "Authorization: Bearer <token>" matching the configured token before
+// reaching the MCP handler. Uses constant-time comparison to avoid leaking
+// the token length/prefix through response-timing side channels.
+func requireBearerToken(token string, next http.Handler) http.Handler {
+	want := "Bearer " + token
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got := r.Header.Get("Authorization")
+		if len(got) != len(want) || subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {
+			w.Header().Set("WWW-Authenticate", "Bearer")
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // defaultTransport reads PP_MCP_TRANSPORT env when set, otherwise falls back

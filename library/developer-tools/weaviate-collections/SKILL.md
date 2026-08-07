@@ -163,10 +163,10 @@ Pull only the fields that matter instead of the full nested config blob.
 Run `weaviate-collections-pp-cli auth setup` for the URL and steps to obtain a token (add `--launch` to open the URL). Then store it:
 
 ```bash
-weaviate-collections-pp-cli auth set-token YOUR_TOKEN_HERE
+echo "$WEAVIATE_API_KEY" | weaviate-collections-pp-cli auth set-token
 ```
 
-Or set `WEAVIATE_API_KEY` as an environment variable.
+Or set `WEAVIATE_API_KEY` as an environment variable directly (no `auth set-token` needed).
 
 You also need `WEAVIATE_COLLECTIONS_BASE_URL` set to your own Weaviate Cloud cluster URL (e.g. `https://your-cluster-id.weaviate.cloud/v1`, found in the Weaviate Cloud console). Every cluster has a unique hostname, so there is no usable default.
 

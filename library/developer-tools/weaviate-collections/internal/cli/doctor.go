@@ -180,7 +180,7 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 				header := cfg.AuthHeader()
 				if header == "" {
 					report["auth"] = "not configured"
-					report["auth_hint"] = "Set it with: weaviate-collections-pp-cli auth set-token <token> or export WEAVIATE_API_KEY=\"your-token-here\""
+					report["auth_hint"] = "Set it with: export WEAVIATE_API_KEY=\"your-token-here\" (or pipe it: echo \"$WEAVIATE_API_KEY\" | weaviate-collections-pp-cli auth set-token)"
 					report["auth_docs_url"] = "https://github.com/weaviate"
 				} else {
 					authConfigured = true

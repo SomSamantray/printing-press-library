@@ -5,9 +5,11 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/mvanhorn/printing-press-library/library/developer-tools/weaviate-collections/internal/cliutil"
 	"github.com/mvanhorn/printing-press-library/library/developer-tools/weaviate-collections/internal/config"
@@ -44,7 +46,7 @@ func newAuthSetupCmd(_ *rootFlags) *cobra.Command {
 			fmt.Fprintln(w, "")
 			fmt.Fprintln(w, "Then set:")
 			fmt.Fprintln(w, "  export WEAVIATE_API_KEY=\"your-token-here\"")
-			fmt.Fprintln(w, "  weaviate-collections-pp-cli auth set-token <token>")
+			fmt.Fprintln(w, "  echo \"$WEAVIATE_API_KEY\" | weaviate-collections-pp-cli auth set-token")
 			if !launch {
 				return nil
 			}
@@ -117,7 +119,7 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 				fmt.Fprintln(w, "")
 				fmt.Fprintln(w, "Set your token:")
 				fmt.Fprintln(w, "  export WEAVIATE_API_KEY=\"your-token-here\"")
-				fmt.Fprintf(w, "  weaviate-collections-pp-cli auth set-token <token>\n")
+				fmt.Fprintf(w, "  echo \"$WEAVIATE_API_KEY\" | weaviate-collections-pp-cli auth set-token\n")
 				return authErr(fmt.Errorf("no credentials configured"))
 			}
 
@@ -131,14 +133,35 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 
 func newAuthSetTokenCmd(flags *rootFlags) *cobra.Command {
 	return &cobra.Command{
-		Use:     "set-token <token>",
-		Short:   "Save an API token to the credentials file",
-		Example: "  weaviate-collections-pp-cli auth set-token YOUR_TOKEN_HERE",
-		Args:    cobra.ExactArgs(1),
+		Use:   "set-token [token]",
+		Short: "Save an API token to the credentials file",
+		Long: "Save an API token to the credentials file.\n\n" +
+			"Prefer piping the token over passing it as an argument: a positional\n" +
+			"token is visible to other local users via the process list and is\n" +
+			"recorded in shell history. When no argument is given, the token is\n" +
+			"read from stdin instead:\n\n" +
+			"  echo \"$WEAVIATE_API_KEY\" | weaviate-collections-pp-cli auth set-token",
+		Example: "  weaviate-collections-pp-cli auth set-token < token.txt",
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.Load(flags.configPath)
 			if err != nil {
 				return configErr(err)
+			}
+
+			var token string
+			if len(args) == 1 {
+				token = args[0]
+			} else {
+				stdinBytes, readErr := io.ReadAll(cmd.InOrStdin())
+				if readErr != nil {
+					return fmt.Errorf("reading token from stdin: %w", readErr)
+				}
+				token = strings.TrimSpace(string(stdinBytes))
+				if token == "" {
+					_ = cmd.Usage()
+					return usageErr(fmt.Errorf("no token provided: pass it as an argument or pipe it via stdin"))
+				}
 			}
 
 			// Clear any legacy auth_header so AuthHeader() falls through to
@@ -148,7 +171,7 @@ func newAuthSetTokenCmd(flags *rootFlags) *cobra.Command {
 			// log line): a masked-tail variant could leak token bytes through
 			// scripted dogfood that captures stderr.
 			cfg.AuthHeaderVal = ""
-			if err := cfg.SaveTokens("", "", args[0], "", cfg.TokenExpiry); err != nil {
+			if err := cfg.SaveTokens("", "", token, "", cfg.TokenExpiry); err != nil {
 				return configErr(fmt.Errorf("saving token: %w", err))
 			}
 

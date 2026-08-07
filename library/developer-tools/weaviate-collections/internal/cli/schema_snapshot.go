@@ -45,9 +45,13 @@ func newNovelSchemaSnapshotCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			label := flagLabel
-			takenAt := time.Now().UTC().Format(time.RFC3339)
+			now := time.Now().UTC()
+			takenAt := now.Format(time.RFC3339)
 			if label == "" {
-				label = "snapshot-" + takenAt
+				// Nanosecond resolution: two unlabeled snapshots within the
+				// same second would otherwise share a label, and the store
+				// Upsert would silently overwrite the first one.
+				label = "snapshot-" + now.Format(time.RFC3339Nano)
 			}
 
 			rec := schemaSnapshotRecord{
