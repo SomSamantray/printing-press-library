@@ -13,18 +13,18 @@ import (
 	"sync"
 	"testing"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/cliutil/testenv"
-	"exa-pp-cli/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil/testenv"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
 
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 func unmarshalAgentResults(t *testing.T, stdout string, out any) {
 	t.Helper()
 	var envelope struct {
-		Meta	map[string]any	`json:"meta"`
-		Results	json.RawMessage	`json:"results"`
+		Meta    map[string]any  `json:"meta"`
+		Results json.RawMessage `json:"results"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
 		t.Fatalf("agent envelope JSON: %v (stdout=%q)", err, stdout)
@@ -102,10 +102,10 @@ func TestTeachCommand_SilentOnSuccess(t *testing.T) {
 
 func TestTeachCommand_JSONOutputRespectsExplicitQuiet(t *testing.T) {
 	tests := []struct {
-		name		string
-		quietArg	string
-		rootQuiet	bool
-		wantOutput	bool
+		name       string
+		quietArg   string
+		rootQuiet  bool
+		wantOutput bool
 	}{
 		{name: "default quiet", wantOutput: true},
 		{name: "explicit quiet", quietArg: "--quiet", wantOutput: false},
@@ -278,13 +278,13 @@ func TestRecallCommand_FoundAndNotFound(t *testing.T) {
 func TestRecallEnvelopeResultsCarryAliasTarget(t *testing.T) {
 	got := toEnvelopeResults([]learn.Hit{
 		{
-			ResourceID:	"old-id",
-			Action:		store.LearningActionAlias,
-			AliasTarget:	"new-id",
-			Confidence:	3,
-			MatchScore:	1,
-			EntityMatch:	learn.EntityMatchExact,
-			ResourceType:	"items",
+			ResourceID:   "old-id",
+			Action:       store.LearningActionAlias,
+			AliasTarget:  "new-id",
+			Confidence:   3,
+			MatchScore:   1,
+			EntityMatch:  learn.EntityMatchExact,
+			ResourceType: "items",
 		},
 	})
 	if len(got) != 1 {
@@ -745,11 +745,11 @@ func TestTeachCommand_IntegratedNotesFileOnly(t *testing.T) {
 // learnEventRow is the readback shape the event-instrumentation tests
 // assert against.
 type learnEventRow struct {
-	Event		string
-	FamilyHash	string
-	MatchedRowID	int64
-	EntityMatch	int
-	Surface		string
+	Event        string
+	FamilyHash   string
+	MatchedRowID int64
+	EntityMatch  int
+	Surface      string
 }
 
 // readLearnEvents returns every learn_events row (insert order) from
@@ -947,20 +947,20 @@ func TestLearnEvents_InsertFailureNeverFailsRecall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	s.Close()	// every insert from here on fails
+	s.Close() // every insert from here on fails
 
 	result := learn.Result{
-		Query:	"some question",
-		Family:	"question some",
-		Found:	true,
+		Query:  "some question",
+		Family: "question some",
+		Found:  true,
 		Results: []learn.Hit{
 			{
-				LearningID:	1,
-				ResourceID:	"widget-1",
-				EntityMatch:	learn.EntityMatchExact,
+				LearningID:  1,
+				ResourceID:  "widget-1",
+				EntityMatch: learn.EntityMatchExact,
 			},
 		},
-		Playbook:	&learn.ResolvedPlaybook{QueryFamily: "question some"},
+		Playbook: &learn.ResolvedPlaybook{QueryFamily: "question some"},
 	}
 	// Must not panic and must not propagate an error (void contract).
 	recordRecallEvents(s, result)
@@ -1022,8 +1022,8 @@ func TestLearnEvents_ConcurrentTeachRecallLosesNothing(t *testing.T) {
 			// recordRecallEvents is the command side's insert path;
 			// a hit result with a playbook writes two events.
 			recordRecallEvents(recallStore, learn.Result{
-				Family:	"fam-conc",
-				Found:	true,
+				Family: "fam-conc",
+				Found:  true,
 				Results: []learn.Hit{
 					{LearningID: int64(i + 1), EntityMatch: learn.EntityMatchExact},
 				},

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"exa-pp-cli/internal/learn/lookups"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/lookups"
 )
 
 // DefaultJaccardMin matches the recall-side floor. Applying the same

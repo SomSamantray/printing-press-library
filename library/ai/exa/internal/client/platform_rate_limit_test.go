@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/config"
-	"exa-pp-cli/internal/platform"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
 )
 
 func TestPlatformRateLimitRetriesSafeRequestAndRecordsMetadata(t *testing.T) {

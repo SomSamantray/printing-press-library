@@ -16,7 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // extractRunResultURLs pulls the result URL set out of a stored monitor run's
@@ -49,7 +49,6 @@ func extractRunResultURLs(data json.RawMessage) ([]string, error) {
 	sort.Strings(urls)
 	return urls, nil
 }
-
 
 // runDataID extracts the canonical run id from the stored run payload.
 func runDataID(data json.RawMessage) string {

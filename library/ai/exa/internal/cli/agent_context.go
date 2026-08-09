@@ -8,8 +8,8 @@ import (
 	"os"
 	"sort"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

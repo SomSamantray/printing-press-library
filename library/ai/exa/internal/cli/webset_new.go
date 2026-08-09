@@ -15,7 +15,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // websetNewItem is one item row surfaced by `webset new`.
@@ -149,11 +149,11 @@ Do NOT use it for a named entity's timeline; use 'entity report'.`,
 			sort.Slice(items, func(i, j int) bool { return items[i].SyncedAt > items[j].SyncedAt })
 
 			view := struct {
-				WebsetID string         `json:"websetId"`
-				Since    string         `json:"since"`
-				Count    int            `json:"addedCount"`
+				WebsetID string          `json:"websetId"`
+				Since    string          `json:"since"`
+				Count    int             `json:"addedCount"`
 				Items    []websetNewItem `json:"items"`
-				Source   string         `json:"source"`
+				Source   string          `json:"source"`
 			}{
 				WebsetID: websetID,
 				Since:    flagSinceIfSet(flagSince, window),

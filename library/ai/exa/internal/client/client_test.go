@@ -16,8 +16,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"exa-pp-cli/internal/config"
-	"exa-pp-cli/internal/platform"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
 )
 
 func TestTruncateBody(t *testing.T) {

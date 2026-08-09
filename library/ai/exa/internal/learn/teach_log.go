@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"exa-pp-cli/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
 )
 
 // teachLogStateDirName is the per-user state directory name.

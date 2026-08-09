@@ -19,7 +19,7 @@ import (
 	"runtime"
 	"testing"
 
-	"exa-pp-cli/internal/cliutil/testenv"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil/testenv"
 )
 
 // credsSampleReadPermsToken is an exposed on-disk token value written to the

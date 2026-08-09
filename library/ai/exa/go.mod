@@ -1,4 +1,4 @@
-module exa-pp-cli
+module github.com/mvanhorn/printing-press-library/library/ai/exa
 
 go 1.26.5
 

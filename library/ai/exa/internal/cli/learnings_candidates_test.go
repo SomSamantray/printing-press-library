@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"exa-pp-cli/internal/learn"
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // seedCandidate derives one candidate row directly through the store

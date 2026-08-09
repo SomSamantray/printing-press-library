@@ -23,10 +23,10 @@ import (
 	"sort"
 	"strings"
 
-	"exa-pp-cli/internal/cli"
-	"exa-pp-cli/internal/mcp/bound"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp/bound"
 )
 
 // RegisterCodeOrchestrationTools registers the agent-facing tools that cover

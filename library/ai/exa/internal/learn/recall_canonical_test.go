@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"exa-pp-cli/internal/learn/entities"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/entities"
 
 	_ "modernc.org/sqlite"
 )

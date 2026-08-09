@@ -28,8 +28,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"exa-pp-cli/internal/learn"
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // registerLearningsCandidateCommands attaches the candidate lifecycle

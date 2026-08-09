@@ -31,9 +31,9 @@ import (
 	"strings"
 	"sync"
 
-	"exa-pp-cli/internal/cli/playbooks"
-	"exa-pp-cli/internal/learn"
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli/playbooks"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // playbookSeedSentinelFamily is the synthetic query_family used to

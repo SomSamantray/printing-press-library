@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"exa-pp-cli/internal/cli"
-	mcptools "exa-pp-cli/internal/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli"
+	mcptools "github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp"
 )
 
 // Transport selection order: --transport flag, then PP_MCP_TRANSPORT env,

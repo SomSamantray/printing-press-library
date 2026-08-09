@@ -5,8 +5,8 @@ package cli
 
 import (
 	"bytes"
-	"exa-pp-cli/internal/client"
 	"encoding/json"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/client"
 	"os"
 	"path/filepath"
 	"strings"
@@ -97,8 +97,8 @@ func TestSpendAggregatesJournal(t *testing.T) {
 		t.Fatalf("spend error: %v (stderr: %s)", err, errb.String())
 	}
 	var view struct {
-		Days     int `json:"days"`
-		Entries  []struct {
+		Days    int `json:"days"`
+		Entries []struct {
 			Day      string  `json:"day"`
 			Resource string  `json:"resource"`
 			Cost     float64 `json:"cost"`

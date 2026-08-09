@@ -16,17 +16,17 @@ import (
 	"strings"
 	"time"
 
-	"exa-pp-cli/internal/cli"
-	"exa-pp-cli/internal/client"
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/config"
-	"exa-pp-cli/internal/learn"
-	"exa-pp-cli/internal/mcp/bound"
-	"exa-pp-cli/internal/mcp/cobratree"
-	"exa-pp-cli/internal/platform"
-	"exa-pp-cli/internal/store"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/client"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp/bound"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp/cobratree"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 const (

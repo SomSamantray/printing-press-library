@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"exa-pp-cli/internal/learn/entities"
-	"exa-pp-cli/internal/learn/lookups"
-	"exa-pp-cli/internal/learn/patterns"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/entities"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/lookups"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/patterns"
 )
 
 // Default thresholds. Keep in sync with the documented contract in

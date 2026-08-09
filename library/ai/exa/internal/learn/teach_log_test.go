@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/cliutil/testenv"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil/testenv"
 )
 
 func withTempHomeForLog(t *testing.T) string {

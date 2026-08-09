@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"exa-pp-cli/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
 )
 
 // The invocation journal records one entry per CLI invocation in dated

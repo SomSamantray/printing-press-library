@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/cliutil/testenv"
-	"exa-pp-cli/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil/testenv"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
 	"github.com/pelletier/go-toml/v2"
 )
 

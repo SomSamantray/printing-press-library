@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/cliutil/testenv"
-	"exa-pp-cli/internal/mcp/bound"
-	"exa-pp-cli/internal/store"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil/testenv"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp/bound"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 func TestMCPPathResolutionMatchesCLIResolverWithHomeEnv(t *testing.T) {

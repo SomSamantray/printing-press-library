@@ -24,9 +24,9 @@ import (
 	"regexp"
 	"sync"
 
-	"exa-pp-cli/internal/learn/entities"
-	"exa-pp-cli/internal/learn/lookups"
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/entities"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/lookups"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // newLearnConfig returns the per-CLI entity extractor Config the

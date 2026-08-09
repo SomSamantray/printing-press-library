@@ -12,8 +12,8 @@ import (
 	"reflect"
 	"strings"
 
-	"exa-pp-cli/internal/client"
-	"exa-pp-cli/internal/platform"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/client"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
 	"github.com/spf13/cobra"
 )
 

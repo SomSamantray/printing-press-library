@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
 	"github.com/spf13/cobra"
 )
 

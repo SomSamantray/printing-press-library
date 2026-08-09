@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"exa-pp-cli/internal/platform"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
 )
 
 func TestPlatformBudgetLookupContract(t *testing.T) {

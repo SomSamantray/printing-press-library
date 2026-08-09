@@ -6,7 +6,7 @@ package main
 import (
 	"os"
 
-	"exa-pp-cli/internal/cli"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli"
 )
 
 func main() {

@@ -13,12 +13,12 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"exa-pp-cli/internal/client"
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/config"
-	"exa-pp-cli/internal/learn"
-	"exa-pp-cli/internal/platform"
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/client"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

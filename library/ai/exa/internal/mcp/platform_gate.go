@@ -6,10 +6,10 @@ package mcp
 import (
 	"context"
 
-	"exa-pp-cli/internal/cli"
-	"exa-pp-cli/internal/platform"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
 )
 
 const mcpTenantGateOwnerKey = "pp:tenant-gate"

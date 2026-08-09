@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	"exa-pp-cli/internal/cli"
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/cliutil/testenv"
-	"exa-pp-cli/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil/testenv"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
 )
 
 // withJournalHome isolates a test in a temp HOME with every journal

@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"strings"
 
-	"exa-pp-cli/internal/mcp/bound"
-	"exa-pp-cli/internal/mcp/cobratree"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp/bound"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp/cobratree"
 )
 
 // RegisterIntents adds generated intent tools to the MCP server.

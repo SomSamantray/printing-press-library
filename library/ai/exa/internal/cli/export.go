@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"exa-pp-cli/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
 	"github.com/spf13/cobra"
 )
 

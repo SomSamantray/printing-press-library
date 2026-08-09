@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"exa-pp-cli/internal/learn/entities"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/entities"
 )
 
 // EntityMatch classifies how well a stored learning's resource-side

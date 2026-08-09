@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"exa-pp-cli/internal/mcp/bound"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/mcp/bound"
 )
 
 func boundedToolResultError(message string) *mcplib.CallToolResult {

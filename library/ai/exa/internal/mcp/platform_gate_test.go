@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"exa-pp-cli/internal/cli"
-	"exa-pp-cli/internal/client"
-	"exa-pp-cli/internal/config"
-	"exa-pp-cli/internal/platform"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cli"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/client"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
 )
 
 func TestMCPEveryRegisteredToolHasFreshTenantGate(t *testing.T) {

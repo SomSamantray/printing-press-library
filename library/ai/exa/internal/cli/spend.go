@@ -18,7 +18,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"exa-pp-cli/internal/client"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/client"
 )
 
 // costEntry is one journaled API call. The client writes these; spend reads them.
@@ -69,8 +69,8 @@ func newNovelSpendCmd(flags *rootFlags) *cobra.Command {
 	var flagResource string
 
 	cmd := &cobra.Command{
-		Use:     "spend",
-		Short:   "See cumulative API spend across every Exa call, broken down by day and resource.",
+		Use:   "spend",
+		Short: "See cumulative API spend across every Exa call, broken down by day and resource.",
 		Long: `Use this command to understand cumulative spend across every Exa call.
 Do NOT use it for counts or groupings of synced records; use 'analytics' instead.`,
 		Example:     "  exa-pp-cli spend --days 30 --resource searches",
@@ -110,7 +110,7 @@ Do NOT use it for counts or groupings of synced records; use 'analytics' instead
 						_ = printJSONFiltered(cmd.OutOrStdout(), map[string]any{
 							"days": days, "resource": resource, "entries": []any{},
 							"totalCost": 0, "totalCostUsd": "$0.0000", "journal": journal,
-							"note": "no cost journal yet; run any live exa-pp-cli command to record spend",
+							"note":   "no cost journal yet; run any live exa-pp-cli command to record spend",
 							"source": "local",
 						}, flags)
 					} else {
@@ -188,15 +188,15 @@ Do NOT use it for counts or groupings of synced records; use 'analytics' instead
 
 			if flags.asJSON || flags.agent {
 				view := struct {
-					Days     int      `json:"days"`
-					Resource string   `json:"resource,omitempty"`
-					Entries  []row    `json:"entries"`
-					Total    float64  `json:"totalCost"`
-					TotalUSD string   `json:"totalCostUsd"`
-					Journal  string   `json:"journal"`
-					Note     string   `json:"note,omitempty"`
-					Skipped  int      `json:"skippedLines,omitempty"`
-					Source   string   `json:"source"`
+					Days     int     `json:"days"`
+					Resource string  `json:"resource,omitempty"`
+					Entries  []row   `json:"entries"`
+					Total    float64 `json:"totalCost"`
+					TotalUSD string  `json:"totalCostUsd"`
+					Journal  string  `json:"journal"`
+					Note     string  `json:"note,omitempty"`
+					Skipped  int     `json:"skippedLines,omitempty"`
+					Source   string  `json:"source"`
 				}{
 					Days:     days,
 					Resource: resource,

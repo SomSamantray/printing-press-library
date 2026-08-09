@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"exa-pp-cli/internal/learn/entities"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/entities"
 )
 
 // NormalizedQuery is the entity-aware normalized representation of a

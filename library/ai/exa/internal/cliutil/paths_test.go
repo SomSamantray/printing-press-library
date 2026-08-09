@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"exa-pp-cli/internal/cliutil/testenv"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil/testenv"
 )
 
 func resetPathEnv(t *testing.T) string {

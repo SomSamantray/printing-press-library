@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"exa-pp-cli/internal/platform"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/platform"
 	"github.com/spf13/cobra"
 )
 

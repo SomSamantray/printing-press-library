@@ -27,12 +27,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"exa-pp-cli/internal/cliutil"
-	"exa-pp-cli/internal/learn"
-	"exa-pp-cli/internal/learn/entities"
-	"exa-pp-cli/internal/learn/lookups"
-	"exa-pp-cli/internal/learn/patterns"
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/entities"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/lookups"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/learn/patterns"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // noLearnEnvVar is the environment variable that disables the learning

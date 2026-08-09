@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"exa-pp-cli/internal/config"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/config"
 )
 
 // recordingRoundTripper counts how many times its RoundTrip method is

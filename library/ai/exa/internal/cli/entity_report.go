@@ -16,7 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"exa-pp-cli/internal/store"
+	"github.com/mvanhorn/printing-press-library/library/ai/exa/internal/store"
 )
 
 // mentionHits carries where an entity name was found and when.
@@ -112,7 +112,6 @@ func parseSyncedAt(v string) time.Time {
 	}
 	return time.Time{}
 }
-
 
 // parseHumanDuration parses durations like "7d", "24h", "90m", "30d" — Go's
 // time.ParseDuration does not accept day units, and day windows are the
