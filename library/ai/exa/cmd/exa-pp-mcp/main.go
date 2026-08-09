@@ -21,7 +21,11 @@ import (
 // guidance that production agents need a remote option.
 
 const (
-	defaultHTTPAddr = ":7777"
+	// defaultHTTPAddr binds loopback-only so an operator who opts into
+	// --transport http does not silently expose the MCP server (and the
+	// process-bound Exa credentials behind its tools) to the network.
+	// Remote hosts pass --addr 0.0.0.0:7777 explicitly.
+	defaultHTTPAddr = "127.0.0.1:7777"
 )
 
 // version is the printed MCP server's version, overridable at build time via ldflags.
