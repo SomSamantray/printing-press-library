@@ -11,10 +11,10 @@
   "auth_context": {
     "type": "bearer_token"
   },
-  "source_fingerprint": "ad10dbe40a937052b946b92dd1befa9b6883f4e497a92183818e813f1fde3a7c",
+  "source_fingerprint": "1db917537c023c2f931e18c3943fa34131f304d9e5b2a38113818f3673409597",
   "source_files": {
     "cmd/exa-pp-cli/main.go": "7c56681f4174807d010b421b1600645afb8daf11c562812dcf119933cdb1a11b",
-    "cmd/exa-pp-mcp/main.go": "f79112133947b9a905cb7ff32f3e175bdc9f2c065cec12d82dfc044df339adc1",
+    "cmd/exa-pp-mcp/main.go": "cd92a3ff98bcde6b79cf175498709ae4c9f7f065ad66d8bbd38738688df04999",
     "go.mod": "566945c58f78dde394e4e0afda24421f7f9888e2780bcb2c69063c1b3dc36957",
     "go.sum": "f1d2244e10982358d582a8268b72b5190d4a49b50212bece15f435786aa7b1f0",
     "internal/cache/cache.go": "e24c190931078115e2ba2b4c5ef9dc7e8eb184018ff35c612c65b183753a4dde",
