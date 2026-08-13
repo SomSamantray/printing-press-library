@@ -18,7 +18,7 @@ Fixes applied:
 
 Skipped findings:
   - gosec G101/G201/G202 in generated files (platform/, store/, cli/auth.go): generator-emitted, filed as retro candidates, not polish-owned
-  - live_api_verification scorecard dimension: N/A for vendor-spec CLI (no browser-sniff traffic-analysis); exhaustive live dogfood (240/240) and 7/7 live probes substitute
+  - live_api_verification scorecard dimension: N/A for vendor-spec CLI (no browser-sniff traffic-analysis); exhaustive live dogfood (248/248 acceptance marker; 595 test entries, 0 failed) and 7/7 live probes substitute
 
 Remaining issues:
   - none
@@ -48,7 +48,7 @@ fixes_applied:
 - tools-audit 2 accepts (generator-emitted framework commands, retro candidates)
 skipped_findings:
 - gosec generated-file findings: generator retro candidates, not polish-owned
-- live_api_verification dimension: N/A for vendor-spec (no traffic-analysis); live dogfood 240/240 + 7/7 live probes substitute
+- live_api_verification dimension: N/A for vendor-spec (no traffic-analysis); live dogfood 248/248 acceptance (publish gate) + 7/7 live probes substitute
 remaining_issues:
 - none
 ship_recommendation: ship
