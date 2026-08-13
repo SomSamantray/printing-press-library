@@ -69,34 +69,46 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 				return err
 			}
 			path := "/1/indexes/" + flagIndex + "/query"
-			data, _, getErr := c.Post(ctx, path, map[string]any{
-				"query":        flagQuery,
-				"hitsPerPage":  1000,
-				"attributesToRetrieve": []string{"objectID"},
-			})
-			if getErr != nil {
-				return classifyAPIError(getErr, flags)
+			// Paginate through results until every expected objectID is found
+			// or the result set is exhausted (Algolia caps at 1000 hits per
+			// query, so deep matches require paging).
+			expectedSet := make(map[string]bool, len(expected))
+			for _, e := range expected {
+				expectedSet[e] = true
 			}
-			// Extract hits from the response envelope.
-			var envelope struct {
-				Hits []map[string]any `json:"hits"`
-			}
-			if err := json.Unmarshal(data, &envelope); err != nil {
-				return fmt.Errorf("parsing search response: %w", err)
-			}
-			found := make([]string, 0, len(envelope.Hits))
-			seen := make(map[string]bool)
-			for _, h := range envelope.Hits {
-				oid, _ := h["objectID"].(string)
-				if oid == "" {
-					continue
+			seen := make(map[string]bool, len(expected))
+			found := make([]string, 0, len(expected))
+			missing := make([]string, 0)
+			const pageSize = 1000
+			const maxPages = 50 // bounded: 50k hits maximum scanned
+			for page := 0; page < maxPages && len(seen) < len(expectedSet); page++ {
+				data, _, getErr := c.Post(ctx, path, map[string]any{
+					"query":                 flagQuery,
+					"hitsPerPage":           pageSize,
+					"page":                  page,
+					"attributesToRetrieve":  []string{"objectID"},
+				})
+				if getErr != nil {
+					return classifyAPIError(getErr, flags)
 				}
-				if !seen[oid] {
+				var envelope struct {
+					Hits []map[string]any `json:"hits"`
+				}
+				if err := json.Unmarshal(data, &envelope); err != nil {
+					return fmt.Errorf("parsing search response: %w", err)
+				}
+				if len(envelope.Hits) == 0 {
+					break
+				}
+				for _, h := range envelope.Hits {
+					oid, _ := h["objectID"].(string)
+					if oid == "" || !expectedSet[oid] || seen[oid] {
+						continue
+					}
 					seen[oid] = true
 					found = append(found, oid)
 				}
 			}
-			missing := make([]string, 0)
 			for _, e := range expected {
 				if !seen[e] {
 					missing = append(missing, e)
