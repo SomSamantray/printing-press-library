@@ -1,14 +1,14 @@
 {
-  "dir": "/Users/apple/printing-press/.runstate/workspace-0b5cfea6/runs/20260813-214420-550eb813/working/pinecone-pp-cli",
-  "binary": "/Users/apple/printing-press/.runstate/workspace-0b5cfea6/runs/20260813-214420-550eb813/working/pinecone-pp-cli/pinecone-pp-cli",
+  "dir": "/Users/apple/printing-press/library/pinecone",
+  "binary": "/Users/apple/printing-press/library/pinecone/pinecone-pp-cli",
   "level": "full",
-  "verdict": "FAIL",
-  "matrix_size": 244,
-  "passed": 238,
-  "failed": 6,
-  "skipped": 351,
-  "unverified": 351,
-  "pass_rate": 97.54098360655738,
+  "verdict": "PASS",
+  "matrix_size": 248,
+  "passed": 248,
+  "failed": 0,
+  "skipped": 347,
+  "unverified": 347,
+  "pass_rate": 100,
   "commands": [
     "admin create-api-key",
     "admin create-invite",
@@ -2357,16 +2357,30 @@
     {
       "command": "check-vectors",
       "kind": "happy_path",
-      "args": null,
-      "status": "skip",
-      "reason": "file fixture required: --file vectors.json"
+      "args": [
+        "check-vectors",
+        "--index",
+        "travel-chat-embeddings",
+        "--file",
+        "vectors.json",
+        "--json"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"file\": \"vectors.json\",\n  \"total_vectors\": 1,\n  \"issues\": [\n    {\n      \"type\": \"dimension\",\n      \"message\": \"expected 1536 values, got 3\",\n      \"id\": \"doc-a\"\n    }\n  ],\n  \"ok\": false,\n  \"expected_dimension\": 1536\n}\n"
     },
     {
       "command": "check-vectors",
       "kind": "json_fidelity",
-      "args": null,
-      "status": "skip",
-      "reason": "file fixture required: --file vectors.json"
+      "args": [
+        "check-vectors",
+        "--index",
+        "travel-chat-embeddings",
+        "--file",
+        "vectors.json",
+        "--json"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"file\": \"vectors.json\",\n  \"total_vectors\": 1,\n  \"issues\": [\n    {\n      \"type\": \"dimension\",\n      \"message\": \"expected 1536 values, got 3\",\n      \"id\": \"doc-a\"\n    }\n  ],\n  \"ok\": false,\n  \"expected_dimension\": 1536\n}\n"
     },
     {
       "command": "check-vectors",
@@ -2564,7 +2578,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"generated_at\": \"2026-08-13T17:45:31Z\",\n  \"indexes\": [\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"host\": \"travel-chat-embeddings-gpn9l3l.svc.aped-4627-b74a.pinecone.io\",\n      \"backed_up\": false,\n      \"has_schedule\": false,\n      \"restorable\": false,\n      \"protected\": false\n    }\n  ],\n  \"protected_count\": 0,\n  \"total_count\": 1\n}\n"
+      "output_sample": "{\n  \"generated_at\": \"2026-08-13T18:24:54Z\",\n  \"indexes\": [\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"host\": \"travel-chat-embeddings-gpn9l3l.svc.aped-4627-b74a.pinecone.io\",\n      \"backed_up\": false,\n      \"has_schedule\": false,\n      \"restorable\": false,\n      \"protected\": false\n    }\n  ],\n  \"protected_count\": 0,\n  \"total_count\": 1\n}\n"
     },
     {
       "command": "coverage",
@@ -2574,7 +2588,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"generated_at\": \"2026-08-13T17:45:31Z\",\n  \"indexes\": [\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"host\": \"travel-chat-embeddings-gpn9l3l.svc.aped-4627-b74a.pinecone.io\",\n      \"backed_up\": false,\n      \"has_schedule\": false,\n      \"restorable\": false,\n      \"protected\": false\n    }\n  ],\n  \"protected_count\": 0,\n  \"total_count\": 1\n}\n"
+      "output_sample": "{\n  \"generated_at\": \"2026-08-13T18:24:54Z\",\n  \"indexes\": [\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"host\": \"travel-chat-embeddings-gpn9l3l.svc.aped-4627-b74a.pinecone.io\",\n      \"backed_up\": false,\n      \"has_schedule\": false,\n      \"restorable\": false,\n      \"protected\": false\n    }\n  ],\n  \"protected_count\": 0,\n  \"total_count\": 1\n}\n"
     },
     {
       "command": "coverage",
@@ -2637,7 +2651,7 @@
         "doctor"
       ],
       "status": "pass",
-      "output_sample": "  OK Config: ok\n  OK Auth: configured\n  OK Env Vars: OK 1/1 available\n  OK Verify Mode: normal operation\n  OK API: reachable (HTTP 404 at /)\n  INFO Credentials: present, not verified. Run `pinecone-pp-cli assistants list` to confirm the token works end-to-end.\n  config_path: /private/tmp/commandcode-501/-Users-apple/5fbd77bd-2fab-4965-90f2-8d1a1d00cc32/scratchpad/pinecone-config.toml\n  base_url: https://api.pinecone.io\n  auth_source: env:PINECONE_API_KEY\n  credentials_location: env:PINECONE_API_KEY\n  version: 0.0.0-dev\n  OK Cache: fresh\n    db_path: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/share/pinecone-pp-cli/data.db\n    schema_version: 9\n    db_bytes: 503808\n    stale_after: 6h0m0s\n    resources:\n      - backups: 0 rows, 1m0s\n      - collections: 0 rows, 1m0s\n      - indexes: 1 rows, 1m0s\n      - indexes_backup_schedules: 0 rows, 0s\n      - indexes_backups: 0 rows, 0s\n      - models: 7 rows, 1m0s\n      - restore-jobs: 0 rows, 1m0s\n  Paths:\n    config: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.config/pinecone-pp-cli (XDG_CONFIG_HOME)\n    data: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/share/pinecone-pp-cli (XDG_DATA_HOME)\n    state: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/state/pinecone-pp-cli (XDG_STATE_HOME)\n    cache: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.cache/pinecone-pp-cli (XDG_CACHE_HOME)\n"
+      "output_sample": "  OK Config: ok\n  OK Auth: configured\n  OK Env Vars: OK 1/1 available\n  OK Verify Mode: normal operation\n  OK API: reachable (HTTP 404 at /)\n  INFO Credentials: present, not verified. Run `pinecone-pp-cli assistants list` to confirm the token works end-to-end.\n  config_path: /private/tmp/commandcode-501/-Users-apple/5fbd77bd-2fab-4965-90f2-8d1a1d00cc32/scratchpad/pinecone-config.toml\n  base_url: https://api.pinecone.io\n  auth_source: env:PINECONE_API_KEY\n  credentials_location: env:PINECONE_API_KEY\n  version: 0.0.0-dev\n  OK Cache: fresh\n    db_path: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/share/pinecone-pp-cli/data.db\n    schema_version: 9\n    db_bytes: 503808\n    stale_after: 6h0m0s\n    resources:\n      - backups: 0 rows, 1m0s\n      - collections: 0 rows, 1m0s\n      - indexes: 1 rows, 1m0s\n      - indexes_backup_schedules: 0 rows, 0s\n      - indexes_backups: 0 rows, 0s\n      - models: 7 rows, 1m0s\n      - restore-jobs: 0 rows, 1m0s\n  Paths:\n    config: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.config/pinecone-pp-cli (XDG_CONFIG_HOME)\n    data: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/share/pinecone-pp-cli (XDG_DATA_HOME)\n    state: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/state/pinecone-pp-cli (XDG_STATE_HOME)\n    cache: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.cache/pinecone-pp-cli (XDG_CACHE_HOME)\n"
     },
     {
       "command": "doctor",
@@ -2647,7 +2661,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"agentcookie\": \"not detected (optional)\",\n  \"api\": \"reachable (HTTP 404 at /)\",\n  \"auth\": \"configured\",\n  \"auth_source\": \"env:PINECONE_API_KEY\",\n  \"base_url\": \"https://api.pinecone.io\",\n  \"cache\": {\n    \"db_bytes\": 503808,\n    \"db_path\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/share/pinecone-pp-cli/data.db\",\n    \"resources\": [\n      {\n        \"last_synced_at\": \"2026-08-13T17:45:00Z\",\n        \"rows\": 0,\n        \"staleness\": \"1m0s\",\n        \"type\": \"backups\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T17:45:00Z\",\n        \"rows\": 0,\n        \"staleness\": \"1m0s\",\n        \"type\": \"collections\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T17:45:00Z\",\n        \"rows\": 1,\n        \"staleness\": \"1m0s\",\n        \"type\": \"indexes\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T17:45:03Z\",\n        \"rows\": 0,\n        \"staleness\": \"1m0s\",\n        \"type\": \"indexes_backup_schedules\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T17:45:04Z\",\n        \"rows\": 0,\n        \"staleness\": \"0s\",\n        \"type\": \"indexes_backups\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T17:45:01Z\",\n        \"rows\": 7,\n        \"staleness\": \"1m0s\",\n        \"type\": \"models\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T17:45:01Z\",\n        \"rows\": 0,\n        \"staleness\": \"1m0s\",\n        \"type\": \"restore-jobs\"\n      }\n    ],\n    \"schema_version\": 9,\n    \"stale_after\": \"6h0m0s\",\n    \"status\": \"fresh\"\n  },\n  \"config\": \"ok\",\n  \"config_path\": \"/private/tmp/commandcode-501/-Users-apple/5fbd77bd-2fab-4965-90f2-8d1a1d00cc32/scratchpad/pinecone-config.toml\",\n  \"credentials\": \"present, not verified. Run `pinecone-pp-cli assistants list` to confirm the token works end-to-end.\",\n  \"credentials_location\": \"env:PINECONE_API_KEY\",\n  \"credentials_locations\": [\n    \"/private/tmp/commandcode-501/-Users-apple/5fbd77bd-2fab-4965-90f2-8d1a1d00cc32/scratchpad/pinecone-config.toml\"\n  ],\n  \"env_vars\": \"OK 1/1 available\",\n  \"paths\": {\n    \"cache\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.cache/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CACHE_HOME\"\n    },\n    \"config\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.config/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CONFIG_HOME\"\n    },\n    \"data\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/share/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_DATA_HOME\"\n    },\n    \"state\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/state/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_STATE_HOME\"\n    },\n    \"status\": \"ok\"\n  },\n  \"verify_mode\": \"normal operation\",\n  \"version\": \"0.0.0-dev\"\n}\n"
+      "output_sample": "{\n  \"agentcookie\": \"not detected (optional)\",\n  \"api\": \"reachable (HTTP 404 at /)\",\n  \"auth\": \"configured\",\n  \"auth_source\": \"env:PINECONE_API_KEY\",\n  \"base_url\": \"https://api.pinecone.io\",\n  \"cache\": {\n    \"db_bytes\": 503808,\n    \"db_path\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/share/pinecone-pp-cli/data.db\",\n    \"resources\": [\n      {\n        \"last_synced_at\": \"2026-08-13T18:24:23Z\",\n        \"rows\": 0,\n        \"staleness\": \"1m0s\",\n        \"type\": \"backups\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T18:24:24Z\",\n        \"rows\": 0,\n        \"staleness\": \"1m0s\",\n        \"type\": \"collections\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T18:24:24Z\",\n        \"rows\": 1,\n        \"staleness\": \"1m0s\",\n        \"type\": \"indexes\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T18:24:28Z\",\n        \"rows\": 0,\n        \"staleness\": \"0s\",\n        \"type\": \"indexes_backup_schedules\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T18:24:29Z\",\n        \"rows\": 0,\n        \"staleness\": \"0s\",\n        \"type\": \"indexes_backups\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T18:24:24Z\",\n        \"rows\": 7,\n        \"staleness\": \"1m0s\",\n        \"type\": \"models\"\n      },\n      {\n        \"last_synced_at\": \"2026-08-13T18:24:25Z\",\n        \"rows\": 0,\n        \"staleness\": \"1m0s\",\n        \"type\": \"restore-jobs\"\n      }\n    ],\n    \"schema_version\": 9,\n    \"stale_after\": \"6h0m0s\",\n    \"status\": \"fresh\"\n  },\n  \"config\": \"ok\",\n  \"config_path\": \"/private/tmp/commandcode-501/-Users-apple/5fbd77bd-2fab-4965-90f2-8d1a1d00cc32/scratchpad/pinecone-config.toml\",\n  \"credentials\": \"present, not verified. Run `pinecone-pp-cli assistants list` to confirm the token works end-to-end.\",\n  \"credentials_location\": \"env:PINECONE_API_KEY\",\n  \"credentials_locations\": [\n    \"/private/tmp/commandcode-501/-Users-apple/5fbd77bd-2fab-4965-90f2-8d1a1d00cc32/scratchpad/pinecone-config.toml\"\n  ],\n  \"env_vars\": \"OK 1/1 available\",\n  \"paths\": {\n    \"cache\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.cache/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CACHE_HOME\"\n    },\n    \"config\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.config/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CONFIG_HOME\"\n    },\n    \"data\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/share/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_DATA_HOME\"\n    },\n    \"state\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/state/pinecone-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_STATE_HOME\"\n    },\n    \"status\": \"ok\"\n  },\n  \"verify_mode\": \"normal operation\",\n  \"version\": \"0.0.0-dev\"\n}\n"
     },
     {
       "command": "doctor",
@@ -2756,13 +2770,9 @@
     {
       "command": "feedback",
       "kind": "error_path",
-      "args": [
-        "feedback",
-        "__printing_press_invalid__"
-      ],
-      "status": "fail",
-      "reason": "expected non-zero exit for invalid argument",
-      "output_sample": "feedback recorded locally (26 chars)\n"
+      "args": null,
+      "status": "skip",
+      "reason": "no-error-path-probe annotation"
     },
     {
       "command": "feedback list",
@@ -2782,8 +2792,7 @@
         "feedback",
         "list"
       ],
-      "status": "pass",
-      "output_sample": "[\n  {\n    \"text\": \"__printing_press_invalid__\",\n    \"cli\": \"pinecone-pp-cli\",\n    \"version\": \"0.0.0-dev\",\n    \"timestamp\": \"2026-08-13T17:45:33.39083Z\"\n  }\n]\n"
+      "status": "pass"
     },
     {
       "command": "feedback list",
@@ -2794,7 +2803,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "[\n  {\n    \"text\": \"__printing_press_invalid__\",\n    \"cli\": \"pinecone-pp-cli\",\n    \"version\": \"0.0.0-dev\",\n    \"timestamp\": \"2026-08-13T17:45:33.39083Z\"\n  }\n]\n"
+      "output_sample": "[]\n"
     },
     {
       "command": "feedback list",
@@ -3773,7 +3782,7 @@
         "--help"
       ],
       "status": "pass",
-      "output_sample": "Get a description of a model hosted by Pinecone.\n\nUsage:\n  pinecone-pp-cli models get \u003cmodel_name\u003e [flags]\n\nExamples:\n  pinecone-pp-cli models get multilingual-e5-large --x-pinecone-api-version example-value\n\nFlags:\n  -h, --help                            help for get\n      --x-pinecone-api-version string   Required date-based version header (default \"2026-04\")\n\nGlobal Flags:\n      --agent                   Set all agent-friendly defaults (--json --compact --no-input --no-color --yes)\n      --allow-partial-failure   Downgrade response-body partial-failure (e.g. partialFailureError) to a warning instead of a non-zero exit\n      --audit-dir string        Aggregate the receipt and index under this audit directory\n      --client-profile string   Select the tenant-gated client profile (env: PRINTING_PRESS_CLIENT_PROFILE)\n      --compact                 Return only key fields (id, name, status, timestamps) for minimal token usage\n      --config string           Config file path\n      --csv                     Output as CSV (table and array responses)\n      --data-source string      Data source for read commands: auto (live with local fallback), live (API only), local (synced data only) (default \"auto\")\n      --deliver string          Route output to a sink: stdout (default), file:\u003cpath\u003e, webhook:\u003curl\u003e\n      --dry-run                 Show request without sending\n      --home string             Root directory for config, data, state, and cache files\n      --human-friendly          Enable colored output and rich formatting\n      --idempotent              Treat already-existing create results as a successful no-op\n      --ignore-missing          Treat missing delete targets as a successful no-op\n      --json                    Output as JSON\n      --max-age duration        Maximum acceptable age of local-store data before a stderr hint suggests sync; 0 disables (default 30m0s)\n      --no-cache                Bypass response cache\n      --no-color                Disable colored output\n      --no-input                Disable all interactive prompts (for CI/agents)\n      --no-learn                Disable the teach/recall learning loop for this invocation\n      --plain                   Output as plain tab-separated text\n      --profile string          Apply values from a saved run profile; this does not select a client (see 'pinecone-pp-cli profile list')\n      --quiet                   Bare output, one value per line\n      --rate-limit float        Max requests per second (0 to disable)\n      --receipt                 Write an atomic private run receipt\n      --receipt-file string     Override the run receipt destination\n      --select string           Comma-separated fields to include in output (e.g. --select created_at,host,instructions)\n      --timeout duration        Request timeout (default 1m0s)\n      --yes                     Skip confirmation prompts (for agents and scripts)\n"
+      "output_sample": "Get a description of a model hosted by Pinecone.\n\nUsage:\n  pinecone-pp-cli models get \u003cmodel_name\u003e [flags]\n\nExamples:\n  pinecone-pp-cli models get multilingual-e5-large --x-pinecone-api-version 2026-04\n\nFlags:\n  -h, --help                            help for get\n      --x-pinecone-api-version string   Required date-based version header (default \"2026-04\")\n\nGlobal Flags:\n      --agent                   Set all agent-friendly defaults (--json --compact --no-input --no-color --yes)\n      --allow-partial-failure   Downgrade response-body partial-failure (e.g. partialFailureError) to a warning instead of a non-zero exit\n      --audit-dir string        Aggregate the receipt and index under this audit directory\n      --client-profile string   Select the tenant-gated client profile (env: PRINTING_PRESS_CLIENT_PROFILE)\n      --compact                 Return only key fields (id, name, status, timestamps) for minimal token usage\n      --config string           Config file path\n      --csv                     Output as CSV (table and array responses)\n      --data-source string      Data source for read commands: auto (live with local fallback), live (API only), local (synced data only) (default \"auto\")\n      --deliver string          Route output to a sink: stdout (default), file:\u003cpath\u003e, webhook:\u003curl\u003e\n      --dry-run                 Show request without sending\n      --home string             Root directory for config, data, state, and cache files\n      --human-friendly          Enable colored output and rich formatting\n      --idempotent              Treat already-existing create results as a successful no-op\n      --ignore-missing          Treat missing delete targets as a successful no-op\n      --json                    Output as JSON\n      --max-age duration        Maximum acceptable age of local-store data before a stderr hint suggests sync; 0 disables (default 30m0s)\n      --no-cache                Bypass response cache\n      --no-color                Disable colored output\n      --no-input                Disable all interactive prompts (for CI/agents)\n      --no-learn                Disable the teach/recall learning loop for this invocation\n      --plain                   Output as plain tab-separated text\n      --profile string          Apply values from a saved run profile; this does not select a client (see 'pinecone-pp-cli profile list')\n      --quiet                   Bare output, one value per line\n      --rate-limit float        Max requests per second (0 to disable)\n      --receipt                 Write an atomic private run receipt\n      --receipt-file string     Override the run receipt destination\n      --select string           Comma-separated fields to include in output (e.g. --select created_at,host,instructions)\n      --timeout duration        Request timeout (default 1m0s)\n      --yes                     Skip confirmation prompts (for agents and scripts)\n"
     },
     {
       "command": "models get",
@@ -3810,7 +3819,7 @@
         "--help"
       ],
       "status": "pass",
-      "output_sample": "List the embedding and reranking models hosted by Pinecone.\n\nUsage:\n  pinecone-pp-cli models list [flags]\n\nExamples:\n  pinecone-pp-cli models list --x-pinecone-api-version example-value\n\nFlags:\n  -h, --help                            help for list\n      --type string                     Filter models by type ('embed' or 'rerank').\n      --vector-type type=embed          Filter embedding models by vector type ('dense' or 'sparse'). Only relevant when type=embed.\n      --x-pinecone-api-version string   Required date-based version header (default \"2026-04\")\n\nGlobal Flags:\n      --agent                   Set all agent-friendly defaults (--json --compact --no-input --no-color --yes)\n      --allow-partial-failure   Downgrade response-body partial-failure (e.g. partialFailureError) to a warning instead of a non-zero exit\n      --audit-dir string        Aggregate the receipt and index under this audit directory\n      --client-profile string   Select the tenant-gated client profile (env: PRINTING_PRESS_CLIENT_PROFILE)\n      --compact                 Return only key fields (id, name, status, timestamps) for minimal token usage\n      --config string           Config file path\n      --csv                     Output as CSV (table and array responses)\n      --data-source string      Data source for read commands: auto (live with local fallback), live (API only), local (synced data only) (default \"auto\")\n      --deliver string          Route output to a sink: stdout (default), file:\u003cpath\u003e, webhook:\u003curl\u003e\n      --dry-run                 Show request without sending\n      --home string             Root directory for config, data, state, and cache files\n      --human-friendly          Enable colored output and rich formatting\n      --idempotent              Treat already-existing create results as a successful no-op\n      --ignore-missing          Treat missing delete targets as a successful no-op\n      --json                    Output as JSON\n      --max-age duration        Maximum acceptable age of local-store data before a stderr hint suggests sync; 0 disables (default 30m0s)\n      --no-cache                Bypass response cache\n      --no-color                Disable colored output\n      --no-input                Disable all interactive prompts (for CI/agents)\n      --no-learn                Disable the teach/recall learning loop for this invocation\n      --plain                   Output as plain tab-separated text\n      --profile string          Apply values from a saved run profile; this does not select a client (see 'pinecone-pp-cli profile list')\n      --quiet                   Bare output, one value per line\n      --rate-limit float        Max requests per second (0 to disable)\n      --receipt                 Write an atomic private run receipt\n      --receipt-file string     Override the run receipt destination\n      --select string           Comma-separated fields to include in output (e.g. --select created_at,host,instructions)\n      --timeout duration        Request timeout (default 1m0s)\n      --yes                     Skip confirmation prompts (for agents and scripts)\n"
+      "output_sample": "List the embedding and reranking models hosted by Pinecone.\n\nUsage:\n  pinecone-pp-cli models list [flags]\n\nExamples:\n  pinecone-pp-cli models list --x-pinecone-api-version 2026-04\n\nFlags:\n  -h, --help                            help for list\n      --type string                     Filter models by type ('embed' or 'rerank').\n      --vector-type type=embed          Filter embedding models by vector type ('dense' or 'sparse'). Only relevant when type=embed.\n      --x-pinecone-api-version string   Required date-based version header (default \"2026-04\")\n\nGlobal Flags:\n      --agent                   Set all agent-friendly defaults (--json --compact --no-input --no-color --yes)\n      --allow-partial-failure   Downgrade response-body partial-failure (e.g. partialFailureError) to a warning instead of a non-zero exit\n      --audit-dir string        Aggregate the receipt and index under this audit directory\n      --client-profile string   Select the tenant-gated client profile (env: PRINTING_PRESS_CLIENT_PROFILE)\n      --compact                 Return only key fields (id, name, status, timestamps) for minimal token usage\n      --config string           Config file path\n      --csv                     Output as CSV (table and array responses)\n      --data-source string      Data source for read commands: auto (live with local fallback), live (API only), local (synced data only) (default \"auto\")\n      --deliver string          Route output to a sink: stdout (default), file:\u003cpath\u003e, webhook:\u003curl\u003e\n      --dry-run                 Show request without sending\n      --home string             Root directory for config, data, state, and cache files\n      --human-friendly          Enable colored output and rich formatting\n      --idempotent              Treat already-existing create results as a successful no-op\n      --ignore-missing          Treat missing delete targets as a successful no-op\n      --json                    Output as JSON\n      --max-age duration        Maximum acceptable age of local-store data before a stderr hint suggests sync; 0 disables (default 30m0s)\n      --no-cache                Bypass response cache\n      --no-color                Disable colored output\n      --no-input                Disable all interactive prompts (for CI/agents)\n      --no-learn                Disable the teach/recall learning loop for this invocation\n      --plain                   Output as plain tab-separated text\n      --profile string          Apply values from a saved run profile; this does not select a client (see 'pinecone-pp-cli profile list')\n      --quiet                   Bare output, one value per line\n      --rate-limit float        Max requests per second (0 to disable)\n      --receipt                 Write an atomic private run receipt\n      --receipt-file string     Override the run receipt destination\n      --select string           Comma-separated fields to include in output (e.g. --select created_at,host,instructions)\n      --timeout duration        Request timeout (default 1m0s)\n      --yes                     Skip confirmation prompts (for agents and scripts)\n"
     },
     {
       "command": "models list",
@@ -3819,12 +3828,10 @@
         "models",
         "list",
         "--x-pinecone-api-version",
-        "example-value"
+        "2026-04"
       ],
-      "status": "fail",
-      "exit_code": 3,
-      "reason": "exit 3",
-      "output_sample": "Error: GET https://api.pinecone.io/models returned HTTP 404\nhint: resource not found. Run the 'list' command to see available items\n"
+      "status": "pass",
+      "output_sample": "{\n  \"meta\": {\n    \"source\": \"live\"\n  },\n  \"results\": [\n    {\n      \"model\": \"llama-text-embed-v2\",\n      \"short_description\": \"A high performance dense embedding model optimized for multilingual and cross-lingual text question-answering retrieval with support for long documents (up to 2048 tokens) and dynamic embedding size (Matryoshka Embeddings).\",\n      \"type\": \"embed\",\n      \"vector_type\": \"dense\",\n      \"default_dimension\": 1024,\n      \"modality\": \"text\",\n      \"max_sequence_length\": 2048,\n      \"max_batch_size\": 96,\n      \"provider_name\": \"NVIDIA\",\n      \"supported_metrics\": [\n        \"cosine\",\n        \"dotproduct\"\n      ],\n      \"supported_dimensions\": [\n        384,\n        512,\n        768,\n        1024,\n        2048\n      ],\n      \"supported_parameters\": [\n        {\n          \"parameter\": \"input_type\",\n          \"required\": true,\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"query\",\n            \"passage\"\n          ]\n        },\n        {\n          \"parameter\": \"truncate\",\n          \"required\": false,\n          \"default\": \"END\",\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"END\",\n            \"NONE\",\n            \"START\"\n          ]\n        },\n        {\n          \"parameter\": \"dimension\",\n          \"required\": false,\n          \"default\": 1024,\n          \"type\": \"one_of\",\n          \"value_type\": \"integer\",\n          \"allowed_values\": [\n            384,\n            512,\n            768,\n            1024,\n            2048\n          ]\n        }\n      ]\n    },\n    {\n      \"model\": \"multilingual-e5-large\",\n      \"short_description\": \"A high-performance dense embedding model trained on a mixture of multilingual datasets. It works well on messy data and short queries expected to return medium-length passages of text (1-2 paragraphs)\",\n      \"type\": \"embed\",\n      \"vector_type\": \"dense\",\n      \"default_dimension\": 1024,\n      \"modality\": \"text\",\n      \"max_sequence_length\": 507,\n      \"max_batch_size\": 96,\n      \"provider_name\": \"Microsoft\",\n      \"supported_metrics\": [\n        \"cosine\",\n        \"euclidean\"\n      ],\n      \"supported_dimensions\": [\n        1024\n      ],\n      \"supported_parameters\": [\n        {\n          \"parameter\": \"input_type\",\n          \"required\": true,\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"query\",\n            \"passage\"\n          ]\n        },\n        {\n          \"parameter\": \"truncate\",\n          \"required\": false,\n          \"default\": \"END\",\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"END\",\n            \"NONE\"\n          ]\n        }\n      ]\n    },\n    {\n      \"model\": \"pinecone-sparse-english-v0\",\n      \"short_description\": \"A sparse embedding model for converting text to sparse vectors for keyword or hybrid semantic/keyword search. Built on the innovations of the DeepImpact architecture.\",\n      \"type\": \"embed\",\n      \"vector_type\": \"sparse\",\n      \"modality\": \"text\",\n      \"max_sequence_length\": 512,\n      \"max_batch_size\": 96,\n      \"provider_name\": \"Pinecone\",\n      \"supported_metrics\": [\n        \"dotproduct\"\n      ],\n      \"supported_parameters\": [\n        {\n          \"parameter\": \"input_type\",\n          \"required\": true,\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"query\",\n            \"passage\"\n          ]\n        },\n        {\n          \"parameter\": \"truncate\",\n          \"required\": false,\n          \"default\": \"END\",\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"END\",\n            \"NONE\"\n          ]\n        },\n        {\n          \"parameter\": \"return_tokens\",\n          \"required\": false,\n          \"default\": false,\n          \"type\": \"any\",\n          \"value_type\": \"boolean\"\n        },\n        {\n          \"parameter\": \"max_tokens_per_sequence\",\n          \"required\": false,\n          \"default\": 512,\n          \"type\": \"one_of\",\n          \"value_…[truncated]"
     },
     {
       "command": "models list",
@@ -3833,13 +3840,11 @@
         "models",
         "list",
         "--x-pinecone-api-version",
-        "example-value",
+        "2026-04",
         "--json"
       ],
-      "status": "fail",
-      "exit_code": 3,
-      "reason": "exit 3",
-      "output_sample": "Error: GET https://api.pinecone.io/models returned HTTP 404\nhint: resource not found. Run the 'list' command to see available items\n"
+      "status": "pass",
+      "output_sample": "{\n  \"meta\": {\n    \"source\": \"live\"\n  },\n  \"results\": [\n    {\n      \"model\": \"llama-text-embed-v2\",\n      \"short_description\": \"A high performance dense embedding model optimized for multilingual and cross-lingual text question-answering retrieval with support for long documents (up to 2048 tokens) and dynamic embedding size (Matryoshka Embeddings).\",\n      \"type\": \"embed\",\n      \"vector_type\": \"dense\",\n      \"default_dimension\": 1024,\n      \"modality\": \"text\",\n      \"max_sequence_length\": 2048,\n      \"max_batch_size\": 96,\n      \"provider_name\": \"NVIDIA\",\n      \"supported_metrics\": [\n        \"cosine\",\n        \"dotproduct\"\n      ],\n      \"supported_dimensions\": [\n        384,\n        512,\n        768,\n        1024,\n        2048\n      ],\n      \"supported_parameters\": [\n        {\n          \"parameter\": \"input_type\",\n          \"required\": true,\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"query\",\n            \"passage\"\n          ]\n        },\n        {\n          \"parameter\": \"truncate\",\n          \"required\": false,\n          \"default\": \"END\",\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"END\",\n            \"NONE\",\n            \"START\"\n          ]\n        },\n        {\n          \"parameter\": \"dimension\",\n          \"required\": false,\n          \"default\": 1024,\n          \"type\": \"one_of\",\n          \"value_type\": \"integer\",\n          \"allowed_values\": [\n            384,\n            512,\n            768,\n            1024,\n            2048\n          ]\n        }\n      ]\n    },\n    {\n      \"model\": \"multilingual-e5-large\",\n      \"short_description\": \"A high-performance dense embedding model trained on a mixture of multilingual datasets. It works well on messy data and short queries expected to return medium-length passages of text (1-2 paragraphs)\",\n      \"type\": \"embed\",\n      \"vector_type\": \"dense\",\n      \"default_dimension\": 1024,\n      \"modality\": \"text\",\n      \"max_sequence_length\": 507,\n      \"max_batch_size\": 96,\n      \"provider_name\": \"Microsoft\",\n      \"supported_metrics\": [\n        \"cosine\",\n        \"euclidean\"\n      ],\n      \"supported_dimensions\": [\n        1024\n      ],\n      \"supported_parameters\": [\n        {\n          \"parameter\": \"input_type\",\n          \"required\": true,\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"query\",\n            \"passage\"\n          ]\n        },\n        {\n          \"parameter\": \"truncate\",\n          \"required\": false,\n          \"default\": \"END\",\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"END\",\n            \"NONE\"\n          ]\n        }\n      ]\n    },\n    {\n      \"model\": \"pinecone-sparse-english-v0\",\n      \"short_description\": \"A sparse embedding model for converting text to sparse vectors for keyword or hybrid semantic/keyword search. Built on the innovations of the DeepImpact architecture.\",\n      \"type\": \"embed\",\n      \"vector_type\": \"sparse\",\n      \"modality\": \"text\",\n      \"max_sequence_length\": 512,\n      \"max_batch_size\": 96,\n      \"provider_name\": \"Pinecone\",\n      \"supported_metrics\": [\n        \"dotproduct\"\n      ],\n      \"supported_parameters\": [\n        {\n          \"parameter\": \"input_type\",\n          \"required\": true,\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"query\",\n            \"passage\"\n          ]\n        },\n        {\n          \"parameter\": \"truncate\",\n          \"required\": false,\n          \"default\": \"END\",\n          \"type\": \"one_of\",\n          \"value_type\": \"string\",\n          \"allowed_values\": [\n            \"END\",\n            \"NONE\"\n          ]\n        },\n        {\n          \"parameter\": \"return_tokens\",\n          \"required\": false,\n          \"default\": false,\n          \"type\": \"any\",\n          \"value_type\": \"boolean\"\n        },\n        {\n          \"parameter\": \"max_tokens_per_sequence\",\n          \"required\": false,\n          \"default\": 512,\n          \"type\": \"one_of\",\n          \"value_…[truncated]"
     },
     {
       "command": "models list",
@@ -4027,38 +4032,33 @@
         "--help"
       ],
       "status": "pass",
-      "output_sample": "Obtain an access token for a service account using the OAuth2 client credentials flow.\n\nUsage:\n  pinecone-pp-cli oauth [flags]\n\nExamples:\n  pinecone-pp-cli oauth --x-pinecone-api-version example-value --audience example-value\n\nFlags:\n      --audience string                 The audience for the token.\n      --client-id string                The service account's client ID.\n      --client-secret string            The service account's client secret.\n      --grant-type string               The type of grant to use.\n  -h, --help                            help for oauth\n      --x-pinecone-api-version string   Required date-based version header (default \"2026-04\")\n\nGlobal Flags:\n      --agent                   Set all agent-friendly defaults (--json --compact --no-input --no-color --yes)\n      --allow-partial-failure   Downgrade response-body partial-failure (e.g. partialFailureError) to a warning instead of a non-zero exit\n      --audit-dir string        Aggregate the receipt and index under this audit directory\n      --client-profile string   Select the tenant-gated client profile (env: PRINTING_PRESS_CLIENT_PROFILE)\n      --compact                 Return only key fields (id, name, status, timestamps) for minimal token usage\n      --config string           Config file path\n      --csv                     Output as CSV (table and array responses)\n      --data-source string      Data source for read commands: auto (live with local fallback), live (API only), local (synced data only) (default \"auto\")\n      --deliver string          Route output to a sink: stdout (default), file:\u003cpath\u003e, webhook:\u003curl\u003e\n      --dry-run                 Show request without sending\n      --home string             Root directory for config, data, state, and cache files\n      --human-friendly          Enable colored output and rich formatting\n      --idempotent              Treat already-existing create results as a successful no-op\n      --ignore-missing          Treat missing delete targets as a successful no-op\n      --json                    Output as JSON\n      --max-age duration        Maximum acceptable age of local-store data before a stderr hint suggests sync; 0 disables (default 30m0s)\n      --no-cache                Bypass response cache\n      --no-color                Disable colored output\n      --no-input                Disable all interactive prompts (for CI/agents)\n      --no-learn                Disable the teach/recall learning loop for this invocation\n      --plain                   Output as plain tab-separated text\n      --profile string          Apply values from a saved run profile; this does not select a client (see 'pinecone-pp-cli profile list')\n      --quiet                   Bare output, one value per line\n      --rate-limit float        Max requests per second (0 to disable)\n      --receipt                 Write an atomic private run receipt\n      --receipt-file string     Override the run receipt destination\n      --select string           Comma-separated fields to include in output (e.g. --select created_at,host,instructions)\n      --timeout duration        Request timeout (default 1m0s)\n      --yes                     Skip confirmation prompts (for agents and scripts)\n"
+      "output_sample": "Obtain an access token for a service account using the OAuth2 client credentials flow.\n\nUsage:\n  pinecone-pp-cli oauth [flags]\n\nExamples:\n  pinecone-pp-cli oauth --audience https://api.pinecone.io --client-id svc-123 --client-secret secret --grant-type client_credentials\n\nFlags:\n      --audience string                 The audience for the token.\n      --client-id string                The service account's client ID.\n      --client-secret string            The service account's client secret.\n      --grant-type string               The type of grant to use.\n  -h, --help                            help for oauth\n      --x-pinecone-api-version string   Required date-based version header (default \"2026-04\")\n\nGlobal Flags:\n      --agent                   Set all agent-friendly defaults (--json --compact --no-input --no-color --yes)\n      --allow-partial-failure   Downgrade response-body partial-failure (e.g. partialFailureError) to a warning instead of a non-zero exit\n      --audit-dir string        Aggregate the receipt and index under this audit directory\n      --client-profile string   Select the tenant-gated client profile (env: PRINTING_PRESS_CLIENT_PROFILE)\n      --compact                 Return only key fields (id, name, status, timestamps) for minimal token usage\n      --config string           Config file path\n      --csv                     Output as CSV (table and array responses)\n      --data-source string      Data source for read commands: auto (live with local fallback), live (API only), local (synced data only) (default \"auto\")\n      --deliver string          Route output to a sink: stdout (default), file:\u003cpath\u003e, webhook:\u003curl\u003e\n      --dry-run                 Show request without sending\n      --home string             Root directory for config, data, state, and cache files\n      --human-friendly          Enable colored output and rich formatting\n      --idempotent              Treat already-existing create results as a successful no-op\n      --ignore-missing          Treat missing delete targets as a successful no-op\n      --json                    Output as JSON\n      --max-age duration        Maximum acceptable age of local-store data before a stderr hint suggests sync; 0 disables (default 30m0s)\n      --no-cache                Bypass response cache\n      --no-color                Disable colored output\n      --no-input                Disable all interactive prompts (for CI/agents)\n      --no-learn                Disable the teach/recall learning loop for this invocation\n      --plain                   Output as plain tab-separated text\n      --profile string          Apply values from a saved run profile; this does not select a client (see 'pinecone-pp-cli profile list')\n      --quiet                   Bare output, one value per line\n      --rate-limit float        Max requests per second (0 to disable)\n      --receipt                 Write an atomic private run receipt\n      --receipt-file string     Override the run receipt destination\n      --select string           Comma-separated fields to include in output (e.g. --select created_at,host,instructions)\n      --timeout duration        Request timeout (default 1m0s)\n      --yes                     Skip confirmation prompts (for agents and scripts)\n"
     },
     {
       "command": "oauth",
       "kind": "happy_path",
       "args": [
         "oauth",
-        "--x-pinecone-api-version",
-        "example-value",
         "--audience",
-        "example-value"
+        "https://api.pinecone.io",
+        "--client-id",
+        "svc-123",
+        "--client-secret",
+        "secret",
+        "--grant-type",
+        "client_credentials"
       ],
-      "status": "fail",
-      "exit_code": 2,
-      "reason": "exit 2",
-      "output_sample": "Error: required flag \"client-id\" not set\n"
+      "status": "unverified",
+      "exit_code": 4,
+      "reason": "unverified-needs-access",
+      "output_sample": "Error: POST https://login.pinecone.io/oauth/token returned HTTP 401: {\"error\":\"access_denied\",\"error_description\":\"Unauthorized\"}\nhint: check your API key. Set your API key with: export PINECONE_API_KEY=\"your-token-here\"\n      Get a key at: https://app.pinecone.io/\n      Run 'pinecone-pp-cli doctor' to check auth status.\n"
     },
     {
       "command": "oauth",
       "kind": "json_fidelity",
-      "args": [
-        "oauth",
-        "--x-pinecone-api-version",
-        "example-value",
-        "--audience",
-        "example-value",
-        "--json"
-      ],
-      "status": "fail",
-      "exit_code": 2,
-      "reason": "exit 2",
-      "output_sample": "Error: required flag \"client-id\" not set\n"
+      "args": null,
+      "status": "unverified",
+      "reason": "unverified-needs-access"
     },
     {
       "command": "oauth",
@@ -4439,27 +4439,38 @@
     {
       "command": "prune",
       "kind": "happy_path",
-      "args": null,
-      "status": "skip",
-      "reason": "non-id positional \"index\" at depth 0"
+      "args": [
+        "prune",
+        "travel-chat-embeddings",
+        "--namespace",
+        "__default__",
+        "--older-than",
+        "90d"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"namespace\": \"__default__\",\n  \"older_than\": \"90d\",\n  \"count\": 0,\n  \"ids\": null,\n  \"dry_run\": true\n}\n"
     },
     {
       "command": "prune",
       "kind": "json_fidelity",
-      "args": null,
-      "status": "skip",
-      "reason": "non-id positional \"index\" at depth 0"
+      "args": [
+        "prune",
+        "travel-chat-embeddings",
+        "--namespace",
+        "__default__",
+        "--older-than",
+        "90d",
+        "--json"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"namespace\": \"__default__\",\n  \"older_than\": \"90d\",\n  \"count\": 0,\n  \"ids\": null,\n  \"dry_run\": true\n}\n"
     },
     {
       "command": "prune",
       "kind": "error_path",
-      "args": [
-        "prune",
-        "__printing_press_invalid__"
-      ],
-      "status": "fail",
-      "reason": "expected non-zero exit for invalid argument",
-      "output_sample": "{\n  \"index\": \"__printing_press_invalid__\",\n  \"namespace\": \"\",\n  \"older_than\": \"90d\",\n  \"count\": 0,\n  \"ids\": null,\n  \"dry_run\": true\n}\n"
+      "args": null,
+      "status": "skip",
+      "reason": "no-error-path-probe annotation"
     },
     {
       "command": "query",
@@ -4784,16 +4795,27 @@
     {
       "command": "snapshot",
       "kind": "happy_path",
-      "args": null,
-      "status": "skip",
-      "reason": "non-id positional \"index\" at depth 0"
+      "args": [
+        "snapshot",
+        "travel-chat-embeddings",
+        "--note",
+        "weekly"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"captured_at\": \"2026-08-13T18:25:10Z\",\n  \"note\": \"weekly\",\n  \"total_vectors\": 2928,\n  \"dimension\": 1536,\n  \"metric\": \"cosine\",\n  \"host\": \"travel-chat-embeddings-gpn9l3l.svc.aped-4627-b74a.pinecone.io\",\n  \"namespaces\": {\n    \"__default__\": 2928\n  }\n}\n"
     },
     {
       "command": "snapshot",
       "kind": "json_fidelity",
-      "args": null,
-      "status": "skip",
-      "reason": "non-id positional \"index\" at depth 0"
+      "args": [
+        "snapshot",
+        "travel-chat-embeddings",
+        "--note",
+        "weekly",
+        "--json"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"captured_at\": \"2026-08-13T18:25:11Z\",\n  \"note\": \"weekly\",\n  \"total_vectors\": 2928,\n  \"dimension\": 1536,\n  \"metric\": \"cosine\",\n  \"host\": \"travel-chat-embeddings-gpn9l3l.svc.aped-4627-b74a.pinecone.io\",\n  \"namespaces\": {\n    \"__default__\": 2928\n  }\n}\n"
     },
     {
       "command": "snapshot",
@@ -4829,7 +4851,7 @@
         "7d"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-08-06T17:45:46Z\",\n  \"snapshots\": [],\n  \"total_delta\": 0\n}\n"
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-08-06T18:25:12Z\",\n  \"snapshots\": [\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"captured_at\": \"2026-08-13T18:25:10Z\",\n      \"note\": \"weekly\",\n      \"total_vectors\": 2928\n    },\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"captured_at\": \"2026-08-13T18:25:11Z\",\n      \"note\": \"weekly\",\n      \"total_vectors\": 2928\n    }\n  ],\n  \"total_delta\": 0,\n  \"notes\": [\n    \"weekly\",\n    \"weekly\"\n  ]\n}\n"
     },
     {
       "command": "snapshot diff",
@@ -4844,7 +4866,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-08-06T17:45:46Z\",\n  \"snapshots\": [],\n  \"total_delta\": 0\n}\n"
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-08-06T18:25:12Z\",\n  \"snapshots\": [\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"captured_at\": \"2026-08-13T18:25:10Z\",\n      \"note\": \"weekly\",\n      \"total_vectors\": 2928\n    },\n    {\n      \"index\": \"travel-chat-embeddings\",\n      \"captured_at\": \"2026-08-13T18:25:11Z\",\n      \"note\": \"weekly\",\n      \"total_vectors\": 2928\n    }\n  ],\n  \"total_delta\": 0,\n  \"notes\": [\n    \"weekly\",\n    \"weekly\"\n  ]\n}\n"
     },
     {
       "command": "snapshot diff",
@@ -4870,7 +4892,7 @@
         "sync"
       ],
       "status": "pass",
-      "output_sample": "{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-projects\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-role-bindings\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-projects\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/projects\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/projects returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-service-accounts\"}\n{\"event\":\"sync_start\",\"resource\":\"assistants\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"backups\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-service-accounts\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/service-accounts\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/service-accounts returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"bulk\"}\n{\"event\":\"sync_error\",\"resource\":\"assistants\",\"status\":404,\"method\":\"GET\",\"path\":\"/assistants\",\"error\":\"GET /assistants returned HTTP 404\"}\n{\"event\":\"sync_start\",\"resource\":\"collections\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-role-bindings\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/role-bindings\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/role-bindings returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"history\"}\n{\"event\":\"sync_error\",\"resource\":\"history\",\"error\":\"PINECONE_SCHEDULE_ID not set; export PINECONE_SCHEDULE_ID=\\u003cvalue\\u003e\"}\n{\"event\":\"sync_start\",\"resource\":\"indexes\"}\n{\"event\":\"sync_warning\",\"resource\":\"indexes\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_complete\",\"resource\":\"backups\",\"total\":0,\"duration_ms\":412}\n{\"event\":\"sync_start\",\"resource\":\"models\"}\n{\"event\":\"sync_warning\",\"resource\":\"models\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_progress\",\"resource\":\"indexes\",\"fetched\":1}\n{\"event\":\"sync_complete\",\"resource\":\"collections\",\"total\":0,\"duration_ms\":425}\n{\"event\":\"sync_start\",\"resource\":\"namespaces\"}\n{\"event\":\"sync_complete\",\"resource\":\"indexes\",\"total\":1,\"duration_ms\":425}\n{\"event\":\"sync_start\",\"resource\":\"restore-jobs\"}\n{\"event\":\"…[truncated]"
+      "output_sample": "{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-projects\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-role-bindings\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-service-accounts\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"assistants\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-projects\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/projects\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/projects returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"backups\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-role-bindings\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/role-bindings\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/role-bindings returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"bulk\"}\n{\"event\":\"sync_error\",\"resource\":\"assistants\",\"status\":404,\"method\":\"GET\",\"path\":\"/assistants\",\"error\":\"GET /assistants returned HTTP 404\"}\n{\"event\":\"sync_start\",\"resource\":\"collections\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-service-accounts\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/service-accounts\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/service-accounts returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"history\"}\n{\"event\":\"sync_error\",\"resource\":\"history\",\"error\":\"PINECONE_SCHEDULE_ID not set; export PINECONE_SCHEDULE_ID=\\u003cvalue\\u003e\"}\n{\"event\":\"sync_start\",\"resource\":\"indexes\"}\n{\"event\":\"sync_warning\",\"resource\":\"indexes\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_error\",\"resource\":\"bulk\",\"status\":404,\"method\":\"GET\",\"path\":\"/bulk/imports\",\"error\":\"GET /bulk/imports returned HTTP 404\"}\n{\"event\":\"sync_start\",\"resource\":\"models\"}\n{\"event\":\"sync_warning\",\"resource\":\"models\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_complete\",\"resource\":\"collections\",\"total\":0,\"duration_ms\":462}\n{\"event\":\"sync_start\",\"resource\":\"namespaces\"}\n{\"event\":\"sync_progress\",\"resource\":\"models\",\"fetched\":7}\n{\"event\":\"sync_complete\",\"resource\":\"models\",\"total\":7,\"duration_ms\":295…[truncated]"
     },
     {
       "command": "sync",
@@ -4880,7 +4902,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-projects\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-role-bindings\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-service-accounts\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-projects\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/projects\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/projects returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"assistants\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"backups\"}\n{\"event\":\"sync_error\",\"resource\":\"assistants\",\"status\":404,\"method\":\"GET\",\"path\":\"/assistants\",\"error\":\"GET /assistants returned HTTP 404\"}\n{\"event\":\"sync_start\",\"resource\":\"bulk\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-role-bindings\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/role-bindings\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/role-bindings returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"collections\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-service-accounts\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/service-accounts\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/service-accounts returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"history\"}\n{\"event\":\"sync_error\",\"resource\":\"history\",\"error\":\"PINECONE_SCHEDULE_ID not set; export PINECONE_SCHEDULE_ID=\\u003cvalue\\u003e\"}\n{\"event\":\"sync_start\",\"resource\":\"indexes\"}\n{\"event\":\"sync_warning\",\"resource\":\"indexes\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_complete\",\"resource\":\"backups\",\"total\":0,\"duration_ms\":348}\n{\"event\":\"sync_start\",\"resource\":\"models\"}\n{\"event\":\"sync_warning\",\"resource\":\"models\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_error\",\"resource\":\"bulk\",\"status\":404,\"method\":\"GET\",\"path\":\"/bulk/imports\",\"error\":\"GET /bulk/imports returned HTTP 404\"}\n{\"event\":\"sync_start\",\"resource\":\"namespaces\"}\n{\"event\":\"sync_complete\",\"resource\":\"collections\",\"total\":0,\"duration_ms\":348}\n{\"event\":\"sync_start\",\"resource\":\"restore-jobs\"}\n{\"even…[truncated]"
+      "output_sample": "{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-projects\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-role-bindings\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-service-accounts\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"assistants\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-projects\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/projects\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/projects returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"backups\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-role-bindings\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/role-bindings\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/role-bindings returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"bulk\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-service-accounts\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/service-accounts\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/service-accounts returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"collections\"}\n{\"event\":\"sync_error\",\"resource\":\"assistants\",\"status\":404,\"method\":\"GET\",\"path\":\"/assistants\",\"error\":\"GET /assistants returned HTTP 404\"}\n{\"event\":\"sync_start\",\"resource\":\"history\"}\n{\"event\":\"sync_error\",\"resource\":\"history\",\"error\":\"PINECONE_SCHEDULE_ID not set; export PINECONE_SCHEDULE_ID=\\u003cvalue\\u003e\"}\n{\"event\":\"sync_start\",\"resource\":\"indexes\"}\n{\"event\":\"sync_warning\",\"resource\":\"indexes\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_complete\",\"resource\":\"backups\",\"total\":0,\"duration_ms\":326}\n{\"event\":\"sync_start\",\"resource\":\"models\"}\n{\"event\":\"sync_warning\",\"resource\":\"models\",\"reason\":\"resource_not_incremental\",\"message\":\"endpoint does not declare a temporal filter parameter; incremental sync has no effect for this resource\"}\n{\"event\":\"sync_error\",\"resource\":\"bulk\",\"status\":404,\"method\":\"GET\",\"path\":\"/bulk/imports\",\"error\":\"GET /bulk/imports returned HTTP 404\"}\n{\"event\":\"sync_start\",\"resource\":\"namespaces\"}\n{\"event\":\"sync_error\",\"resource\":\"namespaces\",\"status\":404,\"method\":\"GET\",\"path\":\"/namespaces\",\"error\":\"GET /namespaces returned HTTP …[truncated]"
     },
     {
       "command": "sync",
@@ -5156,16 +5178,32 @@
     {
       "command": "text-query",
       "kind": "happy_path",
-      "args": null,
-      "status": "skip",
-      "reason": "non-id positional \"index\" at depth 0"
+      "args": [
+        "text-query",
+        "travel-chat-embeddings",
+        "--text",
+        "visa on arrival for thailand",
+        "--top-k",
+        "5",
+        "--json"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"query\": \"visa on arrival for thailand\",\n  \"model\": \"multilingual-e5-large\",\n  \"matches\": [],\n  \"note\": \"no Pinecone hosted embedding model matches this index's 1536-dimension vectors; embed externally and use 'query' instead\"\n}\n"
     },
     {
       "command": "text-query",
       "kind": "json_fidelity",
-      "args": null,
-      "status": "skip",
-      "reason": "non-id positional \"index\" at depth 0"
+      "args": [
+        "text-query",
+        "travel-chat-embeddings",
+        "--text",
+        "visa on arrival for thailand",
+        "--top-k",
+        "5",
+        "--json"
+      ],
+      "status": "pass",
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"query\": \"visa on arrival for thailand\",\n  \"model\": \"multilingual-e5-large\",\n  \"matches\": [],\n  \"note\": \"no Pinecone hosted embedding model matches this index's 1536-dimension vectors; embed externally and use 'query' instead\"\n}\n"
     },
     {
       "command": "text-query",
@@ -5200,7 +5238,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-07-14T17:45:52Z\",\n  \"snapshots\": null,\n  \"growth_per_day\": 0,\n  \"projected_vectors_30d\": 0\n}\n"
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-07-14T18:25:18Z\",\n  \"snapshots\": [\n    {\n      \"captured_at\": \"2026-08-13T18:25:10Z\",\n      \"total_vectors\": 2928,\n      \"note\": \"weekly\"\n    },\n    {\n      \"captured_at\": \"2026-08-13T18:25:11Z\",\n      \"total_vectors\": 2928,\n      \"note\": \"weekly\"\n    }\n  ],\n  \"growth_per_day\": 0,\n  \"projected_vectors_30d\": 2928,\n  \"namespace_shifts\": {\n    \"__default__\": {\n      \"first\": 2928,\n      \"last\": 2928,\n      \"delta\": 0\n    }\n  }\n}\n"
     },
     {
       "command": "usage",
@@ -5214,7 +5252,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-07-14T17:45:52Z\",\n  \"snapshots\": null,\n  \"growth_per_day\": 0,\n  \"projected_vectors_30d\": 0\n}\n"
+      "output_sample": "{\n  \"index\": \"travel-chat-embeddings\",\n  \"since\": \"2026-07-14T18:25:18Z\",\n  \"snapshots\": [\n    {\n      \"captured_at\": \"2026-08-13T18:25:10Z\",\n      \"total_vectors\": 2928,\n      \"note\": \"weekly\"\n    },\n    {\n      \"captured_at\": \"2026-08-13T18:25:11Z\",\n      \"total_vectors\": 2928,\n      \"note\": \"weekly\"\n    }\n  ],\n  \"growth_per_day\": 0,\n  \"projected_vectors_30d\": 2928,\n  \"namespace_shifts\": {\n    \"__default__\": {\n      \"first\": 2928,\n      \"last\": 2928,\n      \"delta\": 0\n    }\n  }\n}\n"
     },
     {
       "command": "usage",
@@ -5525,7 +5563,7 @@
         "archive"
       ],
       "status": "pass",
-      "output_sample": "{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\nArchived 0 items across 3 resources to /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/share/pinecone-pp-cli/data.db\n  admin: error: fetching admin: GET /admin/users returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n  admin-invites: error: fetching admin-invites: GET /admin/invites returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n  admin-organizations: error: fetching admin-organizations: GET /admin/organizations returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n"
+      "output_sample": "{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\nArchived 0 items across 3 resources to /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/share/pinecone-pp-cli/data.db\n  admin: error: fetching admin: GET /admin/users returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n  admin-invites: error: fetching admin-invites: GET /admin/invites returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n  admin-organizations: error: fetching admin-organizations: GET /admin/organizations returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n"
     },
     {
       "command": "workflow archive",
@@ -5536,7 +5574,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"resources_synced\": 3,\n  \"store_path\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/share/pinecone-pp-cli/data.db\",\n  \"timestamp\": \"2026-08-13T17:45:58Z\",\n  \"total_items\": 0\n}\n{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n  admin: error: fetching admin: GET /admin/users returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n  admin-invites: error: fetching admin-invites: GET /admin/invites returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n  admin-organizations: error: fetching admin-organizations: GET /admin/organizations returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n"
+      "output_sample": "{\n  \"resources_synced\": 3,\n  \"store_path\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/share/pinecone-pp-cli/data.db\",\n  \"timestamp\": \"2026-08-13T18:25:24Z\",\n  \"total_items\": 0\n}\n{\"event\":\"sync_start\",\"resource\":\"admin\"}\n{\"event\":\"sync_error\",\"resource\":\"admin\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/users\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/users returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n  admin: error: fetching admin: GET /admin/users returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n{\"event\":\"sync_start\",\"resource\":\"admin-invites\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-invites\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/invites\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/invites returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n  admin-invites: error: fetching admin-invites: GET /admin/invites returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n{\"event\":\"sync_start\",\"resource\":\"admin-organizations\"}\n{\"event\":\"sync_error\",\"resource\":\"admin-organizations\",\"status\":401,\"method\":\"GET\",\"path\":\"/admin/organizations\",\"body\":\"{\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\",\"error\":\"GET /admin/organizations returned HTTP 401: {\\\"error\\\":{\\\"code\\\":\\\"UNAUTHENTICATED\\\",\\\"message\\\":\\\"Unauthorized: Missing authorization header\\\"},\\\"status\\\":401}\"}\n  admin-organizations: error: fetching admin-organizations: GET /admin/organizations returned HTTP 401: {\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"Unauthorized: Missing authorization header\"},\"status\":401}\n"
     },
     {
       "command": "workflow archive",
@@ -5564,7 +5602,7 @@
         "status"
       ],
       "status": "pass",
-      "output_sample": "Archive Status:\n  indexes                        1 items\n  models                         7 items\n\n  Total: 8 items\n  Store: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-2679860926/.local/share/pinecone-pp-cli/data.db\n"
+      "output_sample": "Archive Status:\n  indexes                        1 items\n  models                         7 items\n\n  Total: 8 items\n  Store: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3590140207/.local/share/pinecone-pp-cli/data.db\n"
     },
     {
       "command": "workflow status",
@@ -5585,7 +5623,5 @@
       "reason": "no positional argument"
     }
   ],
-  "ran_at": "2026-08-13T17:45:00.732786Z"
+  "ran_at": "2026-08-13T18:24:24.478174Z"
 }
-Error: live dogfood failed: 6/244 tests failed
-live dogfood failed: 6/244 tests failed
