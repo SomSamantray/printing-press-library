@@ -11,7 +11,7 @@
   "auth_context": {
     "type": "none"
   },
-  "source_fingerprint": "d8740aadee0752b22a013607def6752fd39dc4c7cd423057cb5c6d65bf80fc38",
+  "source_fingerprint": "bf5be28067c9e771eac6808501eacd34ce3e6f2f065f00acab438a403358fca9",
   "source_files": {
     "cmd/algolia-pp-cli/main.go": "27b94d31176f1e2503b56e5e816118804aef65e1f8e06969d6568c3ff86880c1",
     "cmd/algolia-pp-mcp/main.go": "c4b4e511de638e847469e38bed692892528c82ec96edd395998fcef509f4833c",
@@ -140,7 +140,7 @@
     "internal/cli/rules_stale.go": "8023ed0a7a111c9ed12da735dcae5d1fe6c8d026e67b111c02a456a91a4cef7f",
     "internal/cli/rules_stale_test.go": "fd9b0a2b10eca060197d1e1b17b96764e928835d7d68399d53c5f1966336e9dc",
     "internal/cli/search.go": "164c793d6889806c0fea1d46fff288978ee654cd667880bcfa84a789905f2564",
-    "internal/cli/search_check.go": "25d230ba9028854d10cc922a98cd68170109a314fdfd15b436d76a6203825585",
+    "internal/cli/search_check.go": "08ed1a86a1a0e70c7e104d4d785258c24b759c661206351ccd54cbb37b59b281",
     "internal/cli/search_check_test.go": "c950bc8364f7025033d9955d5142a6472eca044432409a4124ddefb7beb579e2",
     "internal/cli/security.go": "1768fb58ca413f66a119ca735dedd9a7cfb6c70c36a20ae254e7de2c14793a90",
     "internal/cli/security_append-source.go": "b4ff9635c0d78f95521f38b860382b360f699eeace29564f54936a6dcfb8fe13",

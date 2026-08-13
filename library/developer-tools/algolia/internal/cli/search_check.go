@@ -69,10 +69,11 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			path := "/1/indexes/" + flagIndex + "/query"
-			// Paginate through results until every expected objectID is found
-			// or the result set is exhausted (Algolia caps at 1000 hits per
-			// query, so deep matches require paging).
+			// Use the Browse API (cursor-based) instead of search pagination:
+			// Algolia caps a single search query at 1,000 hits regardless of
+			// page size, so expected IDs ranking beyond the top 1,000 are
+			// unreachable by paging. Browse iterates every matching record.
+			path := "/1/indexes/" + flagIndex + "/browse"
 			expectedSet := make(map[string]bool, len(expected))
 			for _, e := range expected {
 				expectedSet[e] = true
@@ -81,28 +82,26 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 			found := make([]string, 0, len(expected))
 			missing := make([]string, 0)
 			scanCapped := false
-			const pageSize = 1000
-			const maxPages = 50 // bounded: 50k hits maximum scanned
-			pagesScanned := 0
-			for page := 0; page < maxPages && len(seen) < len(expectedSet); page++ {
-				pagesScanned++
-				data, _, getErr := c.Post(ctx, path, map[string]any{
-					"query":                 flagQuery,
-					"hitsPerPage":           pageSize,
-					"page":                  page,
-					"attributesToRetrieve":  []string{"objectID"},
-				})
+			const maxBatches = 500 // bounded: 500k records maximum scanned
+			cursor := ""
+			for batch := 0; batch < maxBatches && len(seen) < len(expectedSet); batch++ {
+				body := map[string]any{
+					"query":                flagQuery,
+					"attributesToRetrieve": []string{"objectID"},
+				}
+				if cursor != "" {
+					body["cursor"] = cursor
+				}
+				data, _, getErr := c.Post(ctx, path, body)
 				if getErr != nil {
 					return classifyAPIError(getErr, flags)
 				}
 				var envelope struct {
-					Hits []map[string]any `json:"hits"`
+					Hits   []map[string]any `json:"hits"`
+					Cursor string           `json:"cursor"`
 				}
 				if err := json.Unmarshal(data, &envelope); err != nil {
-					return fmt.Errorf("parsing search response: %w", err)
-				}
-				if len(envelope.Hits) == 0 {
-					break
+					return fmt.Errorf("parsing browse response: %w", err)
 				}
 				for _, h := range envelope.Hits {
 					oid, _ := h["objectID"].(string)
@@ -112,8 +111,12 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 					seen[oid] = true
 					found = append(found, oid)
 				}
+				if envelope.Cursor == "" || len(envelope.Hits) == 0 {
+					break
+				}
+				cursor = envelope.Cursor
 			}
-			if pagesScanned >= maxPages && len(seen) < len(expectedSet) {
+			if len(seen) < len(expectedSet) {
 				scanCapped = true
 			}
 			for _, e := range expected {
@@ -130,7 +133,7 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 				Passed:   len(missing) == 0,
 			}
 			if scanCapped {
-				res.Note = fmt.Sprintf("scan cap reached at %d pages (max %d); expected IDs may rank deeper than 50k hits — raise the page bound to widen the search", pagesScanned, maxPages)
+				res.Note = fmt.Sprintf("scan cap reached at %d browse batches; expected IDs may rank deeper than 500k records — widen the query or raise the batch bound", maxBatches)
 			}
 			if !wantsHumanTable(cmd.OutOrStdout(), flags) {
 				if err := printJSONFiltered(cmd.OutOrStdout(), res, flags); err != nil {
