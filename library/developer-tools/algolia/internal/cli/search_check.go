@@ -33,6 +33,7 @@ type searchCheckResult struct {
 	Found    []string `json:"found"`
 	Missing  []string `json:"missing"`
 	Passed   bool     `json:"passed"`
+	Note     string   `json:"note,omitempty"`
 }
 
 func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
@@ -79,9 +80,12 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 			seen := make(map[string]bool, len(expected))
 			found := make([]string, 0, len(expected))
 			missing := make([]string, 0)
+			scanCapped := false
 			const pageSize = 1000
 			const maxPages = 50 // bounded: 50k hits maximum scanned
+			pagesScanned := 0
 			for page := 0; page < maxPages && len(seen) < len(expectedSet); page++ {
+				pagesScanned++
 				data, _, getErr := c.Post(ctx, path, map[string]any{
 					"query":                 flagQuery,
 					"hitsPerPage":           pageSize,
@@ -109,6 +113,9 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 					found = append(found, oid)
 				}
 			}
+			if pagesScanned >= maxPages && len(seen) < len(expectedSet) {
+				scanCapped = true
+			}
 			for _, e := range expected {
 				if !seen[e] {
 					missing = append(missing, e)
@@ -121,6 +128,9 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 				Found:    found,
 				Missing:  missing,
 				Passed:   len(missing) == 0,
+			}
+			if scanCapped {
+				res.Note = fmt.Sprintf("scan cap reached at %d pages (max %d); expected IDs may rank deeper than 50k hits — raise the page bound to widen the search", pagesScanned, maxPages)
 			}
 			if !wantsHumanTable(cmd.OutOrStdout(), flags) {
 				if err := printJSONFiltered(cmd.OutOrStdout(), res, flags); err != nil {

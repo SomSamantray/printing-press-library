@@ -67,6 +67,15 @@ func newNovelRulesStaleCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			settingsRaw, _ := db.Get("indexes", flagIndex)
+			if len(settingsRaw) == 0 {
+				fmt.Fprintf(cmd.ErrOrStderr(), "warning: settings for index %q not in local store; run 'algolia-pp-cli sync --resources indexes' before auditing rules\n", flagIndex)
+				res := rulesStaleResult{Index: flagIndex, Stale: make([]staleRule, 0)}
+				if !wantsHumanTable(cmd.OutOrStdout(), flags) {
+					return printJSONFiltered(cmd.OutOrStdout(), res, flags)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Cannot audit rules for %q without synced settings.\n", flagIndex)
+				return nil
+			}
 			settings := unwrapSettingsObject(settingsRaw)
 			searchable := stringSliceField(settings, "searchableAttributes")
 			facetable := stringSliceField(settings, "attributesForFaceting")
@@ -185,9 +194,6 @@ func ruleAttributeRefs(rule *struct {
 				}
 			}
 		}
-	}
-	if cons, ok := rule.Consequence["filterPromotes"].(bool); ok {
-		_ = cons
 	}
 	collectFilters(rule.Consequence["filter"])
 	collectFilters(rule.Consequence["filters"])

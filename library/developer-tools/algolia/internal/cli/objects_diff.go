@@ -75,7 +75,7 @@ func newNovelObjectsDiffCmd(flags *rootFlags) *cobra.Command {
 				out := make(map[string]json.RawMessage)
 				rows, err := db.DB().QueryContext(cmd.Context(), `
 					SELECT id, data FROM resources
-					WHERE resource_type IN (?, 'records')`, "records_"+indexName)
+					WHERE resource_type = ?`, "records_"+indexName)
 				if err != nil {
 					return nil, err
 				}

@@ -22,16 +22,32 @@ type findHit struct {
 }
 
 type findResult struct {
-	Query   string    `json:"query"`
-	Hits    []findHit `json:"hits"`
-	Scanned int       `json:"scanned"`
-	Note    string    `json:"note,omitempty"`
+	Query        string    `json:"query"`
+	Hits         []findHit `json:"hits"`
+	Scanned      int       `json:"scanned"`
+	MaxScanPages int       `json:"max_scan_pages"`
+	Note         string    `json:"note,omitempty"`
+}
+
+// nonRecordResourceTypes are synced resource kinds whose blobs are not user
+// records (logs, keys, clusters, dictionaries, security) — searching them
+// returns noise instead of records.
+var nonRecordResourceTypes = map[string]bool{
+	"logs":                 true,
+	"keys":                 true,
+	"clusters":             true,
+	"clusters-mapping":     true,
+	"clusters-mapping-top": true,
+	"dictionaries":         true,
+	"security":             true,
+	"wait-for-api-key":     true,
 }
 
 func newNovelFindCmd(flags *rootFlags) *cobra.Command {
 	var flagQuery string
 	var flagLimit int
 	var flagDB string
+	var flagMaxScanPages int
 
 	cmd := &cobra.Command{
 		Use:         "find",
@@ -77,11 +93,10 @@ func newNovelFindCmd(flags *rootFlags) *cobra.Command {
 
 			// Discover every synced resource type and search each with FTS,
 			// labeling hits by resource_type. Skip non-record resources
-			// (logs, sync state, etc.) whose blobs are not user records.
+			// (logs, keys, clusters, etc.) whose blobs are not user records.
 			rows, err := db.DB().QueryContext(cmd.Context(), `
 				SELECT DISTINCT r.resource_type FROM resources r
 				WHERE r.resource_type IN (SELECT DISTINCT resource_type FROM resources_fts)
-				  AND r.resource_type NOT IN ('logs')
 				ORDER BY r.resource_type`)
 			if err != nil {
 				return fmt.Errorf("listing synced resource types: %w", err)
@@ -93,6 +108,9 @@ func newNovelFindCmd(flags *rootFlags) *cobra.Command {
 					_ = rows.Close()
 					return fmt.Errorf("scan resource type: %w", err)
 				}
+				if nonRecordResourceTypes[t] {
+					continue
+				}
 				types = append(types, t)
 			}
 			if err := rows.Err(); err != nil {
@@ -103,9 +121,19 @@ func newNovelFindCmd(flags *rootFlags) *cobra.Command {
 				return fmt.Errorf("close resource types: %w", err)
 			}
 
+			if flagMaxScanPages <= 0 {
+				flagMaxScanPages = 5
+			}
 			hits := make([]findHit, 0)
 			scanned := 0
+			scanCapped := false
+			typesScanned := 0
 			for _, t := range types {
+				if typesScanned >= flagMaxScanPages {
+					scanCapped = true
+					break
+				}
+				typesScanned++
 				partial, searchErr := db.Search(query, flagLimit, t)
 				if searchErr != nil {
 					continue
@@ -138,7 +166,10 @@ func newNovelFindCmd(flags *rootFlags) *cobra.Command {
 				}
 			}
 
-			res := findResult{Query: query, Hits: hits, Scanned: scanned}
+			res := findResult{Query: query, Hits: hits, Scanned: scanned, MaxScanPages: flagMaxScanPages}
+			if scanCapped {
+				res.Note = fmt.Sprintf("scan cap reached at %d resource types; raise --max-scan-pages to search more", flagMaxScanPages)
+			}
 			if len(hits) == 0 {
 				res.Note = "no hits found in any synced index; run 'algolia-pp-cli sync' to refresh the local mirror"
 			}
@@ -158,6 +189,7 @@ func newNovelFindCmd(flags *rootFlags) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flagQuery, "query", "", "Search query to match across all synced indices")
 	cmd.Flags().IntVar(&flagLimit, "limit", 20, "Maximum hits to return (default 20)")
+	cmd.Flags().IntVar(&flagMaxScanPages, "max-scan-pages", 5, "Maximum resource types to scan before returning partial or empty results")
 	cmd.Flags().StringVar(&flagDB, "db", "", "SQLite database file path (default: resolved data directory data.db)")
 	return cmd
 }

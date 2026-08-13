@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mvanhorn/printing-press-library/library/developer-tools/algolia/internal/store"
 	"github.com/spf13/cobra"
@@ -96,6 +97,7 @@ func newNovelApikeysReportCmd(flags *rootFlags) *cobra.Command {
 					ACLs        []string `json:"acl"`
 					Indexes     []string `json:"indexes"`
 					Validity    int64    `json:"validity"`
+					CreatedAt   string   `json:"createdAt"`
 				}
 				if json.Unmarshal(raw, &k) != nil {
 					continue
@@ -113,12 +115,14 @@ func newNovelApikeysReportCmd(flags *rootFlags) *cobra.Command {
 				}
 				writeCapable := containsAny(acl, []string{"addObject", "deleteObject", "deleteIndex", "editSettings", "settings", "logs"})
 				unrestricted := containsString(acl, "*")
+				expired := isKeyExpired(k.CreatedAt, k.Validity)
 				entry := apiKeyReportEntry{
 					Key:          keyID,
 					Description:  k.Description,
 					ACLs:         acl,
 					WriteCapable: writeCapable,
 					Unrestricted: unrestricted,
+					Expired:      expired,
 					Indexes:      k.Indexes,
 				}
 				if entry.Indexes == nil {
@@ -131,6 +135,9 @@ func newNovelApikeysReportCmd(flags *rootFlags) *cobra.Command {
 				}
 				if unrestricted {
 					report.Unrestricted++
+				}
+				if expired {
+					report.Expired++
 				}
 			}
 
@@ -168,4 +175,18 @@ func containsAny(hay []string, needles []string) bool {
 		}
 	}
 	return false
+}
+
+// isKeyExpired reports whether an Algolia API key has passed its expiry.
+// Algolia keys carry validity (seconds from creation) and createdAt
+// (RFC3339). A validity of 0 means the key never expires.
+func isKeyExpired(createdAt string, validity int64) bool {
+	if validity <= 0 || createdAt == "" {
+		return false
+	}
+	created, err := time.Parse(time.RFC3339, createdAt)
+	if err != nil {
+		return false
+	}
+	return time.Now().After(created.Add(time.Duration(validity) * time.Second))
 }
