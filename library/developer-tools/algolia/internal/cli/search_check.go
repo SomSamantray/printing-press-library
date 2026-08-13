@@ -27,13 +27,14 @@ func init() {
 }
 
 type searchCheckResult struct {
-	Index    string   `json:"index"`
-	Query    string   `json:"query"`
-	Expected []string `json:"expected"`
-	Found    []string `json:"found"`
-	Missing  []string `json:"missing"`
-	Passed   bool     `json:"passed"`
-	Note     string   `json:"note,omitempty"`
+	Index        string   `json:"index"`
+	Query        string   `json:"query"`
+	Expected     []string `json:"expected"`
+	Found        []string `json:"found"`
+	Missing      []string `json:"missing"`
+	Inconclusive []string `json:"inconclusive,omitempty"`
+	Passed       bool     `json:"passed"`
+	Note         string   `json:"note,omitempty"`
 }
 
 func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
@@ -45,7 +46,7 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 		Use:         "check",
 		Short:       "Assert that a query returns expected objectIDs, with a typed exit code for CI pipelines.",
 		Example:     "  algolia-pp-cli search check --index algolia_movie_sample_dataset --query dune --expect media-sample-data-438631",
-		Annotations: map[string]string{"mcp:read-only": "true"},
+		Annotations: map[string]string{"mcp:read-only": "true", "pp:typed-exit-codes": "0,1,3"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {
 				return cmd.Help()
@@ -80,7 +81,6 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 			}
 			seen := make(map[string]bool, len(expected))
 			found := make([]string, 0, len(expected))
-			missing := make([]string, 0)
 			scanCapped := false
 			const maxBatches = 500 // bounded: 500k records maximum scanned
 			cursor := ""
@@ -119,34 +119,39 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 			if len(seen) < len(expectedSet) {
 				scanCapped = true
 			}
-			for _, e := range expected {
-				if !seen[e] {
-					missing = append(missing, e)
-				}
-			}
+			missing, inconclusive := classifySearchCheckMisses(expected, seen, scanCapped)
 			res := searchCheckResult{
-				Index:    flagIndex,
-				Query:    flagQuery,
-				Expected: expected,
-				Found:    found,
-				Missing:  missing,
-				Passed:   len(missing) == 0,
+				Index:        flagIndex,
+				Query:        flagQuery,
+				Expected:     expected,
+				Found:        found,
+				Missing:      missing,
+				Inconclusive: inconclusive,
+				Passed:       len(missing) == 0,
 			}
 			if scanCapped {
-				res.Note = fmt.Sprintf("scan cap reached at %d browse batches; expected IDs may rank deeper than 500k records — widen the query or raise the batch bound", maxBatches)
+				res.Note = fmt.Sprintf("scan cap reached at %d browse batches before every expected objectID was located; %d expected objectID(s) are unverified (not confirmed missing) — widen the query or raise the batch bound", maxBatches, len(inconclusive))
 			}
 			if !wantsHumanTable(cmd.OutOrStdout(), flags) {
 				if err := printJSONFiltered(cmd.OutOrStdout(), res, flags); err != nil {
 					return err
 				}
-			} else if res.Passed {
+			} else if res.Passed && len(inconclusive) == 0 {
 				fmt.Fprintf(cmd.OutOrStdout(), "PASS: query %q on %s returned all %d expected objectIDs\n", flagQuery, flagIndex, len(expected))
-			} else {
+			} else if !res.Passed {
 				fmt.Fprintf(cmd.OutOrStdout(), "FAIL: query %q on %s missing %d expected objectIDs: %s\n", flagQuery, flagIndex, len(missing), strings.Join(missing, ", "))
+			} else {
+				fmt.Fprintf(cmd.OutOrStdout(), "INCONCLUSIVE: query %q on %s could not verify %d expected objectID(s) before the scan cap: %s\n", flagQuery, flagIndex, len(inconclusive), strings.Join(inconclusive, ", "))
 			}
 			if !res.Passed {
-				// Typed exit: 1 for assertion failure (not a usage/API error).
+				// Typed exit: 1 for a confirmed assertion failure.
 				return newAssertionError()
+			}
+			if len(inconclusive) > 0 {
+				// Typed exit: 3, distinct from both pass (0) and confirmed
+				// failure (1) — the check could not be completed, so a CI
+				// pipeline must not read this as a clean pass.
+				return inconclusiveErr(fmt.Errorf("%d expected objectID(s) unverified: scan cap reached before the index was fully browsed", len(inconclusive)))
 			}
 			return nil
 		},
@@ -162,7 +167,35 @@ type assertionError struct{}
 
 func (assertionError) Error() string { return "assertion failed" }
 
+// classifySearchCheckMisses splits expected-but-unseen objectIDs into
+// confirmed-missing (an exhaustive scan covered the whole index and the ID
+// genuinely never appeared) versus inconclusive (the scan was capped before
+// reaching every record, so absence is unverified, not confirmed). Order is
+// preserved from expected so output stays deterministic.
+func classifySearchCheckMisses(expected []string, seen map[string]bool, scanCapped bool) (missing, inconclusive []string) {
+	missing = make([]string, 0)
+	inconclusive = make([]string, 0)
+	for _, e := range expected {
+		if seen[e] {
+			continue
+		}
+		if scanCapped {
+			inconclusive = append(inconclusive, e)
+		} else {
+			missing = append(missing, e)
+		}
+	}
+	return missing, inconclusive
+}
+
 func newAssertionError() error { return assertionError{} }
+
+// inconclusiveErr signals that an assertion could not be completed (a
+// capped scan, not a confirmed failure) with a distinct typed exit code
+// (3, reusing the codebase's existing 0/1/2/../3 exit-code scheme rather
+// than a bespoke error type) so CI pipelines can tell "confirmed failure"
+// apart from "we couldn't finish checking."
+func inconclusiveErr(err error) error { return notFoundErr(err) }
 
 func splitCSV(s string) []string {
 	parts := strings.Split(s, ",")
