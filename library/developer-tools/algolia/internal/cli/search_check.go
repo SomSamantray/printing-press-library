@@ -70,7 +70,9 @@ func newNovelSearchCheckCmd(flags *rootFlags) *cobra.Command {
 			}
 			path := "/1/indexes/" + flagIndex + "/query"
 			data, _, getErr := c.Post(ctx, path, map[string]any{
-				"query": flagQuery,
+				"query":        flagQuery,
+				"hitsPerPage":  1000,
+				"attributesToRetrieve": []string{"objectID"},
 			})
 			if getErr != nil {
 				return classifyAPIError(getErr, flags)

@@ -8,9 +8,13 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 
+	"github.com/mvanhorn/printing-press-library/library/developer-tools/algolia/internal/client"
 	"github.com/mvanhorn/printing-press-library/library/developer-tools/algolia/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +40,7 @@ func newNovelSettingsDiffCmd(flags *rootFlags) *cobra.Command {
 		Use:         "diff <index-a> <index-b>",
 		Short:       "Field-level comparison of settings between two indices (or a settings file vs an index).",
 		Example:     "  algolia-pp-cli settings diff algolia_movie_sample_dataset staging_movies",
-		Annotations: map[string]string{"mcp:read-only": "true"},
+		Annotations: map[string]string{"mcp:read-only": "true", "pp:happy-args": "index-a=algolia_movie_sample_dataset;index-b=algolia_movie_sample_dataset", "pp:typed-exit-codes": "0,3"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {
 				return cmd.Help()
@@ -77,9 +81,13 @@ func newNovelSettingsDiffCmd(flags *rootFlags) *cobra.Command {
 			if errRight != nil || rightRaw == nil {
 				rightRaw, errRight = fetchLiveSettings(cmd, flags, rightName)
 			}
-			// A missing index is a valid empty-diff state, not a crash: report
-			// the gap gracefully so parity checks can run before an index exists.
+			// A genuinely missing index (404) is a valid one-sided-diff state;
+			// any other fetch failure (auth, network, rate limit) is an
+			// operational error and must not masquerade as a missing index.
 			if errLeft != nil && leftRaw == nil {
+				if !isNotFoundError(errLeft) {
+					return apiErr(fmt.Errorf("fetching settings for index %q: %w", leftName, errLeft))
+				}
 				fmt.Fprintf(cmd.ErrOrStderr(), "warning: settings for index %q not found (live fetch: %v); showing one-sided diff from %q\n", leftName, errLeft, rightName)
 				rightSettings := unwrapSettingsObject(rightRaw)
 				res := settingsDiffResult{Left: leftName, Right: rightName, Diff: make([]settingsDiffEntry, 0), Count: 0, MissingIndex: leftName}
@@ -96,6 +104,9 @@ func newNovelSettingsDiffCmd(flags *rootFlags) *cobra.Command {
 				return nil
 			}
 			if errRight != nil && rightRaw == nil {
+				if !isNotFoundError(errRight) {
+					return apiErr(fmt.Errorf("fetching settings for index %q: %w", rightName, errRight))
+				}
 				fmt.Fprintf(cmd.ErrOrStderr(), "warning: settings for index %q not found (live fetch: %v); showing one-sided diff from %q\n", rightName, errRight, leftName)
 				leftSettings := unwrapSettingsObject(leftRaw)
 				res := settingsDiffResult{Left: leftName, Right: rightName, Diff: make([]settingsDiffEntry, 0), Count: 0, MissingIndex: rightName}
@@ -185,4 +196,17 @@ func jsonEqual(a, b any) bool {
 		return false
 	}
 	return string(aj) == string(bj)
+}
+
+// isNotFoundError reports whether err is a genuine HTTP 404 (index does not
+// exist) rather than an auth, network, or rate-limit failure.
+func isNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == http.StatusNotFound
+	}
+	return strings.Contains(err.Error(), "HTTP 404")
 }

@@ -148,6 +148,10 @@ func newNovelRulesStaleCmd(flags *rootFlags) *cobra.Command {
 	return cmd
 }
 
+// ruleAttributeRefs extracts attribute NAMES referenced by a rule's
+// consequences — the only rule surface that can reference searchable or
+// faceted attributes. Condition patterns and contexts are query text, not
+// attribute names; promoted objectIDs are record IDs, not attributes.
 func ruleAttributeRefs(rule *struct {
 	ObjectID   string `json:"objectID"`
 	IndexName  string `json:"indexName"`
@@ -167,22 +171,75 @@ func ruleAttributeRefs(rule *struct {
 			out = append(out, s)
 		}
 	}
-	for _, c := range rule.Conditions {
-		add(c.Pattern)
-		if c.Context != "" {
-			add(c.Context)
-		}
-	}
-	if cons, ok := rule.Consequence["promote"].([]any); ok {
-		for _, p := range cons {
-			if pm, ok := p.(map[string]any); ok {
-				if oid, ok := pm["objectID"].(string); ok {
-					add(oid)
+	// Filter expressions are the canonical attribute references:
+	// "genre:scifi" references the genre attribute. Extract the key
+	// before the first ':' in each filter operand.
+	collectFilters := func(filters any) {
+		switch f := filters.(type) {
+		case string:
+			add(attributeFromFilter(f))
+		case []any:
+			for _, item := range f {
+				if s, ok := item.(string); ok {
+					add(attributeFromFilter(s))
 				}
 			}
 		}
 	}
+	if cons, ok := rule.Consequence["filterPromotes"].(bool); ok {
+		_ = cons
+	}
+	collectFilters(rule.Consequence["filter"])
+	collectFilters(rule.Consequence["filters"])
+	if cons, ok := rule.Consequence["promote"].([]any); ok {
+		for _, p := range cons {
+			if pm, ok := p.(map[string]any); ok {
+				// promote objects carry an explicit attribute name
+				if attr, ok := pm["attribute"].(string); ok {
+					add(attr)
+				}
+			}
+		}
+	}
+	if cons, ok := rule.Consequence["hide"].([]any); ok {
+		for _, h := range cons {
+			if hm, ok := h.(map[string]any); ok {
+				if attr, ok := hm["attribute"].(string); ok {
+					add(attr)
+				}
+			}
+		}
+	}
+	if cons, ok := rule.Consequence["filterPromotes"].([]any); ok {
+		for _, fp := range cons {
+			if fpm, ok := fp.(map[string]any); ok {
+				collectFilters(fpm["filter"])
+			}
+		}
+	}
 	return out
+}
+
+// attributeFromFilter extracts the attribute name from a filter operand:
+// "genre:scifi" -> "genre", "brand:X" -> "brand". Operands without a
+// colon (bare terms) are not attribute references.
+func attributeFromFilter(filter string) string {
+	// Strip negation/score prefixes: "-genre:scifi", "_rating>=4", "rating:>=4"
+	s := filter
+	for len(s) > 0 && (s[0] == '-' || s[0] == '_' || s[0] == ' ') {
+		s = s[1:]
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == ':' {
+			return s[:i]
+		}
+		// Numeric/range operators end the attribute name too
+		if c == '>' || c == '<' || c == '=' || c == ' ' {
+			return s[:i]
+		}
+	}
+	return ""
 }
 
 func stringSliceField(m map[string]any, key string) []string {

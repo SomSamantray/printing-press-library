@@ -36,7 +36,7 @@ func newNovelObjectsDiffCmd(flags *rootFlags) *cobra.Command {
 		Use:         "diff <index-a> <index-b>",
 		Short:       "Compare records of two indices (added/removed/changed by objectID) to verify prod/staging parity.",
 		Example:     "  algolia-pp-cli objects diff algolia_movie_sample_dataset staging_movies",
-		Annotations: map[string]string{"mcp:read-only": "true"},
+		Annotations: map[string]string{"mcp:read-only": "true", "pp:happy-args": "index-a=algolia_movie_sample_dataset;index-b=algolia_movie_sample_dataset", "pp:typed-exit-codes": "0,3"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {
 				return cmd.Help()
