@@ -273,7 +273,15 @@ Resource scoping:
 				go func() {
 					defer wg.Done()
 					for resource := range work {
-						res := syncResource(cmd.Context(), c, db, resource, sinceTS, full, maxPages, effectiveLatestOnly, prune, userParams, syncEventWriter)
+						var res syncResult
+						if resource == "browse" {
+							// Parent-keyed dependent: scoped per index, so it
+							// needs its own per-parent fan-out rather than the
+							// generic flat-resource loop below.
+							res = syncBrowseResource(cmd.Context(), c, db, maxPages, syncEventWriter, humanFriendly)
+						} else {
+							res = syncResource(cmd.Context(), c, db, resource, sinceTS, full, maxPages, effectiveLatestOnly, prune, userParams, syncEventWriter)
+						}
 						results <- res
 					}
 				}()
@@ -982,6 +990,194 @@ func syncResource(ctx context.Context, c interface {
 	}
 
 	return syncResult{Resource: resource, Count: cachedCount, Duration: time.Since(started)}
+}
+
+// syncBrowseResource populates the typed "browse" table — the per-index
+// record mirror that objects_gaps and objects_diff audit against.
+//
+// Unlike the flat single-endpoint resources syncResource handles, browse is
+// scoped per parent index: Algolia's browse endpoint is
+// POST /1/indexes/{indexName}/browse and must be paginated separately for
+// every synced index. This is the "parent-keyed dependent" cascade the sync
+// command's help text describes; it has its own fan-out here because the
+// generic flat-resource loop has no notion of iterating a parent table.
+//
+// The browse API has no incremental/since filter, so each run replaces a
+// given index's stored rows wholesale (delete-then-insert) rather than
+// attempting a partial merge — there is no watermark to merge against.
+func syncBrowseResource(ctx context.Context, c interface {
+	Post(context.Context, string, any) (json.RawMessage, int, error)
+}, db *store.Store, maxPages int, syncEvents io.Writer, humanFriendly bool) syncResult {
+	started := time.Now()
+
+	indexNames, err := browseSyncIndexNames(ctx, db)
+	if err != nil {
+		return syncResult{Resource: "browse", Err: fmt.Errorf("listing synced indexes: %w", err), Duration: time.Since(started)}
+	}
+	if len(indexNames) == 0 {
+		return syncResult{
+			Resource: "browse",
+			Warn:     errors.New("no indexes are synced locally; run 'algolia-pp-cli sync --resources indexes' before syncing browse"),
+			Duration: time.Since(started),
+		}
+	}
+
+	var totalStored int
+	var capHit bool
+	for _, indexName := range indexNames {
+		stored, indexCapHit, err := syncBrowseIndex(ctx, c, db, indexName, maxPages)
+		if err != nil {
+			return syncResult{Resource: "browse", Count: totalStored, Err: fmt.Errorf("browsing index %s: %w", indexName, err), Duration: time.Since(started)}
+		}
+		totalStored += stored
+		if indexCapHit {
+			capHit = true
+		}
+		if humanFriendly {
+			fmt.Fprintf(os.Stderr, "\r  browse: %d synced (%s)", totalStored, indexName)
+		} else {
+			fmt.Fprintf(syncEvents, `{"event":"sync_progress","resource":"browse","fetched":%d,"index":%q}`+"\n", totalStored, indexName)
+		}
+	}
+
+	if capHit {
+		if humanFriendly {
+			fmt.Fprintf(os.Stderr, "\nwarning: browse hit --max-pages on one or more indexes; some records may be missing\n")
+		} else {
+			fmt.Fprintf(syncEvents, `{"event":"sync_warning","resource":"browse","reason":"max_pages_cap_hit"}`+"\n")
+		}
+	}
+
+	if err := db.SaveSyncProgress("browse", "", totalStored); err != nil {
+		return syncResult{Resource: "browse", Count: totalStored, Err: fmt.Errorf("saving sync state for browse: %w", err), Duration: time.Since(started)}
+	}
+
+	if !humanFriendly {
+		fmt.Fprintf(syncEvents, `{"event":"sync_complete","resource":"browse","total":%d,"duration_ms":%d}`+"\n", totalStored, time.Since(started).Milliseconds())
+	}
+
+	return syncResult{Resource: "browse", Count: totalStored, Duration: time.Since(started)}
+}
+
+// browseSyncIndexNames returns every index name already present in the local
+// "indexes" table (the id column stores the index name — see
+// resourceIDFieldOverrides["indexes"] = "name"). Browse is a dependent of
+// indexes, so it can only enumerate indices indexes itself already synced.
+func browseSyncIndexNames(ctx context.Context, db *store.Store) ([]string, error) {
+	rows, err := db.DB().QueryContext(ctx, `SELECT id FROM indexes`)
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			_ = rows.Close()
+			return nil, fmt.Errorf("scan index name: %w", err)
+		}
+		names = append(names, name)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return nil, err
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	return names, nil
+}
+
+// browsePageResponse decodes the fields syncBrowseIndex needs from an
+// Algolia browse response: the page of hits, and the pagination cursor
+// (absent on the last page — see the OpenAPI `cursor` schema description).
+type browsePageResponse struct {
+	Hits   []json.RawMessage `json:"hits"`
+	Cursor string            `json:"cursor"`
+}
+
+// syncBrowseIndex paginates one index's browse endpoint to completion (or
+// until maxPages/a repeated cursor stops it) and replaces that index's rows
+// in the typed browse table. Returns the count stored and whether maxPages
+// truncated the index before its last page.
+func syncBrowseIndex(ctx context.Context, c interface {
+	Post(context.Context, string, any) (json.RawMessage, int, error)
+}, db *store.Store, indexName string, maxPages int) (int, bool, error) {
+	if _, err := db.DB().ExecContext(ctx, `DELETE FROM browse WHERE indexes_id = ?`, indexName); err != nil {
+		return 0, false, fmt.Errorf("clearing prior browse rows: %w", err)
+	}
+
+	path := replacePathParam("/1/indexes/{indexName}/browse", "indexName", indexName)
+	cursor := ""
+	stored := 0
+	for page := 1; ; page++ {
+		if maxPages > 0 && page > maxPages {
+			return stored, true, nil
+		}
+		body := map[string]any{}
+		if cursor != "" {
+			body["cursor"] = cursor
+		}
+		data, status, err := c.Post(ctx, path, body)
+		if err != nil {
+			return stored, false, err
+		}
+		if status < 200 || status >= 300 {
+			return stored, false, fmt.Errorf("unexpected status %d", status)
+		}
+
+		var resp browsePageResponse
+		if err := json.Unmarshal(data, &resp); err != nil {
+			return stored, false, fmt.Errorf("decoding browse response: %w", err)
+		}
+
+		for _, hit := range resp.Hits {
+			merged, err := mergeIndexesID(hit, indexName)
+			if err != nil {
+				continue
+			}
+			if err := db.UpsertBrowse(merged); err != nil {
+				return stored, false, fmt.Errorf("storing record: %w", err)
+			}
+			stored++
+		}
+
+		if resp.Cursor == "" {
+			return stored, false, nil
+		}
+		// The server echoing back the cursor we just sent would loop
+		// forever; stop instead of hanging on a misbehaving or mocked
+		// endpoint.
+		if resp.Cursor == cursor {
+			return stored, false, nil
+		}
+		cursor = resp.Cursor
+	}
+}
+
+// mergeIndexesID decodes a browse hit and injects the fields UpsertBrowse
+// needs but a raw Algolia hit never carries:
+//
+//   - "indexes_id": UpsertBrowse's domain-table writer derives the typed
+//     table's indexes_id column from the object payload, not a separate
+//     parameter (see Store.upsertBrowseTx). indexName is only known from
+//     the request path, so it must be merged in here.
+//   - "id": Store.extractObjectID (the generic resource-ID extractor
+//     UpsertBrowse uses) only recognizes generic ID field names (id, Id,
+//     ID, _id, uuid, slug, name) — it has no knowledge of Algolia's
+//     objectID convention. Without this alias every real hit is rejected
+//     with "missing id for browse".
+func mergeIndexesID(hit json.RawMessage, indexName string) (json.RawMessage, error) {
+	obj, err := store.DecodeJSONObject(hit)
+	if err != nil {
+		return nil, err
+	}
+	obj["indexes_id"] = indexName
+	if _, hasID := obj["id"]; !hasID {
+		if objectID, ok := obj["objectID"]; ok {
+			obj["id"] = objectID
+		}
+	}
+	return json.Marshal(obj)
 }
 
 // paginationDefaults holds the resolved pagination parameter names and page size.
@@ -1971,6 +2167,7 @@ func defaultSyncResources() []string {
 // validation to reject misspellings before they become silent no-ops.
 func knownSyncResourceNames() []string {
 	names := []string{
+		"browse",
 		"clusters",
 		"clusters-mapping",
 		"clusters-mapping-top",

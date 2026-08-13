@@ -54,7 +54,7 @@ func newNovelObjectsGapsCmd(flags *rootFlags) *cobra.Command {
 				flagDB = defaultDBPath("algolia-pp-cli")
 			}
 			if _, statErr := os.Stat(flagDB); os.IsNotExist(statErr) {
-				fmt.Fprintf(cmd.ErrOrStderr(), "no local mirror at %s\nrun: algolia-pp-cli sync --resources indexes,records to populate the local database.\n", flagDB)
+				fmt.Fprintf(cmd.ErrOrStderr(), "no local mirror at %s\nrun: algolia-pp-cli sync --resources indexes,browse to populate the local database.\n", flagDB)
 				if !wantsHumanTable(cmd.OutOrStdout(), flags) {
 					return printJSONFiltered(cmd.OutOrStdout(), objectsGapsResult{Index: flagIndex, Gaps: make([]gapRecord, 0)}, flags)
 				}
@@ -67,6 +67,9 @@ func newNovelObjectsGapsCmd(flags *rootFlags) *cobra.Command {
 			defer db.Close()
 			if !hintIfUnsynced(cmd, db, "indexes") {
 				hintIfStale(cmd, db, "indexes", flags.maxAge)
+			}
+			if !hintIfUnsynced(cmd, db, "browse") {
+				hintIfStale(cmd, db, "browse", flags.maxAge)
 			}
 
 			settingsRaw, _ := db.Get("indexes", flagIndex)

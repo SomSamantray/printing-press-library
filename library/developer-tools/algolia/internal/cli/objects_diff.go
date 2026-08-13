@@ -56,7 +56,7 @@ func newNovelObjectsDiffCmd(flags *rootFlags) *cobra.Command {
 				flagDB = defaultDBPath("algolia-pp-cli")
 			}
 			if _, statErr := os.Stat(flagDB); os.IsNotExist(statErr) {
-				fmt.Fprintf(cmd.ErrOrStderr(), "no local mirror at %s\nrun: algolia-pp-cli sync --resources records to populate the local database.\n", flagDB)
+				fmt.Fprintf(cmd.ErrOrStderr(), "no local mirror at %s\nrun: algolia-pp-cli sync --resources indexes,browse to populate the local database.\n", flagDB)
 				if !wantsHumanTable(cmd.OutOrStdout(), flags) {
 					return printJSONFiltered(cmd.OutOrStdout(), objectsDiffResult{Left: leftName, Right: rightName}, flags)
 				}
@@ -67,8 +67,8 @@ func newNovelObjectsDiffCmd(flags *rootFlags) *cobra.Command {
 				return fmt.Errorf("opening local database: %w", err)
 			}
 			defer db.Close()
-			if !hintIfUnsynced(cmd, db, "records") {
-				hintIfStale(cmd, db, "records", flags.maxAge)
+			if !hintIfUnsynced(cmd, db, "browse") {
+				hintIfStale(cmd, db, "browse", flags.maxAge)
 			}
 
 			loadIndexRecords := func(indexName string) (map[string]json.RawMessage, error) {
@@ -86,7 +86,14 @@ func newNovelObjectsDiffCmd(flags *rootFlags) *cobra.Command {
 						_ = rows.Close()
 						return nil, err
 					}
-					out[id] = json.RawMessage(d)
+					// browse is a per-index dependent resource: the store
+					// composites id as "<objectID>\x00<indexName>" so the
+					// same objectID in two different indices doesn't
+					// collide on the same primary key. Strip that suffix so
+					// records with the same objectID in both indices are
+					// recognized as the same record, not counted as both
+					// added and removed.
+					out[store.BareResourceID(id)] = stripSyncMetadataFields(json.RawMessage(d))
 				}
 				if err := rows.Err(); err != nil {
 					_ = rows.Close()
@@ -159,4 +166,25 @@ func newNovelObjectsDiffCmd(flags *rootFlags) *cobra.Command {
 	cmd.Flags().StringVar(&flagDB, "db", "", "SQLite database file path (default: resolved data directory data.db)")
 	cmd.Flags().IntVar(&flagLimit, "limit", 100, "Maximum IDs to list per category (default 100)")
 	return cmd
+}
+
+// stripSyncMetadataFields removes fields the sync layer injects into a
+// stored browse row that are not part of the underlying record itself
+// (indexes_id). Without this, a byte-for-byte comparison of two indices'
+// copies of an otherwise-identical record always reports it as changed,
+// since indexes_id necessarily differs between the two sides being
+// compared. Falls back to the original bytes if the row is not a JSON
+// object (should not happen for browse rows, but comparing raw bytes is
+// safer than dropping the record from the diff).
+func stripSyncMetadataFields(data json.RawMessage) json.RawMessage {
+	obj, err := store.DecodeJSONObject(data)
+	if err != nil {
+		return data
+	}
+	delete(obj, "indexes_id")
+	normalized, err := json.Marshal(obj)
+	if err != nil {
+		return data
+	}
+	return normalized
 }
