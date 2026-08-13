@@ -163,9 +163,14 @@ Do NOT use it to find sessions that were already abandoned; use 'sessions orphan
 			signal.Stop(sigCh)
 
 			// Guaranteed release: POST /v1/sessions/{id} with status REQUEST_RELEASE.
+			// Use a dedicated release context so cleanup still runs when the
+			// session lifetime exceeded the root request timeout — the root
+			// context may be expired by the time the hold ends.
 			releaseBody := map[string]any{"status": "REQUEST_RELEASE"}
 			relPath := replacePathParam("/v1/sessions/{id}", "id", sess.ID)
-			if _, relStatus, relErr := c.PostWithParams(ctx, relPath, nil, releaseBody); relErr != nil {
+			releaseCtx, releaseCancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer releaseCancel()
+			if _, relStatus, relErr := c.PostWithParams(releaseCtx, relPath, nil, releaseBody); relErr != nil {
 				return fmt.Errorf("releasing session %s: %w", sess.ID, relErr)
 			} else if relStatus < 200 || relStatus >= 300 {
 				return fmt.Errorf("releasing session %s: HTTP %d", sess.ID, relStatus)

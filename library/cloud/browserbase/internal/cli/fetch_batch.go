@@ -83,6 +83,10 @@ Do NOT use it to look back at what was already fetched; use 'web history' instea
 				}
 				pace = parsed
 			}
+			if pace <= 0 {
+				_ = cmd.Usage()
+				return usageErr(fmt.Errorf("--pace must be greater than zero (got %s)", pace))
+			}
 
 			// Read URLs (after dry-run so verify probes don't need the file).
 			f, err := os.Open(flagFile)

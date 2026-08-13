@@ -47,7 +47,7 @@ func newNovelSessionsOrphansCmd(flags *rootFlags) *cobra.Command {
 		Long: `Use this command to find running sessions that were never released (keepAlive orphans) and the runtime they're burning.
 Do NOT use it for an overall status breakdown of all sessions; use 'projects digest' instead.`,
 		Example:     "  browserbase-pp-cli sessions orphans --older-than 15m --stop --json",
-		Annotations: map[string]string{"mcp:read-only": "true", "mcp:write-positionals": "0"},
+		Annotations: map[string]string{"mcp:read-only": "false", "mcp:write-positionals": "0"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {
 				return cmd.Help()
