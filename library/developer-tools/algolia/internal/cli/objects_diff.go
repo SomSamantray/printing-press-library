@@ -74,8 +74,8 @@ func newNovelObjectsDiffCmd(flags *rootFlags) *cobra.Command {
 			loadIndexRecords := func(indexName string) (map[string]json.RawMessage, error) {
 				out := make(map[string]json.RawMessage)
 				rows, err := db.DB().QueryContext(cmd.Context(), `
-					SELECT id, data FROM resources
-					WHERE resource_type = ?`, "records_"+indexName)
+					SELECT id, data FROM browse
+					WHERE indexes_id = ?`, indexName)
 				if err != nil {
 					return nil, err
 				}

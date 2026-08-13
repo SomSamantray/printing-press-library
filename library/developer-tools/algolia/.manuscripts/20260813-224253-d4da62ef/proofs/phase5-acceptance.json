@@ -11,7 +11,7 @@
   "auth_context": {
     "type": "none"
   },
-  "source_fingerprint": "c454a1aa72c518ce05d795bf0df7b57e0372a470d127dbe3fcb964c8731502d5",
+  "source_fingerprint": "d8740aadee0752b22a013607def6752fd39dc4c7cd423057cb5c6d65bf80fc38",
   "source_files": {
     "cmd/algolia-pp-cli/main.go": "27b94d31176f1e2503b56e5e816118804aef65e1f8e06969d6568c3ff86880c1",
     "cmd/algolia-pp-mcp/main.go": "c4b4e511de638e847469e38bed692892528c82ec96edd395998fcef509f4833c",
@@ -116,9 +116,9 @@
     "internal/cli/logs_errors.go": "52946dbee01ccacad6af78b61e016be47c800287be5558affda63a260ff7a15b",
     "internal/cli/logs_errors_test.go": "f78bc018c8a960b3e4112264dc7187c6aaf8bd1af43671afd61beb3ca0368da0",
     "internal/cli/objects.go": "75a182d97667478897a45cfe340327752cdf057c5422f5e77fc229daa06f7a38",
-    "internal/cli/objects_diff.go": "0ee8b5c3ea4b81c3e0329ec071906a87016ca5cfc4dbd2e0717e06afdf9bea51",
+    "internal/cli/objects_diff.go": "48806fb2bed24b69481c7fc0fff2ba54ae03577c0979bd45e4cc583c3675bb57",
     "internal/cli/objects_diff_test.go": "8238fc95e1579ac18f065ffa65a0b1c02836ed597a83667992a9f59fef8e9e7a",
-    "internal/cli/objects_gaps.go": "775010267696736668073673f953e4637f569f93b768d1756bd66bde7195b2f2",
+    "internal/cli/objects_gaps.go": "81ab8b9b2fc4d30302fcc819f8b85d082582720fd86c1afd6f2773988ee0c1b1",
     "internal/cli/objects_gaps_test.go": "02cb8f25c09e7203ed9a00f3dbb9dfd8d3dd96bf74f8fa867cb30b22f734b426",
     "internal/cli/platform_cli_test.go": "6169240b5bff329ff6027f7766b3f1b12c9e1ea3294dee1aa4add23df6a86c80",
     "internal/cli/platform_client.go": "cceb43cd1ef3d33a7cf260a0f6c2bac338d571066c1d252061ba5d92e4126976",

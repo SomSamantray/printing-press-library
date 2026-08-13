@@ -77,9 +77,9 @@ func newNovelObjectsGapsCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			rows, err := db.DB().QueryContext(cmd.Context(), `
-				SELECT id, data FROM resources
-				WHERE resource_type = ?
-				LIMIT ?`, "records_"+flagIndex, flagLimit*20)
+				SELECT id, data FROM browse
+				WHERE indexes_id = ?
+				LIMIT ?`, flagIndex, flagLimit*20)
 			if err != nil {
 				return fmt.Errorf("querying records: %w", err)
 			}
