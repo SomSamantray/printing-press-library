@@ -10,6 +10,32 @@ import (
 	"testing"
 )
 
+// TestDocaiBatchFailureReason locks down that rejected jobs and jobs that
+// never reach a terminal status after polling are treated as failures, not
+// silent successes with no saved result.
+func TestDocaiBatchFailureReason(t *testing.T) {
+	cases := []struct {
+		name     string
+		status   string
+		terminal bool
+		wantErr  bool
+	}{
+		{"completed", "completed", true, false},
+		{"partially_completed", "partially_completed", true, false},
+		{"failed status", "failed", true, true},
+		{"rejected status", "rejected", true, true},
+		{"poll exhausted", "processing", false, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := docaiBatchFailureReason(tc.status, tc.terminal)
+			if (got != "") != tc.wantErr {
+				t.Fatalf("docaiBatchFailureReason(%q, terminal=%v) = %q, want non-empty=%v", tc.status, tc.terminal, got, tc.wantErr)
+			}
+		})
+	}
+}
+
 // TestNovelDocaiBatchHelpWires smoke-tests that the docai batch command
 // resolves at runtime and renders useful --help output. Catches wiring
 // regressions (missing AddCommand, panicking RunE on --help, etc.) before

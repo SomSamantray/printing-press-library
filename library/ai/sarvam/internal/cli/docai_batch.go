@@ -226,6 +226,15 @@ func newNovelDocaiBatchCmd(flags *rootFlags) *cobra.Command {
 							}
 						}
 					}
+					// A rejected job or one that never reached a terminal
+					// status after all polls produced no saved result;
+					// surface that as an error so it counts as a failure
+					// below instead of silently reporting success.
+					if res.Error == "" {
+						if reason := docaiBatchFailureReason(res.Status, terminal); reason != "" {
+							res.Error = reason
+						}
+					}
 				}
 				results = append(results, res)
 			}
@@ -290,6 +299,22 @@ func loadDocaiSchema(cmd *cobra.Command, name string) (json.RawMessage, error) {
 		return nil, apiErr(fmt.Errorf("schema %q is corrupt", name))
 	}
 	return entry.Schema, nil
+}
+
+// docaiBatchFailureReason reports why a batch item never produced a saved
+// result — a terminal failed/rejected status, or the poll loop exhausting
+// without reaching a terminal state — so it can be surfaced as an error.
+// Returns "" when the status is a genuine success (completed or
+// partially_completed).
+func docaiBatchFailureReason(status string, terminal bool) string {
+	switch {
+	case status == "failed", status == "rejected":
+		return fmt.Sprintf("job status: %s", status)
+	case !terminal:
+		return "polling timed out before job reached a terminal state"
+	default:
+		return ""
+	}
 }
 
 func mimeTypeFor(path string) string {
