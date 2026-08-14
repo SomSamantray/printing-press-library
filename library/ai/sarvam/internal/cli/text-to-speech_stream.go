@@ -143,6 +143,14 @@ func newTextToSpeechStreamCmd(flags *rootFlags) *cobra.Command {
 			if flags.asJSON || flags.csv || flags.compact || flags.plain || flags.selectFields != "" {
 				return fmt.Errorf("binary response cannot be rendered as structured output; redirect stdout or use --deliver file:<path>")
 			}
+			// The shared client wraps binary responses in a base64 JSON
+			// envelope ({_pp_binary:true, encoding:"base64", data:"..."}) so
+			// they survive the json.RawMessage contract. For a streaming-audio
+			// command the user wants playable bytes on stdout, not the
+			// envelope — decode the payload back before writing.
+			if out, err := decodeBinaryEnvelope(data); err == nil {
+				data = out
+			}
 			_, err = cmd.OutOrStdout().Write(data)
 			return err
 		},

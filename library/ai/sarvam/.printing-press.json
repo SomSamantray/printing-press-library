@@ -4,12 +4,6 @@
   "printing_press_version": "4.30.2",
   "api_name": "sarvam",
   "cli_name": "sarvam-pp-cli",
-  "contributors": [
-    {
-      "handle": "SomSamantray",
-      "name": "Som Samantray"
-    }
-  ],
   "printer": "SomSamantray",
   "printer_name": "Som Samantray",
   "spec_path": "sarvam-openapi.yaml",
@@ -67,5 +61,7 @@
       "command": "stt-job report",
       "description": "Per-file digest of a batch STT job with typed exit codes for cron alerting"
     }
-  ]
+  ],
+  "display_name": "Sarvam AI",
+  "description": "Every Sarvam AI model on your terminal \u2014 translate, speak, transcribe, chat, and extract documents in 22 Indian languages, with a local history that compounds"
 }

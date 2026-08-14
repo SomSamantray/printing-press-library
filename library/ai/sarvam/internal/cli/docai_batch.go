@@ -209,7 +209,13 @@ func newNovelDocaiBatchCmd(flags *rootFlags) *cobra.Command {
 									res.Result = resultsData
 									outFile := filepath.Join(flagOut, strings.TrimSuffix(filepath.Base(doc), filepath.Ext(doc))+".json")
 									// #nosec G306 -- user-facing extraction result the caller explicitly requested; 0644 keeps it readable by downstream tooling.
-									_ = os.WriteFile(outFile, resultsData, 0o644)
+									if werr := os.WriteFile(outFile, resultsData, 0o644); werr != nil {
+										res.Error = "writing result: " + werr.Error()
+										res.Status = "failed"
+									}
+								} else {
+									res.Error = "fetching results: " + err.Error()
+									res.Status = "failed"
 								}
 							}
 						default:

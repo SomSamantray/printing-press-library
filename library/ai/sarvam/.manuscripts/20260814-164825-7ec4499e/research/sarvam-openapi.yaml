@@ -2,6 +2,8 @@ openapi: 3.0.3
 info:
   title: Sarvam AI API
   version: "1.0.0"
+  x-display-name: Sarvam AI
+  x-cli-description: Every Sarvam AI model on your terminal — translate, speak, transcribe, chat, and extract documents in 22 Indian languages, with a local history that compounds
   description: >
     Sarvam AI provides models and APIs for chat completion, speech-to-text,
     text-to-speech, translation, transliteration, language identification,
