@@ -226,12 +226,13 @@ func newNovelDocaiBatchCmd(flags *rootFlags) *cobra.Command {
 							}
 						}
 					}
-					// A rejected job or one that never reached a terminal
-					// status after all polls produced no saved result;
-					// surface that as an error so it counts as a failure
+					// Anything short of a genuine completed/partially_completed
+					// status produced no saved result — rejected, failed,
+					// poll-exhausted, or the ctx deadline firing mid-poll.
+					// Surface that as an error so it counts as a failure
 					// below instead of silently reporting success.
 					if res.Error == "" {
-						if reason := docaiBatchFailureReason(res.Status, terminal); reason != "" {
+						if reason := docaiBatchFailureReason(res.Status); reason != "" {
 							res.Error = reason
 						}
 					}
@@ -302,18 +303,18 @@ func loadDocaiSchema(cmd *cobra.Command, name string) (json.RawMessage, error) {
 }
 
 // docaiBatchFailureReason reports why a batch item never produced a saved
-// result — a terminal failed/rejected status, or the poll loop exhausting
-// without reaching a terminal state — so it can be surfaced as an error.
-// Returns "" when the status is a genuine success (completed or
-// partially_completed).
-func docaiBatchFailureReason(status string, terminal bool) string {
-	switch {
-	case status == "failed", status == "rejected":
-		return fmt.Sprintf("job status: %s", status)
-	case !terminal:
-		return "polling timed out before job reached a terminal state"
-	default:
+// result. Only "completed" and "partially_completed" are genuine successes;
+// any other final status — failed, rejected, still non-terminal because the
+// poll loop exhausted, or still non-terminal because the command's context
+// deadline fired mid-poll (ctx.Done()) — means no result was saved and is
+// surfaced as an error. Checking the status alone (rather than tracking why
+// the poll loop stopped) covers all of these exit paths uniformly.
+func docaiBatchFailureReason(status string) string {
+	switch status {
+	case "completed", "partially_completed":
 		return ""
+	default:
+		return fmt.Sprintf("job did not complete (status: %s)", status)
 	}
 }
 

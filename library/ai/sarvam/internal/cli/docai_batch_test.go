@@ -10,27 +10,29 @@ import (
 	"testing"
 )
 
-// TestDocaiBatchFailureReason locks down that rejected jobs and jobs that
-// never reach a terminal status after polling are treated as failures, not
-// silent successes with no saved result.
+// TestDocaiBatchFailureReason locks down that any status other than a
+// genuine success ("completed"/"partially_completed") is treated as a
+// failure, not a silent success with no saved result — whether the poll
+// loop stopped because of a rejected/failed job, exhausting all polls, or
+// the command's own context deadline firing mid-poll (ctx.Done()).
 func TestDocaiBatchFailureReason(t *testing.T) {
 	cases := []struct {
-		name     string
-		status   string
-		terminal bool
-		wantErr  bool
+		name    string
+		status  string
+		wantErr bool
 	}{
-		{"completed", "completed", true, false},
-		{"partially_completed", "partially_completed", true, false},
-		{"failed status", "failed", true, true},
-		{"rejected status", "rejected", true, true},
-		{"poll exhausted", "processing", false, true},
+		{"completed", "completed", false},
+		{"partially_completed", "partially_completed", false},
+		{"failed status", "failed", true},
+		{"rejected status", "rejected", true},
+		{"poll exhausted", "processing", true},
+		{"ctx deadline fired mid-poll", "processing", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := docaiBatchFailureReason(tc.status, tc.terminal)
+			got := docaiBatchFailureReason(tc.status)
 			if (got != "") != tc.wantErr {
-				t.Fatalf("docaiBatchFailureReason(%q, terminal=%v) = %q, want non-empty=%v", tc.status, tc.terminal, got, tc.wantErr)
+				t.Fatalf("docaiBatchFailureReason(%q) = %q, want non-empty=%v", tc.status, got, tc.wantErr)
 			}
 		})
 	}
