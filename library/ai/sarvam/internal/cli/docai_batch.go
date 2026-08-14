@@ -231,18 +231,35 @@ func newNovelDocaiBatchCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			if !wantsHumanTable(cmd.OutOrStdout(), flags) {
-				return printJSONFiltered(cmd.OutOrStdout(), map[string]any{
+				if err := printJSONFiltered(cmd.OutOrStdout(), map[string]any{
 					"schema":  flagSchema,
 					"dir":     flagDir,
 					"results": results,
-				}, flags)
-			}
-			for _, r := range results {
-				if r.Error != "" {
-					fmt.Fprintf(cmd.OutOrStdout(), "%-30s FAIL: %s\n", r.File, r.Error)
-				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "%-30s %s job=%s\n", r.File, r.Status, r.JobID)
+				}, flags); err != nil {
+					return err
 				}
+			} else {
+				for _, r := range results {
+					if r.Error != "" {
+						fmt.Fprintf(cmd.OutOrStdout(), "%-30s FAIL: %s\n", r.File, r.Error)
+					} else {
+						fmt.Fprintf(cmd.OutOrStdout(), "%-30s %s job=%s\n", r.File, r.Status, r.JobID)
+					}
+				}
+			}
+
+			// Surface persistence failures through the exit code so scripts
+			// and agents can detect failed result writes, not just read about
+			// them in the output. Any failed doc (write error, API error, or
+			// non-terminal status) makes the run exit non-zero.
+			failed := 0
+			for _, r := range results {
+				if r.Error != "" || r.Status == "failed" {
+					failed++
+				}
+			}
+			if failed > 0 {
+				return partialFailureErr(fmt.Errorf("%d of %d document(s) failed to extract or save results", failed, len(results)))
 			}
 			return nil
 		},

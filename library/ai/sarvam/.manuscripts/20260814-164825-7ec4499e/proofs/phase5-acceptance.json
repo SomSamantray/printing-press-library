@@ -11,7 +11,7 @@
   "auth_context": {
     "type": "none"
   },
-  "source_fingerprint": "d6cf02dd2e57068dc1106214d71be6d401b1822819f563ed2c6a70d2d85ee384",
+  "source_fingerprint": "3d3938f6b5ecc30af13f40505c02e303fbe1384d4f54bd7c5ddd3fccd1c4c928",
   "source_files": {
     "cmd/sarvam-pp-cli/main.go": "9f2bd261442d27c014ba83cddee71a679261841825f2ce35c4716ae746be375e",
     "cmd/sarvam-pp-mcp/main.go": "47930b45a66c5db7a19380faac1e5e359cc0a09951c4385ee1404fa281dc232b",
@@ -35,7 +35,7 @@
     "internal/cli/doc-ai_status.go": "5ebf1ff7ae888d303ddf2cf7bb6a83104606629749111243c077d419f672dc77",
     "internal/cli/doc-ai_upload.go": "492320386131fe28bb56442c66b49003676147132792c83e750f3ccb9fac57d2",
     "internal/cli/docai.go": "39d4fd09f4ef84212b1190be65c77a230341e98871fc57a9f83ddd08571c8d38",
-    "internal/cli/docai_batch.go": "cba3a8c5f67fb0ab5497f1511d98ce797dd500a9734da3d3aaaca0f78d7d2318",
+    "internal/cli/docai_batch.go": "095306104cbc5cb3778882870ddacac0b065a2334ee19caabb062dfcfd9257ab",
     "internal/cli/docai_batch_test.go": "b976e60cb4ea3981890209ad76a8bdfb1b1516ed8e612522ae208f7b1fa4b41f",
     "internal/cli/docai_schema.go": "b3aa80f35bc457a2973f2dd1d79b9dee48e812ff084a9b6c69de358881af3734",
     "internal/cli/docai_schema_test.go": "9c42b7e88d93a7fa8c1f28619c01a23140d319fbbefde30ca2bb69086cbc001a",
