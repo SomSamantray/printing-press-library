@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
@@ -16,9 +17,9 @@ import (
 
 // Transport selection order: --transport flag, then PP_MCP_TRANSPORT env,
 // then the first transport declared in the spec (see MCPConfig.Transport).
-// The flag surface lets one binary serve stdio locally and streamable HTTP
-// when hosted in a container or remote sandbox, matching the Anthropic
-// guidance that production agents need a remote option.
+// HTTP transport is intentionally restricted to loopback addresses because
+// this server exposes local files and command execution without a network
+// authentication layer.
 
 const (
 	defaultHTTPAddr = "127.0.0.1:7777"
@@ -26,6 +27,21 @@ const (
 
 // version is the printed MCP server's version, overridable at build time via ldflags.
 var version = "0.0.0-dev"
+
+func validateHTTPAddr(addr string) error {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return fmt.Errorf("invalid HTTP bind address %q: %w", addr, err)
+	}
+	if strings.EqualFold(host, "localhost") {
+		return nil
+	}
+	ip := net.ParseIP(host)
+	if ip == nil || !ip.IsLoopback() {
+		return fmt.Errorf("HTTP MCP transport only supports loopback bind addresses; refusing %q", addr)
+	}
+	return nil
+}
 
 func main() {
 	if err := cli.BindMCPServerProfile(); err != nil {
@@ -62,6 +78,10 @@ func main() {
 			os.Exit(1)
 		}
 	case "http":
+		if err := validateHTTPAddr(*addr); err != nil {
+			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
+			os.Exit(2)
+		}
 		httpSrv := server.NewStreamableHTTPServer(s)
 		fmt.Fprintf(os.Stderr, "ihatepdf-cv-pp-mcp serving MCP over streamable HTTP at %s\n", *addr)
 		if err := httpSrv.Start(*addr); err != nil {
@@ -76,7 +96,7 @@ func main() {
 
 // defaultTransport reads PP_MCP_TRANSPORT env when set, otherwise falls back
 // to "stdio" so running the binary with no args keeps today's behavior.
-// Container-hosted agents can pin the transport via env without a flag, which
+// Local HTTP clients can pin the transport via env without a flag;
 // matches how hosted-agent process supervisors typically pass configuration.
 func defaultTransport() string {
 	if t := os.Getenv("PP_MCP_TRANSPORT"); t != "" {

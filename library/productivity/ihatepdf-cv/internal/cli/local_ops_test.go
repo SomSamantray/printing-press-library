@@ -3,6 +3,19 @@ package cli
 
 import "testing"
 
+func TestImageTypeForPathRejectsExtensionlessInput(t *testing.T) {
+	if _, err := imageTypeForPath("scan"); err == nil {
+		t.Fatal("expected extensionless image path to be rejected")
+	}
+	got, err := imageTypeForPath("scan.PNG")
+	if err != nil {
+		t.Fatalf("imageTypeForPath returned error: %v", err)
+	}
+	if got != "PNG" {
+		t.Fatalf("image type = %q, want PNG", got)
+	}
+}
+
 func TestHashBytesDeterministic(t *testing.T) {
 	got := hashBytes("x.pdf", []byte("hello"))
 	if got.SHA256 != "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824" {

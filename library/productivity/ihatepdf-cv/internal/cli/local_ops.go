@@ -281,6 +281,14 @@ func newExtractTextCmd(flags *rootFlags) *cobra.Command {
 	return c
 }
 
+func imageTypeForPath(path string) (string, error) {
+	ext := filepath.Ext(path)
+	if ext == "" {
+		return "", usageErr(fmt.Errorf("image path %s has no file extension", path))
+	}
+	return strings.ToUpper(ext[1:]), nil
+}
+
 func newImagesToPDFCmd(flags *rootFlags) *cobra.Command {
 	var output string
 	c := &cobra.Command{Use: "images-to-pdf [images...]", Short: "Convert JPG and PNG images to a local PDF.", Example: "  ihatepdf-cv-pp-cli images-to-pdf scan-1.png scan-2.jpg --output scans.pdf --json", Annotations: map[string]string{"mcp:read-only": "false", "pp:happy-args": "image=testdata/fixture.png;--output=verify-images.pdf"}, RunE: func(cmd *cobra.Command, args []string) error {
@@ -311,8 +319,12 @@ func newImagesToPDFCmd(flags *rootFlags) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("decode image %s: %w", path, err)
 			}
+			imageType, err := imageTypeForPath(path)
+			if err != nil {
+				return err
+			}
 			pdf.AddPage()
-			pdf.ImageOptions(path, 10, 10, 190, 0, false, fpdf.ImageOptions{ImageType: strings.ToUpper(filepath.Ext(path)[1:]), ReadDpi: true}, 0, "")
+			pdf.ImageOptions(path, 10, 10, 190, 0, false, fpdf.ImageOptions{ImageType: imageType, ReadDpi: true}, 0, "")
 			_ = cfg
 		}
 		if err := pdf.OutputFileAndClose(output); err != nil {
