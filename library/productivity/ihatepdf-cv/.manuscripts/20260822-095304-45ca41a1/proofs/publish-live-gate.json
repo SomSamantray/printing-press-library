@@ -1,6 +1,6 @@
 {
-  "dir": "/Users/apple/printing-press/.runstate/workspace-0b5cfea6/runs/20260822-095304-45ca41a1/working/ihatepdf-cv-pp-cli",
-  "binary": "/Users/apple/printing-press/.runstate/workspace-0b5cfea6/runs/20260822-095304-45ca41a1/working/ihatepdf-cv-pp-cli/ihatepdf-cv-pp-cli",
+  "dir": "/Users/apple/printing-press/.publish-repo-workspace-0b5cfea6/library/productivity/ihatepdf-cv",
+  "binary": "/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/ihatepdf-cv-pp-cli-dogfood-956230852",
   "level": "full",
   "verdict": "PASS",
   "matrix_size": 106,
@@ -112,7 +112,7 @@
         "--agent"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"db\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.local/share/ihatepdf-cv-pp-cli/data.db\",\n    \"indexed\": 1,\n    \"operation\": \"catalog-index\",\n    \"source\": \"local-file\"\n  }\n}\n"
+      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"db\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.local/share/ihatepdf-cv-pp-cli/data.db\",\n    \"indexed\": 1,\n    \"operation\": \"catalog-index\",\n    \"source\": \"local-file\"\n  }\n}\n"
     },
     {
       "command": "catalog index",
@@ -125,7 +125,7 @@
         "--agent"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"db\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.local/share/ihatepdf-cv-pp-cli/data.db\",\n    \"indexed\": 1,\n    \"operation\": \"catalog-index\",\n    \"source\": \"local-file\"\n  }\n}\n"
+      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"db\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.local/share/ihatepdf-cv-pp-cli/data.db\",\n    \"indexed\": 1,\n    \"operation\": \"catalog-index\",\n    \"source\": \"local-file\"\n  }\n}\n"
     },
     {
       "command": "catalog index",
@@ -191,7 +191,7 @@
         "--agent"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"count\": 1,\n    \"last_indexed\": \"2026-08-22T06:43:52Z\",\n    \"resource\": \"pdf_catalog\",\n    \"source\": \"local-file\"\n  }\n}\n"
+      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"count\": 1,\n    \"last_indexed\": \"2026-08-22T08:19:58Z\",\n    \"resource\": \"pdf_catalog\",\n    \"source\": \"local-file\"\n  }\n}\n"
     },
     {
       "command": "catalog status",
@@ -202,7 +202,7 @@
         "--agent"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"count\": 1,\n    \"last_indexed\": \"2026-08-22T06:43:52Z\",\n    \"resource\": \"pdf_catalog\",\n    \"source\": \"local-file\"\n  }\n}\n"
+      "output_sample": "{\n  \"meta\": {\n    \"source\": \"local\"\n  },\n  \"results\": {\n    \"count\": 1,\n    \"last_indexed\": \"2026-08-22T08:19:58Z\",\n    \"resource\": \"pdf_catalog\",\n    \"source\": \"local-file\"\n  }\n}\n"
     },
     {
       "command": "catalog status",
@@ -229,7 +229,7 @@
         "--dry-run"
       ],
       "status": "pass",
-      "output_sample": "  OK Config: ok\n  OK Auth: not required\n  OK Verify Mode: normal operation\n  OK API: reachable\n  OK Cache: map[age_seconds:0 checked_at:2026-08-22T06:43:52Z fresh:true source:local stale_after_seconds:1800 status:fresh]\n  config_path: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.config/ihatepdf-cv-pp-cli/config.toml\n  base_url: https://www.ihatepdf.cv\n  version: 0.0.0-dev\n  Paths:\n    config: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.config/ihatepdf-cv-pp-cli (XDG_CONFIG_HOME)\n    data: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.local/share/ihatepdf-cv-pp-cli (XDG_DATA_HOME)\n    state: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.local/state/ihatepdf-cv-pp-cli (XDG_STATE_HOME)\n    cache: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.cache/ihatepdf-cv-pp-cli (XDG_CACHE_HOME)\nGET https://www.ihatepdf.cv/\n\n(dry run - no request sent)\n"
+      "output_sample": "  OK Config: ok\n  OK Auth: not required\n  OK Verify Mode: normal operation\n  OK API: reachable\n  OK Cache: map[age_seconds:0 checked_at:2026-08-22T08:19:58Z fresh:true source:local stale_after_seconds:1800 status:fresh]\n  config_path: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.config/ihatepdf-cv-pp-cli/config.toml\n  base_url: https://www.ihatepdf.cv\n  version: 0.0.0-dev\n  Paths:\n    config: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.config/ihatepdf-cv-pp-cli (XDG_CONFIG_HOME)\n    data: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.local/share/ihatepdf-cv-pp-cli (XDG_DATA_HOME)\n    state: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.local/state/ihatepdf-cv-pp-cli (XDG_STATE_HOME)\n    cache: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.cache/ihatepdf-cv-pp-cli (XDG_CACHE_HOME)\nGET https://www.ihatepdf.cv/\n\n(dry run - no request sent)\n"
     },
     {
       "command": "doctor",
@@ -240,7 +240,7 @@
         "--json"
       ],
       "status": "pass",
-      "output_sample": "{\n  \"api\": \"reachable\",\n  \"auth\": \"not required\",\n  \"base_url\": \"https://www.ihatepdf.cv\",\n  \"cache\": {\n    \"age_seconds\": 0,\n    \"checked_at\": \"2026-08-22T06:43:52Z\",\n    \"fresh\": true,\n    \"source\": \"local\",\n    \"stale_after_seconds\": 1800,\n    \"status\": \"fresh\"\n  },\n  \"config\": \"ok\",\n  \"config_path\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.config/ihatepdf-cv-pp-cli/config.toml\",\n  \"paths\": {\n    \"cache\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.cache/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CACHE_HOME\"\n    },\n    \"config\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.config/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CONFIG_HOME\"\n    },\n    \"data\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.local/share/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_DATA_HOME\"\n    },\n    \"state\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.local/state/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_STATE_HOME\"\n    },\n    \"status\": \"ok\"\n  },\n  \"verify_mode\": \"normal operation\",\n  \"version\": \"0.0.0-dev\"\n}\nGET https://www.ihatepdf.cv/\n\n(dry run - no request sent)\n"
+      "output_sample": "{\n  \"api\": \"reachable\",\n  \"auth\": \"not required\",\n  \"base_url\": \"https://www.ihatepdf.cv\",\n  \"cache\": {\n    \"age_seconds\": 0,\n    \"checked_at\": \"2026-08-22T08:19:58Z\",\n    \"fresh\": true,\n    \"source\": \"local\",\n    \"stale_after_seconds\": 1800,\n    \"status\": \"fresh\"\n  },\n  \"config\": \"ok\",\n  \"config_path\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.config/ihatepdf-cv-pp-cli/config.toml\",\n  \"paths\": {\n    \"cache\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.cache/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CACHE_HOME\"\n    },\n    \"config\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.config/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_CONFIG_HOME\"\n    },\n    \"data\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.local/share/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_DATA_HOME\"\n    },\n    \"state\": {\n      \"dir\": \"/var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.local/state/ihatepdf-cv-pp-cli\",\n      \"rung\": \"xdg-env\",\n      \"source\": \"XDG_STATE_HOME\"\n    },\n    \"status\": \"ok\"\n  },\n  \"verify_mode\": \"normal operation\",\n  \"version\": \"0.0.0-dev\"\n}\nGET https://www.ihatepdf.cv/\n\n(dry run - no request sent)\n"
     },
     {
       "command": "doctor",
@@ -709,14 +709,14 @@
       "kind": "happy_path",
       "args": null,
       "status": "skip",
-      "reason": "blocked-fixture: required API parameter"
+      "reason": "no id parseable from companion at depth 0"
     },
     {
       "command": "learnings confirm",
       "kind": "json_fidelity",
       "args": null,
       "status": "skip",
-      "reason": "blocked-fixture: required API parameter"
+      "reason": "no id parseable from companion at depth 0"
     },
     {
       "command": "learnings confirm",
@@ -730,7 +730,7 @@
       "kind": "error_path_real",
       "args": null,
       "status": "skip",
-      "reason": "blocked-fixture: required API parameter"
+      "reason": "no id parseable from companion at depth 0"
     },
     {
       "command": "learnings forget",
@@ -875,14 +875,14 @@
       "kind": "happy_path",
       "args": null,
       "status": "skip",
-      "reason": "blocked-fixture: required API parameter"
+      "reason": "list companion previously failed at depth 0 for \"id\""
     },
     {
       "command": "learnings reject",
       "kind": "json_fidelity",
       "args": null,
       "status": "skip",
-      "reason": "blocked-fixture: required API parameter"
+      "reason": "list companion previously failed at depth 0 for \"id\""
     },
     {
       "command": "learnings reject",
@@ -896,7 +896,7 @@
       "kind": "error_path_real",
       "args": null,
       "status": "skip",
-      "reason": "blocked-fixture: required API parameter"
+      "reason": "list companion previously failed at depth 0 for \"id\""
     },
     {
       "command": "learnings stats",
@@ -1888,7 +1888,7 @@
         "status"
       ],
       "status": "pass",
-      "output_sample": "Archive Status:\n  pdf_catalog                    1 items\n\n  Total: 1 items\n  Store: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-1615408859/.local/share/ihatepdf-cv-pp-cli/data.db\n"
+      "output_sample": "Archive Status:\n  pdf_catalog                    1 items\n\n  Total: 1 items\n  Store: /var/folders/4c/4s9qrz4s335f5whj7y427ns00000gn/T/printing-press-subprocess-3848983860/.local/share/ihatepdf-cv-pp-cli/data.db\n"
     },
     {
       "command": "workflow status",
@@ -1909,5 +1909,5 @@
       "reason": "no positional argument"
     }
   ],
-  "ran_at": "2026-08-22T06:43:51.930305Z"
+  "ran_at": "2026-08-22T08:19:58.093307Z"
 }
