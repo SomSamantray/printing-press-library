@@ -76,30 +76,12 @@
       "group": "Private local document pipelines"
     },
     {
-      "name": "Reproducible local workflow",
-      "command": "workflow run",
-      "description": "Chain local PDF operations and emit a machine-readable artifact manifest.",
-      "rationale": "The browser workflow builder has local state, but this CLI makes the chain deterministic and scriptable.",
-      "example": "ihatepdf-cv-pp-cli workflow run pipeline.json --agent",
-      "why_it_matters": "Choose this when the same document preparation sequence must be repeated in CI or by an agent.",
-      "group": "Private local document pipelines"
-    },
-    {
       "name": "Integrity trail",
       "command": "fingerprint",
       "description": "Record SHA-256, SHA-1, and MD5 hashes for inputs and outputs.",
       "rationale": "A CLI can emit a stable integrity record directly alongside generated artifacts.",
       "example": "ihatepdf-cv-pp-cli fingerprint report.pdf --json",
       "why_it_matters": "Choose this when downstream systems need to verify that a PDF was not changed.",
-      "group": "Trust and audit"
-    },
-    {
-      "name": "Safe redaction",
-      "command": "redact",
-      "description": "Redact selected sensitive text patterns into a separate output file.",
-      "rationale": "The CLI can combine explicit pattern selection, non-destructive defaults, and a redaction report.",
-      "example": "ihatepdf-cv-pp-cli redact report.pdf --pattern email --output clean.pdf --agent",
-      "why_it_matters": "Choose this when an agent needs a conservative, reviewable redaction step.",
       "group": "Trust and audit"
     },
     {
@@ -134,7 +116,7 @@
   "narrative": {
     "display_name": "ihatepdf.cv",
     "headline": "Private PDF operations for agents, scripts, and offline pipelines.",
-    "value_prop": "ihatepdf.cv CLI brings the website's no-upload promise to the terminal. Merge, inspect, redact, fingerprint, encrypt, and chain document operations locally with JSON output and reproducible artifacts.",
+    "value_prop": "ihatepdf.cv CLI brings the website's no-upload promise to the terminal. Merge, inspect, fingerprint, encrypt, search, catalog, and convert documents locally with JSON output and reproducible artifacts.",
     "quickstart": [
       {
         "command": "ihatepdf-cv-pp-cli doctor --dry-run",
@@ -165,8 +147,7 @@
     ],
     "when_to_use": "Use this CLI for local, privacy-sensitive PDF preparation, inspection, and repeatable file pipelines. It is especially useful when an agent needs structured JSON and deterministic output paths.",
     "anti_triggers": [
-      "Do not use this CLI for interactive browser editing, camera capture, P2P sharing, or collaborative whiteboards.",
-      "Do not treat automatic redaction as a substitute for human or legal review."
+      "Do not use this CLI for interactive browser editing, camera capture, P2P sharing, or collaborative whiteboards."
     ],
     "recipes": [
       {
@@ -188,7 +169,7 @@
     "trigger_phrases": [
       "check this PDF for privacy risks",
       "merge these PDFs locally",
-      "redact emails from a PDF",
+      "scan a PDF for privacy risks",
       "fingerprint a PDF",
       "use ihatepdf.cv CLI"
     ]

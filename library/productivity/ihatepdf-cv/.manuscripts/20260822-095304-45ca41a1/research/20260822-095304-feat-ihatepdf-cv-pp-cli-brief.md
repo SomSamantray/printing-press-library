@@ -18,7 +18,7 @@
 
 ## Tool Surface Found
 - Page management: merge, compress, split, organize, rotate, crop/resize, PDF-to-ZIP.
-- Edit/security: edit/sign, fill forms, redact, watermark, page numbers, headers/footers, flatten, invert colors, encrypt, unlock/remove password, auto-redact, privacy scanner, fingerprint.
+- Edit/security: edit/sign, fill forms, redaction UI, watermark, page numbers, headers/footers, flatten, invert colors, encrypt, unlock/remove password, automatic redaction UI, privacy scanner, fingerprint.
 - Conversion: text/Markdown/HTML/Word/images/Excel/PowerPoint/CSV/audio/eBook to PDF; PDF to Word/JPG/Excel/PowerPoint/text/HTML/audio/EPUB.
 - AI/collaboration: OCR, chat/summarize, compare, repair, P2P share, whiteboard, workflow builder, camera scan.
 
@@ -37,7 +37,7 @@
 ## Data Layer
 - Primary entities: local PDF jobs, input files, output artifacts, workflow steps, inspection records.
 - Sync cursor: none; this is a stateless local-file tool, not a remote API client.
-- FTS/search: no remote search; optional extracted-text search is a future local index, not required for the first CLI.
+- FTS/search: no remote search; the CLI provides local extracted-text search backed by the SQLite catalog.
 
 ## Product Thesis
 - Name: ihatepdf.cv CLI
@@ -48,6 +48,6 @@
 
 ## Build Priorities
 1. Core PDF file operations: inspect, merge, split, rotate, extract text, fingerprint.
-2. Privacy/security: redact, encrypt, and PII scanning with JSON output.
+2. Privacy/security: encrypt and PII scanning with JSON output; the browser redaction UI is outside the CLI boundary.
 3. Creation: images-to-PDF and text/Markdown-to-PDF.
 4. Comprehensive dogfood using generated fixtures and negative/error paths.

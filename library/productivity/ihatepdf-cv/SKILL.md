@@ -1,6 +1,6 @@
 ---
 name: pp-ihatepdf-cv
-description: "Private PDF operations for agents, scripts, and offline pipelines. Trigger phrases: `check this PDF for privacy risks`, `merge these PDFs locally`, `redact emails from a PDF`, `fingerprint a PDF`, `use ihatepdf.cv CLI`."
+description: "Private PDF operations for agents, scripts, and offline pipelines. Trigger phrases: `check this PDF for privacy risks`, `merge these PDFs locally`, `fingerprint a PDF`, `use ihatepdf.cv CLI`."
 author: "Som Samantray"
 license: "Apache-2.0"
 argument-hint: "<command> [args] | install cli|mcp"

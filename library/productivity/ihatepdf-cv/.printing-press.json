@@ -70,19 +70,9 @@
       "description": "Find content and metadata risks before a PDF leaves your machine."
     },
     {
-      "name": "Reproducible local workflow",
-      "command": "workflow run",
-      "description": "Chain local PDF operations and emit a machine-readable artifact manifest."
-    },
-    {
       "name": "Integrity trail",
       "command": "fingerprint",
       "description": "Record SHA-256, SHA-1, and MD5 hashes for inputs and outputs."
-    },
-    {
-      "name": "Safe redaction",
-      "command": "redact",
-      "description": "Redact selected sensitive text patterns into a separate output file."
     },
     {
       "name": "Agent-native inspection",
