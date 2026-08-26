@@ -39,9 +39,16 @@ func newNovelResearchFetchManyCmd(flags *rootFlags) *cobra.Command {
 			defer cancel()
 			pages, failures := fetchMany(ctx, flags, clean, maxChars, concurrency, live, authenticated)
 			snap := researchSnapshot{ID: newResearchSnapshotID(strings.Join(clean, "\n")), Query: "fetch-many", CreatedAt: "now", AuthMode: map[bool]string{true: "authenticated", false: "public"}[authenticated], FetchedCount: len(pages)}
-			if s, err := openResearchStore(ctx); err == nil {
-				_ = persistResearchSnapshot(s, snap, nil, pages)
+			s, err := openResearchStore(ctx)
+			if err != nil {
+				return fmt.Errorf("open research store: %w", err)
+			}
+			if err := persistResearchSnapshot(s, snap, nil, pages); err != nil {
 				_ = s.Close()
+				return fmt.Errorf("persist research snapshot: %w", err)
+			}
+			if err := s.Close(); err != nil {
+				return fmt.Errorf("close research store: %w", err)
 			}
 			if len(failures) > 0 {
 				fmt.Fprintf(cmd.ErrOrStderr(), "warning: %d of %d fetches failed; %d pages saved\n", len(failures), len(clean), len(pages))
