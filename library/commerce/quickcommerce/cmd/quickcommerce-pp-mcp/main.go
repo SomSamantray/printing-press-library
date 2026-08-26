@@ -27,6 +27,8 @@ const (
 	defaultHTTPAddr = "127.0.0.1:7777"
 	mcpEndpointPath = "/mcp"
 	authTokenEnvVar = "QUICKCOMMERCE_MCP_TOKEN"
+	tlsCertEnvVar   = "QUICKCOMMERCE_MCP_TLS_CERT"
+	tlsKeyEnvVar    = "QUICKCOMMERCE_MCP_TLS_KEY"
 )
 
 // version is the printed MCP server's version, overridable at build time via ldflags.
@@ -51,6 +53,8 @@ func main() {
 	transport := flag.String("transport", defaultTransport(), "MCP transport: stdio | http")
 	addr := flag.String("addr", defaultHTTPAddr, "bind address for http transport (host:port or :port)")
 	authToken := flag.String("auth-token", "", "bearer token required of http MCP clients (env: "+authTokenEnvVar+"); required when --addr is not loopback")
+	tlsCert := flag.String("tls-cert", "", "TLS certificate file for http transport (env: "+tlsCertEnvVar+"); required with --tls-key when --addr is not loopback")
+	tlsKey := flag.String("tls-key", "", "TLS private key file for http transport (env: "+tlsKeyEnvVar+"); required with --tls-cert when --addr is not loopback")
 	flag.Parse()
 
 	switch strings.ToLower(*transport) {
@@ -64,21 +68,31 @@ func main() {
 		if token == "" {
 			token = os.Getenv(authTokenEnvVar)
 		}
-		if token == "" && !isLoopbackAddr(*addr) {
-			// This server registers credentialed API, SQLite, and CLI
-			// shell-out tools (see internal/mcp/tools.go). mcp-go's
-			// built-in DNS-rebinding guard only protects loopback
-			// listeners against a rebound Host header; it does not
-			// authenticate clients connecting to a genuinely
-			// non-loopback address. Fail closed rather than let that
-			// surface sit open to the network with no client check.
-			fmt.Fprintf(os.Stderr, "refusing to start http transport on non-loopback address %q without --auth-token or %s: this server exposes credentialed API, local-data, and CLI shell-out tools\n", *addr, authTokenEnvVar)
+		certFile := *tlsCert
+		if certFile == "" {
+			certFile = os.Getenv(tlsCertEnvVar)
+		}
+		keyFile := *tlsKey
+		if keyFile == "" {
+			keyFile = os.Getenv(tlsKeyEnvVar)
+		}
+		if err := checkRemoteHTTPRequirements(*addr, token, certFile, keyFile); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 
 		httpSrv := server.NewStreamableHTTPServer(s, server.WithEndpointPath(mcpEndpointPath))
 		mux := http.NewServeMux()
 		mux.Handle(mcpEndpointPath, requireBearerToken(token, httpSrv))
+
+		if certFile != "" && keyFile != "" {
+			fmt.Fprintf(os.Stderr, "quickcommerce-pp-mcp serving MCP over streamable HTTPS at %s\n", *addr)
+			if err := http.ListenAndServeTLS(*addr, certFile, keyFile, mux); err != nil {
+				fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		}
 
 		fmt.Fprintf(os.Stderr, "quickcommerce-pp-mcp serving MCP over streamable HTTP at %s\n", *addr)
 		if err := http.ListenAndServe(*addr, mux); err != nil {
@@ -113,6 +127,33 @@ func isLoopbackAddr(addr string) bool {
 		return false
 	}
 	return ip.IsLoopback()
+}
+
+// checkRemoteHTTPRequirements returns a fail-closed error when addr is not
+// loopback and either the bearer token or the TLS cert/key pair is missing.
+// Loopback binds have no requirement: local traffic never crosses the
+// network, so today's unauthenticated-and-plaintext default keeps working.
+//
+// This server registers credentialed API, SQLite, and CLI shell-out tools
+// (see internal/mcp/tools.go). mcp-go's built-in DNS-rebinding guard only
+// protects loopback listeners against a rebound Host header; it does not
+// authenticate clients connecting to a genuinely non-loopback address, so a
+// bearer token is required there. But a bearer token sent over plain HTTP is
+// just as exposed to a network observer as the tools it protects: captured
+// once, it is a static, reusable credential that can be replayed
+// indefinitely. TLS is what keeps the token itself confidential in transit,
+// so it is required alongside the token, not instead of it.
+func checkRemoteHTTPRequirements(addr, token, tlsCertFile, tlsKeyFile string) error {
+	if isLoopbackAddr(addr) {
+		return nil
+	}
+	if token == "" {
+		return fmt.Errorf("refusing to start http transport on non-loopback address %q without --auth-token or %s: this server exposes credentialed API, local-data, and CLI shell-out tools", addr, authTokenEnvVar)
+	}
+	if tlsCertFile == "" || tlsKeyFile == "" {
+		return fmt.Errorf("refusing to start http transport on non-loopback address %q without --tls-cert/--tls-key or %s/%s: an --auth-token sent over plain HTTP is exposed to any network observer between client and server", addr, tlsCertEnvVar, tlsKeyEnvVar)
+	}
+	return nil
 }
 
 // requireBearerToken gates next behind a constant-time comparison against

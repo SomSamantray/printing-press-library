@@ -90,6 +90,47 @@ func TestRequireBearerToken_RejectsMissingOrWrongToken(t *testing.T) {
 	}
 }
 
+// TestCheckRemoteHTTPRequirements_LoopbackNeedsNothing pins the default
+// behavior this PR must not regress: a loopback bind with no token and no
+// TLS cert/key keeps working exactly as before.
+func TestCheckRemoteHTTPRequirements_LoopbackNeedsNothing(t *testing.T) {
+	if err := checkRemoteHTTPRequirements("127.0.0.1:7777", "", "", ""); err != nil {
+		t.Fatalf("loopback bind with no token/TLS should be allowed, got: %v", err)
+	}
+}
+
+// TestCheckRemoteHTTPRequirements_NonLoopbackNeedsTokenAndTLS is the core of
+// this fix: a non-loopback bind must refuse to start unless it has BOTH a
+// bearer token and a TLS cert/key pair. A token alone (this PR's prior
+// state) is not enough -- sent over plain HTTP it is a static, reusable
+// credential exposed to any on-path network observer, defeating the point
+// of requiring it.
+func TestCheckRemoteHTTPRequirements_NonLoopbackNeedsTokenAndTLS(t *testing.T) {
+	cases := []struct {
+		name        string
+		token       string
+		cert, key   string
+		wantAllowed bool
+	}{
+		{"nothing configured", "", "", "", false},
+		{"token only, no TLS", "secret", "", "", false},
+		{"token and cert but no key", "secret", "cert.pem", "", false},
+		{"token and key but no cert", "secret", "", "key.pem", false},
+		{"TLS only, no token", "", "cert.pem", "key.pem", false},
+		{"token and full TLS pair", "secret", "cert.pem", "key.pem", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := checkRemoteHTTPRequirements("0.0.0.0:7777", tc.token, tc.cert, tc.key)
+			allowed := err == nil
+			if allowed != tc.wantAllowed {
+				t.Fatalf("checkRemoteHTTPRequirements(token=%q, cert=%q, key=%q) allowed=%v, want %v (err=%v)",
+					tc.token, tc.cert, tc.key, allowed, tc.wantAllowed, err)
+			}
+		})
+	}
+}
+
 func TestRequireBearerToken_AcceptsCorrectToken(t *testing.T) {
 	called := false
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { called = true })
