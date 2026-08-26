@@ -32,23 +32,43 @@ func TestIsLoopbackAddr(t *testing.T) {
 	}
 }
 
-// TestRequireBearerToken_NoTokenLeavesHandlerOpen pins the default behavior
-// this PR must not regress: an operator who never sets --auth-token or
-// QUICKCOMMERCE_MCP_TOKEN and binds loopback keeps working exactly as
-// before, unauthenticated.
-func TestRequireBearerToken_NoTokenLeavesHandlerOpen(t *testing.T) {
-	called := false
-	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { called = true })
-
-	handler := requireBearerToken("", next)
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/mcp", nil))
-
-	if !called {
-		t.Fatal("expected next handler to run when no token is configured")
+// TestRequireBearerToken_EmptyTokenFailsClosed guards the fix for the
+// "unauthenticated loopback MCP" finding: requireBearerToken used to leave
+// the wrapped handler completely open when no token was configured, on the
+// premise that a loopback bind is a trust boundary. It is not -- any other
+// local process on the host could reach it. main() now always resolves an
+// explicit or auto-generated token before wiring this handler, so an empty
+// token reaching here is an invariant violation and must reject every
+// request rather than pass them through, regardless of what Authorization
+// header (or lack of one) the request carries.
+func TestRequireBearerToken_EmptyTokenFailsClosed(t *testing.T) {
+	cases := []struct {
+		name   string
+		header string
+	}{
+		{"no header at all", ""},
+		{"empty bearer value", "Bearer "},
 	}
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			called := false
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { called = true })
+			handler := requireBearerToken("", next)
+
+			req := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+			if tc.header != "" {
+				req.Header.Set("Authorization", tc.header)
+			}
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+
+			if called {
+				t.Fatal("wrapped handler ran despite an empty configured token -- this is the loopback-auth-bypass regression")
+			}
+			if rec.Code != http.StatusUnauthorized {
+				t.Fatalf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+			}
+		})
 	}
 }
 
@@ -90,12 +110,19 @@ func TestRequireBearerToken_RejectsMissingOrWrongToken(t *testing.T) {
 	}
 }
 
-// TestCheckRemoteHTTPRequirements_LoopbackNeedsNothing pins the default
-// behavior this PR must not regress: a loopback bind with no token and no
-// TLS cert/key keeps working exactly as before.
-func TestCheckRemoteHTTPRequirements_LoopbackNeedsNothing(t *testing.T) {
-	if err := checkRemoteHTTPRequirements("127.0.0.1:7777", "", "", ""); err != nil {
-		t.Fatalf("loopback bind with no token/TLS should be allowed, got: %v", err)
+// TestCheckRemoteHTTPRequirements_LoopbackNeedsTokenButNotTLS guards the fix
+// for the "unauthenticated loopback MCP" finding: a loopback bind with no
+// token must now be refused (main() auto-generates one before this ever
+// runs in practice, but the function itself must not treat an empty token
+// as "no requirement" -- that was the exact bug). TLS is still not required
+// for loopback: that requirement addresses a network observer intercepting
+// the token in transit, which does not apply to loopback traffic.
+func TestCheckRemoteHTTPRequirements_LoopbackNeedsTokenButNotTLS(t *testing.T) {
+	if err := checkRemoteHTTPRequirements("127.0.0.1:7777", "", "", ""); err == nil {
+		t.Fatal("loopback bind with no token should be refused -- this is the loopback-auth-bypass regression")
+	}
+	if err := checkRemoteHTTPRequirements("127.0.0.1:7777", "secret", "", ""); err != nil {
+		t.Fatalf("loopback bind with a token but no TLS should be allowed, got: %v", err)
 	}
 }
 
@@ -128,6 +155,27 @@ func TestCheckRemoteHTTPRequirements_NonLoopbackNeedsTokenAndTLS(t *testing.T) {
 					tc.token, tc.cert, tc.key, allowed, tc.wantAllowed, err)
 			}
 		})
+	}
+}
+
+// TestGenerateAuthToken guards the auto-generation path that keeps
+// zero-config startup working (R2): a non-empty, sufficiently long token
+// that differs across calls (proving it's actually random, not a fixed
+// placeholder).
+func TestGenerateAuthToken(t *testing.T) {
+	a, err := generateAuthToken()
+	if err != nil {
+		t.Fatalf("generateAuthToken: %v", err)
+	}
+	if len(a) < 32 {
+		t.Fatalf("generateAuthToken length = %d, want >= 32", len(a))
+	}
+	b, err := generateAuthToken()
+	if err != nil {
+		t.Fatalf("generateAuthToken: %v", err)
+	}
+	if a == b {
+		t.Fatal("generateAuthToken returned the same value twice -- not random")
 	}
 }
 

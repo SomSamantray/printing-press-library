@@ -4,7 +4,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/subtle"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"net"
@@ -52,7 +54,7 @@ func main() {
 
 	transport := flag.String("transport", defaultTransport(), "MCP transport: stdio | http")
 	addr := flag.String("addr", defaultHTTPAddr, "bind address for http transport (host:port or :port)")
-	authToken := flag.String("auth-token", "", "bearer token required of http MCP clients (env: "+authTokenEnvVar+"); required when --addr is not loopback")
+	authToken := flag.String("auth-token", "", "bearer token required of http MCP clients (env: "+authTokenEnvVar+"); auto-generated and printed to stderr when unset")
 	tlsCert := flag.String("tls-cert", "", "TLS certificate file for http transport (env: "+tlsCertEnvVar+"); required with --tls-key when --addr is not loopback")
 	tlsKey := flag.String("tls-key", "", "TLS private key file for http transport (env: "+tlsKeyEnvVar+"); required with --tls-cert when --addr is not loopback")
 	flag.Parse()
@@ -67,6 +69,24 @@ func main() {
 		token := *authToken
 		if token == "" {
 			token = os.Getenv(authTokenEnvVar)
+		}
+		if token == "" {
+			// Loopback is not a trust boundary: any other local process on
+			// this host (a different OS user, a compromised process) can
+			// connect to a loopback-bound port too, and this server
+			// registers credentialed API, SQLite, and CLI shell-out tools.
+			// Every HTTP-transport request must carry a real credential --
+			// generate one when the operator hasn't configured
+			// --auth-token/QUICKCOMMERCE_MCP_TOKEN, so zero-config startup
+			// still works, and tell the operator what it is (this stderr
+			// line is the only place they can learn it).
+			generated, err := generateAuthToken()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "generating MCP auth token failed: %v\n", err)
+				os.Exit(1)
+			}
+			token = generated
+			fmt.Fprintf(os.Stderr, "generated MCP bearer token (no --auth-token/%s configured): %s\n", authTokenEnvVar, token)
 		}
 		certFile := *tlsCert
 		if certFile == "" {
@@ -130,25 +150,33 @@ func isLoopbackAddr(addr string) bool {
 }
 
 // checkRemoteHTTPRequirements returns a fail-closed error when addr is not
-// loopback and either the bearer token or the TLS cert/key pair is missing.
-// Loopback binds have no requirement: local traffic never crosses the
-// network, so today's unauthenticated-and-plaintext default keeps working.
+// loopback and the TLS cert/key pair is missing. A bearer token is always
+// required regardless of loopback status (main() auto-generates one when
+// unset, before this check runs -- see the "http" case), so this function's
+// remaining job is the additional non-loopback requirement: TLS.
 //
 // This server registers credentialed API, SQLite, and CLI shell-out tools
 // (see internal/mcp/tools.go). mcp-go's built-in DNS-rebinding guard only
 // protects loopback listeners against a rebound Host header; it does not
-// authenticate clients connecting to a genuinely non-loopback address, so a
-// bearer token is required there. But a bearer token sent over plain HTTP is
-// just as exposed to a network observer as the tools it protects: captured
-// once, it is a static, reusable credential that can be replayed
-// indefinitely. TLS is what keeps the token itself confidential in transit,
-// so it is required alongside the token, not instead of it.
+// authenticate ANY client, loopback or not -- a co-resident local process
+// (a different OS user, a compromised process) can reach a loopback-bound
+// port with no more standing than a genuine remote client has for a
+// non-loopback one. A bearer token sent over plain HTTP is, however, just
+// as exposed to a network observer as the tools it protects once traffic
+// leaves the loopback interface: captured once, it is a static, reusable
+// credential that can be replayed indefinitely. TLS is what keeps the
+// token confidential in transit for a non-loopback bind, so it is required
+// there alongside the (always-present) token.
 func checkRemoteHTTPRequirements(addr, token, tlsCertFile, tlsKeyFile string) error {
+	if token == "" {
+		// Defensive: main() always resolves or generates a token before
+		// calling this function. A caller that reaches here with an empty
+		// token skipped that step -- fail closed rather than silently
+		// treating it as "no requirement".
+		return fmt.Errorf("refusing to start http transport on %q without a bearer token: this server exposes credentialed API, local-data, and CLI shell-out tools", addr)
+	}
 	if isLoopbackAddr(addr) {
 		return nil
-	}
-	if token == "" {
-		return fmt.Errorf("refusing to start http transport on non-loopback address %q without --auth-token or %s: this server exposes credentialed API, local-data, and CLI shell-out tools", addr, authTokenEnvVar)
 	}
 	if tlsCertFile == "" || tlsKeyFile == "" {
 		return fmt.Errorf("refusing to start http transport on non-loopback address %q without --tls-cert/--tls-key or %s/%s: an --auth-token sent over plain HTTP is exposed to any network observer between client and server", addr, tlsCertEnvVar, tlsKeyEnvVar)
@@ -156,20 +184,38 @@ func checkRemoteHTTPRequirements(addr, token, tlsCertFile, tlsKeyFile string) er
 	return nil
 }
 
-// requireBearerToken gates next behind a constant-time comparison against
-// token. An empty token leaves next ungated (the loopback-only default: a
-// local caller with no token configured keeps today's behavior). This is
-// deliberately separate from mcp-go's DNS-rebinding protection on
-// StreamableHTTPServer, which guards the loopback Host header and does not
-// authenticate the client.
-func requireBearerToken(token string, next http.Handler) http.Handler {
-	if token == "" {
-		return next
+// generateAuthToken returns a cryptographically random 32-byte token,
+// hex-encoded so it is safe to use verbatim in an Authorization header and
+// on a command line with no escaping.
+func generateAuthToken() (string, error) {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", fmt.Errorf("reading random bytes: %w", err)
 	}
+	return hex.EncodeToString(buf), nil
+}
+
+// requireBearerToken gates next behind a constant-time comparison against
+// token. token must be non-empty: main() always resolves an explicit
+// --auth-token/QUICKCOMMERCE_MCP_TOKEN or auto-generates one before wiring
+// this handler, so there is no longer a legitimate "unauthenticated" path.
+// An empty token reaching here is treated as a caller invariant violation
+// and fails closed (rejects every request) rather than the previous
+// behavior of leaving next completely ungated -- a loopback bind is not a
+// trust boundary (see checkRemoteHTTPRequirements), so failing open here
+// would let any co-resident local process reach the wrapped MCP handler
+// with no credential at all. This is deliberately separate from mcp-go's
+// DNS-rebinding protection on StreamableHTTPServer, which guards the
+// loopback Host header and does not authenticate the client.
+func requireBearerToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const prefix = "Bearer "
 		got := r.Header.Get("Authorization")
-		if !strings.HasPrefix(got, prefix) ||
+		// token == "" is checked explicitly rather than left to
+		// ConstantTimeCompare: two empty byte slices compare equal, so a
+		// bare "Authorization: Bearer " request (empty value after the
+		// prefix) would otherwise match an empty configured token.
+		if token == "" || !strings.HasPrefix(got, prefix) ||
 			subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(got, prefix)), []byte(token)) != 1 {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="quickcommerce-pp-mcp"`)
 			http.Error(w, "missing or invalid bearer token", http.StatusUnauthorized)
