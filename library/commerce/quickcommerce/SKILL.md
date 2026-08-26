@@ -270,14 +270,19 @@ Before list/search/drill commands on a new user question, run:
 # read from stdin: agent shells are noninteractive and a user question can
 # contain names, emails, phone numbers, or account identifiers.
 #
-# Assign via a quoted heredoc, not `VAR='...'`: a single-quoted literal
-# breaks (and can be used to inject shell syntax) the moment the value
-# itself contains an apostrophe. Quoting the heredoc delimiter disables all
-# shell expansion in the body, so the value lands exactly as written no
-# matter what it contains.
-IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
-compare product prices across platforms
-QUERY_EOF
+# Capture the value with your Write tool, not a shell heredoc: a heredoc's
+# terminator is matched by exact line content, so if the value itself
+# contains a line equal to the delimiter, the heredoc closes early and
+# whatever follows that line runs as literal shell commands. Writing the
+# value to a file with a non-shell tool sidesteps shell parsing of it
+# entirely -- there's no delimiter to spoof, and reading it back with
+# `read` from file redirection has no terminator-matching step to game.
+# 1. Write tool -> a scratch file, containing exactly:
+#    compare product prices across platforms
+STRUCTURAL_QUERY_FILE=$(mktemp)
+# (Write tool call targets $STRUCTURAL_QUERY_FILE here)
+IFS= read -r STRUCTURAL_QUERY < "$STRUCTURAL_QUERY_FILE"
+rm -f "$STRUCTURAL_QUERY_FILE"
 quickcommerce-pp-cli recall "$STRUCTURAL_QUERY" --agent
 ```
 
@@ -387,11 +392,17 @@ Teaching is unconditional. After resolving a query the store could not answer, b
 
 ```bash
 # Pass only an identifier-free structural query held by the agent. Never copy
-# a raw user question into the learning store. Assign via a quoted heredoc
-# (not `VAR='...'`) so an apostrophe in the value can't break the assignment.
-IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
-compare product prices across platforms
-QUERY_EOF
+# a raw user question into the learning store. Capture it with your Write
+# tool, not a shell heredoc: a heredoc's terminator is matched by exact line
+# content, so a value containing a line equal to the delimiter closes it
+# early and runs whatever follows as literal shell commands. Writing the
+# value to a file with a non-shell tool sidesteps shell parsing entirely.
+# 1. Write tool -> a scratch file, containing exactly:
+#    compare product prices across platforms
+STRUCTURAL_QUERY_FILE=$(mktemp)
+# (Write tool call targets $STRUCTURAL_QUERY_FILE here)
+IFS= read -r STRUCTURAL_QUERY < "$STRUCTURAL_QUERY_FILE"
+rm -f "$STRUCTURAL_QUERY_FILE"
 quickcommerce-pp-cli teach --query "$STRUCTURAL_QUERY" --resource-type <type> --resource <id1> --resource <id2>
 # (append shell `&` to background it)
 ```
@@ -407,11 +418,15 @@ You do not need to decide whether a session "deserves" a playbook: a teach on a 
 ```bash
 # Use a sanitized structural query supplied by the agent; this example is
 # intentionally noninteractive and contains no user-identifying context.
-# Assign via a quoted heredoc (not `VAR='...'`) so an apostrophe in the
-# value can't break the assignment.
-IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
-compare product prices across platforms
-QUERY_EOF
+# Capture it with your Write tool, not a shell heredoc -- see the recall
+# recipe above for why: a heredoc's terminator is exact-line-matched and a
+# value colliding with the delimiter runs whatever follows as real commands.
+# 1. Write tool -> a scratch file, containing exactly:
+#    compare product prices across platforms
+STRUCTURAL_QUERY_FILE=$(mktemp)
+# (Write tool call targets $STRUCTURAL_QUERY_FILE here)
+IFS= read -r STRUCTURAL_QUERY < "$STRUCTURAL_QUERY_FILE"
+rm -f "$STRUCTURAL_QUERY_FILE"
 
 # Common case: record both the resource learning AND the playbook in one call.
 quickcommerce-pp-cli teach \
@@ -439,14 +454,21 @@ If your debug-protocol response identifies a concrete correction the notes or pl
 ```bash
 # Both values must be structuralized before assignment: remove names, emails,
 # phone numbers, account IDs, personal paths, and user-specific query history.
-# Assign via quoted heredocs (not `VAR='...'`) so an apostrophe in either
-# value can't break the assignment.
-IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
-compare product prices across platforms
-QUERY_EOF
-IFS= read -r STRUCTURAL_NOTE <<'NOTE_EOF'
-API response wraps items under a nested data.results field
-NOTE_EOF
+# Capture both with your Write tool, not shell heredocs -- see the recall
+# recipe above for why: a heredoc's terminator is exact-line-matched and a
+# value colliding with the delimiter runs whatever follows as real commands.
+# 1. Write tool -> a scratch file, containing exactly:
+#    compare product prices across platforms
+STRUCTURAL_QUERY_FILE=$(mktemp)
+# (Write tool call targets $STRUCTURAL_QUERY_FILE here)
+IFS= read -r STRUCTURAL_QUERY < "$STRUCTURAL_QUERY_FILE"
+rm -f "$STRUCTURAL_QUERY_FILE"
+# 2. Write tool -> a second scratch file, containing exactly:
+#    API response wraps items under a nested data.results field
+STRUCTURAL_NOTE_FILE=$(mktemp)
+# (Write tool call targets $STRUCTURAL_NOTE_FILE here)
+IFS= read -r STRUCTURAL_NOTE < "$STRUCTURAL_NOTE_FILE"
+rm -f "$STRUCTURAL_NOTE_FILE"
 quickcommerce-pp-cli playbook amend \
   --query "$STRUCTURAL_QUERY" \
   --add-note "$STRUCTURAL_NOTE"
