@@ -435,8 +435,20 @@ func syncResource(ctx context.Context, c interface {
 	var totalCount int
 	requestedAt := started.UTC()
 
-	// Resume cursor from sync_state (unless --full cleared it)
-	existingCursor, lastSynced, _, _ := db.GetSyncState(resource)
+	// Resume cursor from sync_state (unless --full cleared it). A read
+	// failure here falls back to a full sync (the safe default), but must
+	// stay visible instead of silently masquerading as "no prior sync" --
+	// see GetSyncState's doc comment for why this previously fired on valid
+	// partial-sync rows and is now expected to be rare/genuine.
+	existingCursor, lastSynced, _, syncStateErr := db.GetSyncState(resource)
+	if syncStateErr != nil {
+		if humanFriendly {
+			fmt.Fprintf(os.Stderr, "  %s: could not read prior sync state, falling back to full sync: %v\n", resource, syncStateErr)
+		} else {
+			fmt.Fprintf(syncEvents, `{"event":"sync_warning","resource":"%s","reason":"sync_state_read_failed","message":%q}`+"\n",
+				resource, syncStateErr.Error())
+		}
+	}
 	if !full {
 		if storedCount, err := db.Count(resource); err == nil && storedCount == 0 {
 			existingCursor = ""

@@ -4,8 +4,11 @@
 package main
 
 import (
+	"crypto/subtle"
 	"flag"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"strings"
 
@@ -22,6 +25,8 @@ import (
 
 const (
 	defaultHTTPAddr = "127.0.0.1:7777"
+	mcpEndpointPath = "/mcp"
+	authTokenEnvVar = "QUICKCOMMERCE_MCP_TOKEN"
 )
 
 // version is the printed MCP server's version, overridable at build time via ldflags.
@@ -45,6 +50,7 @@ func main() {
 
 	transport := flag.String("transport", defaultTransport(), "MCP transport: stdio | http")
 	addr := flag.String("addr", defaultHTTPAddr, "bind address for http transport (host:port or :port)")
+	authToken := flag.String("auth-token", "", "bearer token required of http MCP clients (env: "+authTokenEnvVar+"); required when --addr is not loopback")
 	flag.Parse()
 
 	switch strings.ToLower(*transport) {
@@ -54,9 +60,28 @@ func main() {
 			os.Exit(1)
 		}
 	case "http":
-		httpSrv := server.NewStreamableHTTPServer(s)
+		token := *authToken
+		if token == "" {
+			token = os.Getenv(authTokenEnvVar)
+		}
+		if token == "" && !isLoopbackAddr(*addr) {
+			// This server registers credentialed API, SQLite, and CLI
+			// shell-out tools (see internal/mcp/tools.go). mcp-go's
+			// built-in DNS-rebinding guard only protects loopback
+			// listeners against a rebound Host header; it does not
+			// authenticate clients connecting to a genuinely
+			// non-loopback address. Fail closed rather than let that
+			// surface sit open to the network with no client check.
+			fmt.Fprintf(os.Stderr, "refusing to start http transport on non-loopback address %q without --auth-token or %s: this server exposes credentialed API, local-data, and CLI shell-out tools\n", *addr, authTokenEnvVar)
+			os.Exit(1)
+		}
+
+		httpSrv := server.NewStreamableHTTPServer(s, server.WithEndpointPath(mcpEndpointPath))
+		mux := http.NewServeMux()
+		mux.Handle(mcpEndpointPath, requireBearerToken(token, httpSrv))
+
 		fmt.Fprintf(os.Stderr, "quickcommerce-pp-mcp serving MCP over streamable HTTP at %s\n", *addr)
-		if err := httpSrv.Start(*addr); err != nil {
+		if err := http.ListenAndServe(*addr, mux); err != nil {
 			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
 			os.Exit(1)
 		}
@@ -64,6 +89,53 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown --transport %q (supported: stdio, http)\n", *transport)
 		os.Exit(2)
 	}
+}
+
+// isLoopbackAddr reports whether addr (a net/http listen address, e.g.
+// "127.0.0.1:7777", ":7777", "0.0.0.0:7777", or "localhost:7777") binds
+// exclusively to the loopback interface. A wildcard host (empty, "0.0.0.0",
+// "::") binds every interface including non-loopback ones, so it is treated
+// as non-loopback; an address this function cannot parse is treated as
+// non-loopback too, so an unrecognized form fails closed rather than open.
+func isLoopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	if host == "" {
+		return false
+	}
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	return ip.IsLoopback()
+}
+
+// requireBearerToken gates next behind a constant-time comparison against
+// token. An empty token leaves next ungated (the loopback-only default: a
+// local caller with no token configured keeps today's behavior). This is
+// deliberately separate from mcp-go's DNS-rebinding protection on
+// StreamableHTTPServer, which guards the loopback Host header and does not
+// authenticate the client.
+func requireBearerToken(token string, next http.Handler) http.Handler {
+	if token == "" {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const prefix = "Bearer "
+		got := r.Header.Get("Authorization")
+		if !strings.HasPrefix(got, prefix) ||
+			subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(got, prefix)), []byte(token)) != 1 {
+			w.Header().Set("WWW-Authenticate", `Bearer realm="quickcommerce-pp-mcp"`)
+			http.Error(w, "missing or invalid bearer token", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // defaultTransport reads PP_MCP_TRANSPORT env when set, otherwise falls back

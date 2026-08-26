@@ -2160,15 +2160,40 @@ func (s *Store) SaveSyncProgress(resourceType, cursor string, count int) error {
 	return err
 }
 
+// GetSyncState reads the resume checkpoint for resourceType. last_cursor and
+// last_synced_at are nullable columns (backfillColumns adds them via ALTER
+// TABLE ADD COLUMN with no DEFAULT, so any row from before that migration
+// carries NULL there), so this scans into nullable-safe types instead of the
+// non-nullable cursor/lastSynced/count return values directly. A NULL column
+// resolves to a valid zero value here rather than failing the whole scan --
+// a real cursor or timestamp sitting alongside a NULL total_count must still
+// come back, not get discarded along with it.
 func (s *Store) GetSyncState(resourceType string) (cursor string, lastSynced time.Time, count int, err error) {
+	var (
+		nullCursor sql.NullString
+		nullSynced sql.NullTime
+		nullCount  sql.NullInt64
+	)
 	err = s.db.QueryRow(
 		`SELECT last_cursor, last_synced_at, total_count FROM sync_state WHERE resource_type = ?`,
 		resourceType,
-	).Scan(&cursor, &lastSynced, &count)
+	).Scan(&nullCursor, &nullSynced, &nullCount)
 	if err == sql.ErrNoRows {
 		return "", time.Time{}, 0, nil
 	}
-	return
+	if err != nil {
+		return "", time.Time{}, 0, err
+	}
+	if nullCursor.Valid {
+		cursor = nullCursor.String
+	}
+	if nullSynced.Valid {
+		lastSynced = nullSynced.Time
+	}
+	if nullCount.Valid {
+		count = int(nullCount.Int64)
+	}
+	return cursor, lastSynced, count, nil
 }
 
 // SaveSyncCursor stores the pagination cursor for a resource type.

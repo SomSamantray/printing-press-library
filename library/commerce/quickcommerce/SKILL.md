@@ -266,7 +266,11 @@ This CLI ships a self-capturing learning loop. The CLI does its own bookkeeping:
 Before list/search/drill commands on a new user question, run:
 
 ```bash
-quickcommerce-pp-cli recall "<user's question>" --agent
+# Agent input must already be structuralized and identifier-free. Do not
+# read from stdin: agent shells are noninteractive and a user question can
+# contain names, emails, phone numbers, or account identifiers.
+STRUCTURAL_QUERY='compare product prices across platforms'
+quickcommerce-pp-cli recall "$STRUCTURAL_QUERY" --agent
 ```
 
 The response envelope:
@@ -374,7 +378,10 @@ Graceful degradation: if `learnings confirm` is an unknown command, you are driv
 Teaching is unconditional. After resolving a query the store could not answer, background-teach the final resource mapping - no call-count threshold, no judging whether it was "worth" learning. The teach is the anchor of the loop: it triggers playbook synthesis for a family without a playbook, and same-referent phrasings fold into one family so near-duplicate teaches do not fragment the store. Fire it after assembling your user-facing response but BEFORE emitting it, with a shell `&` so the call returns immediately:
 
 ```bash
-quickcommerce-pp-cli teach --query "<user's question>" --resource-type <type> --resource <id1> --resource <id2>
+# Pass only an identifier-free structural query held by the agent. Never copy
+# a raw user question into the learning store.
+STRUCTURAL_QUERY='compare product prices across platforms'
+quickcommerce-pp-cli teach --query "$STRUCTURAL_QUERY" --resource-type <type> --resource <id1> --resource <id2>
 # (append shell `&` to background it)
 ```
 
@@ -387,9 +394,13 @@ PII rule: teach the structural question with identifiers stripped - never includ
 You do not need to decide whether a session "deserves" a playbook: a teach on a family without one auto-synthesizes a `playbook_candidate` from the session's journal, and the next session judges it via confirm/reject. Attach explicit playbook flags only when you already hold choreography worth recording verbatim - workarounds the CLI didn't surface (silently-dropped flags, undocumented params, pagination tricks, payload gotchas). Prefer the **integrated one-call form** - record the resource learning and the playbook in the same `teach` invocation:
 
 ```bash
+# Use a sanitized structural query supplied by the agent; this example is
+# intentionally noninteractive and contains no user-identifying context.
+STRUCTURAL_QUERY='compare product prices across platforms'
+
 # Common case: record both the resource learning AND the playbook in one call.
 quickcommerce-pp-cli teach \
-  --query "<user's question>" \
+  --query "$STRUCTURAL_QUERY" \
   --resource <id> \
   --playbook-file ~/playbooks/<shape>.json \
   --playbook-notes-file ~/playbooks/<shape>-notes.md
@@ -397,7 +408,7 @@ quickcommerce-pp-cli teach \
 
 # Alternate: playbook-only (no resource to record alongside).
 quickcommerce-pp-cli teach-playbook \
-  --query "<user's question>" \
+  --query "$STRUCTURAL_QUERY" \
   --playbook-file ~/playbooks/<shape>.json \
   --notes-file ~/playbooks/<shape>-notes.md
 ```
@@ -411,9 +422,13 @@ When you DO find a playbook on a future recall, treat it as ground truth: replay
 If your debug-protocol response identifies a concrete correction the notes or playbook should know — a workaround, an undocumented endpoint shape, a stale field name, observed schema drift, an empty-payload fallback — fire `playbook amend` BEFORE emitting your user-facing response. Same fire-and-forget posture as `teach`.
 
 ```bash
+# Both values must be structuralized before assignment: remove names, emails,
+# phone numbers, account IDs, personal paths, and user-specific query history.
+STRUCTURAL_QUERY='compare product prices across platforms'
+STRUCTURAL_NOTE='API response wraps items under a nested data.results field'
 quickcommerce-pp-cli playbook amend \
-  --query "<exact recall query string>" \
-  --add-note "<your concrete correction>"
+  --query "$STRUCTURAL_QUERY" \
+  --add-note "$STRUCTURAL_NOTE"
 # (append shell `&` to background it)
 ```
 
