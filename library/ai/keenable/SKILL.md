@@ -220,8 +220,11 @@ This CLI ships a self-capturing learning loop. The CLI does its own bookkeeping:
 Before list/search/drill commands on a new user question, run:
 
 ```bash
-read -r -p "Question: " USER_QUERY
-keenable-pp-cli recall "$USER_QUERY" --agent
+# Agent input must already be structuralized and identifier-free. Do not
+# read from stdin: agent shells are noninteractive and a user question can
+# contain names, emails, phone numbers, or account identifiers.
+STRUCTURAL_QUERY='search current API documentation'
+keenable-pp-cli recall "$STRUCTURAL_QUERY" --agent
 ```
 
 The response envelope:
@@ -328,8 +331,10 @@ Graceful degradation: if `learnings confirm` is an unknown command, you are driv
 Teaching is unconditional. After resolving a query the store could not answer, background-teach the final resource mapping - no call-count threshold, no judging whether it was "worth" learning. The teach is the anchor of the loop: it triggers playbook synthesis for a family without a playbook, and same-referent phrasings fold into one family so near-duplicate teaches do not fragment the store. Fire it after assembling your user-facing response but BEFORE emitting it, with a shell `&` so the call returns immediately:
 
 ```bash
-read -r -p "Question: " USER_QUERY
-keenable-pp-cli teach --query "$USER_QUERY" --resource-type <type> --resource <id1> --resource <id2>
+# Pass only an identifier-free structural query held by the agent. Never copy
+# a raw user question into the learning store.
+STRUCTURAL_QUERY='search current API documentation'
+keenable-pp-cli teach --query "$STRUCTURAL_QUERY" --resource-type <type> --resource <id1> --resource <id2>
 # (append shell `&` to background it)
 ```
 
@@ -342,12 +347,12 @@ PII rule: teach the structural question with identifiers stripped - never includ
 You do not need to decide whether a session "deserves" a playbook: a teach on a family without one auto-synthesizes a `playbook_candidate` from the session's journal, and the next session judges it via confirm/reject. Attach explicit playbook flags only when you already hold choreography worth recording verbatim - workarounds the CLI didn't surface (silently-dropped flags, undocumented params, pagination tricks, payload gotchas). Prefer the **integrated one-call form** - record the resource learning and the playbook in the same `teach` invocation:
 
 ```bash
-# Capture the question as data; do not interpolate it into shell source.
-read -r -p "Question: " USER_QUERY
-
+# Use a sanitized structural query supplied by the agent; this example is
+# intentionally noninteractive and contains no user-identifying context.
+STRUCTURAL_QUERY='search current API documentation'
 # Common case: record both the resource learning AND the playbook in one call.
 keenable-pp-cli teach \
-  --query "$USER_QUERY" \
+  --query "$STRUCTURAL_QUERY" \
   --resource <id> \
   --playbook-file ~/playbooks/<shape>.json \
   --playbook-notes-file ~/playbooks/<shape>-notes.md
@@ -355,7 +360,7 @@ keenable-pp-cli teach \
 
 # Alternate: playbook-only (no resource to record alongside).
 keenable-pp-cli teach-playbook \
-  --query "$USER_QUERY" \
+  --query "$STRUCTURAL_QUERY" \
   --playbook-file ~/playbooks/<shape>.json \
   --notes-file ~/playbooks/<shape>-notes.md
 ```
@@ -369,11 +374,13 @@ When you DO find a playbook on a future recall, treat it as ground truth: replay
 If your debug-protocol response identifies a concrete correction the notes or playbook should know — a workaround, an undocumented endpoint shape, a stale field name, observed schema drift, an empty-payload fallback — fire `playbook amend` BEFORE emitting your user-facing response. Same fire-and-forget posture as `teach`.
 
 ```bash
-read -r -p "Recall query: " RECALL_QUERY
-read -r -p "Correction: " CORRECTION_NOTE
+# Both values must be structuralized before assignment: remove names, emails,
+# phone numbers, account IDs, personal paths, and user-specific query history.
+STRUCTURAL_QUERY='search current API documentation'
+STRUCTURAL_NOTE='API response uses a wrapped results envelope'
 keenable-pp-cli playbook amend \
-  --query "$RECALL_QUERY" \
-  --add-note "$CORRECTION_NOTE"
+  --query "$STRUCTURAL_QUERY" \
+  --add-note "$STRUCTURAL_NOTE"
 # (append shell `&` to background it)
 ```
 
