@@ -369,9 +369,11 @@ When you DO find a playbook on a future recall, treat it as ground truth: replay
 If your debug-protocol response identifies a concrete correction the notes or playbook should know — a workaround, an undocumented endpoint shape, a stale field name, observed schema drift, an empty-payload fallback — fire `playbook amend` BEFORE emitting your user-facing response. Same fire-and-forget posture as `teach`.
 
 ```bash
+read -r -p "Recall query: " RECALL_QUERY
+read -r -p "Correction: " CORRECTION_NOTE
 keenable-pp-cli playbook amend \
-  --query "<exact recall query string>" \
-  --add-note "<your concrete correction>"
+  --query "$RECALL_QUERY" \
+  --add-note "$CORRECTION_NOTE"
 # (append shell `&` to background it)
 ```
 

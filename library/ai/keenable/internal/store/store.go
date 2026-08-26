@@ -80,6 +80,13 @@ type Store struct {
 	path    string
 }
 
+// ResourceWrite describes one generic resource row in an atomic write batch.
+type ResourceWrite struct {
+	ResourceType string
+	ID           string
+	Data         json.RawMessage
+}
+
 // Open opens or creates the SQLite store at dbPath using the background
 // context. Prefer OpenWithContext from a Cobra command so SIGINT during
 // a slow migration interrupts the open instead of stranding the caller.
@@ -1069,6 +1076,24 @@ func (s *Store) Upsert(resourceType, id string, data json.RawMessage) error {
 		return err
 	}
 
+	return tx.Commit()
+}
+
+// UpsertMany writes all generic resources in one transaction.
+func (s *Store) UpsertMany(resources []ResourceWrite) error {
+	s.lockForWrite()
+	defer s.unlockAfterWrite()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for _, resource := range resources {
+		if err := s.upsertGenericResourceTx(tx, resource.ResourceType, resource.ID, resource.Data); err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
 }
 

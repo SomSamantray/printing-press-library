@@ -168,20 +168,27 @@ func researchFetch(ctx context.Context, flags *rootFlags, rawURL string, maxChar
 }
 
 func persistResearchSnapshot(s *store.Store, snap researchSnapshot, results []researchResult, pages []researchPage) error {
-	if err := s.Upsert("research_snapshots", snap.ID, mustJSON(snap)); err != nil {
-		return err
-	}
+	writes := make([]store.ResourceWrite, 0, 1+len(results)+len(pages))
+	writes = append(writes, store.ResourceWrite{
+		ResourceType: "research_snapshots",
+		ID:           snap.ID,
+		Data:         mustJSON(snap),
+	})
 	for _, result := range results {
-		if err := s.Upsert("research_results", snap.ID+":"+researchHash(result.URL), mustJSON(map[string]any{"snapshot_id": snap.ID, "result": result})); err != nil {
-			return err
-		}
+		writes = append(writes, store.ResourceWrite{
+			ResourceType: "research_results",
+			ID:           snap.ID + ":" + researchHash(result.URL),
+			Data:         mustJSON(map[string]any{"snapshot_id": snap.ID, "result": result}),
+		})
 	}
 	for _, page := range pages {
-		if err := s.Upsert("research_pages", snap.ID+":"+researchHash(page.URL), mustJSON(map[string]any{"snapshot_id": snap.ID, "page": page})); err != nil {
-			return err
-		}
+		writes = append(writes, store.ResourceWrite{
+			ResourceType: "research_pages",
+			ID:           snap.ID + ":" + researchHash(page.URL),
+			Data:         mustJSON(map[string]any{"snapshot_id": snap.ID, "page": page}),
+		})
 	}
-	return nil
+	return s.UpsertMany(writes)
 }
 
 func mustJSON(value any) json.RawMessage {
