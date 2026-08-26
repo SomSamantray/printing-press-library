@@ -75,7 +75,8 @@ func researchHash(value string) string {
 }
 
 func newResearchSnapshotID(query string) string {
-	return time.Now().UTC().Format("20060102T150405Z") + "-" + researchHash(query + time.Now().UTC().String())[:10]
+	now := time.Now().UTC()
+	return now.Format("20060102T150405Z") + "-" + researchHash(query+now.String())[:10]
 }
 
 func searchBody(req researchSearchRequest) map[string]any {
@@ -205,7 +206,6 @@ func loadResearchSnapshot(s *store.Store, id string) (researchSnapshot, error) {
 		if len(items) == 0 {
 			return researchSnapshot{ID: "latest", AuthMode: "unknown"}, nil
 		}
-		id = ""
 		var snap researchSnapshot
 		if err := json.Unmarshal(items[0], &snap); err != nil {
 			return snap, err
