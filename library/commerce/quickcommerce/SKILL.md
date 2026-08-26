@@ -269,7 +269,15 @@ Before list/search/drill commands on a new user question, run:
 # Agent input must already be structuralized and identifier-free. Do not
 # read from stdin: agent shells are noninteractive and a user question can
 # contain names, emails, phone numbers, or account identifiers.
-STRUCTURAL_QUERY='compare product prices across platforms'
+#
+# Assign via a quoted heredoc, not `VAR='...'`: a single-quoted literal
+# breaks (and can be used to inject shell syntax) the moment the value
+# itself contains an apostrophe. Quoting the heredoc delimiter disables all
+# shell expansion in the body, so the value lands exactly as written no
+# matter what it contains.
+IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
+compare product prices across platforms
+QUERY_EOF
 quickcommerce-pp-cli recall "$STRUCTURAL_QUERY" --agent
 ```
 
@@ -379,8 +387,11 @@ Teaching is unconditional. After resolving a query the store could not answer, b
 
 ```bash
 # Pass only an identifier-free structural query held by the agent. Never copy
-# a raw user question into the learning store.
-STRUCTURAL_QUERY='compare product prices across platforms'
+# a raw user question into the learning store. Assign via a quoted heredoc
+# (not `VAR='...'`) so an apostrophe in the value can't break the assignment.
+IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
+compare product prices across platforms
+QUERY_EOF
 quickcommerce-pp-cli teach --query "$STRUCTURAL_QUERY" --resource-type <type> --resource <id1> --resource <id2>
 # (append shell `&` to background it)
 ```
@@ -396,7 +407,11 @@ You do not need to decide whether a session "deserves" a playbook: a teach on a 
 ```bash
 # Use a sanitized structural query supplied by the agent; this example is
 # intentionally noninteractive and contains no user-identifying context.
-STRUCTURAL_QUERY='compare product prices across platforms'
+# Assign via a quoted heredoc (not `VAR='...'`) so an apostrophe in the
+# value can't break the assignment.
+IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
+compare product prices across platforms
+QUERY_EOF
 
 # Common case: record both the resource learning AND the playbook in one call.
 quickcommerce-pp-cli teach \
@@ -424,8 +439,14 @@ If your debug-protocol response identifies a concrete correction the notes or pl
 ```bash
 # Both values must be structuralized before assignment: remove names, emails,
 # phone numbers, account IDs, personal paths, and user-specific query history.
-STRUCTURAL_QUERY='compare product prices across platforms'
-STRUCTURAL_NOTE='API response wraps items under a nested data.results field'
+# Assign via quoted heredocs (not `VAR='...'`) so an apostrophe in either
+# value can't break the assignment.
+IFS= read -r STRUCTURAL_QUERY <<'QUERY_EOF'
+compare product prices across platforms
+QUERY_EOF
+IFS= read -r STRUCTURAL_NOTE <<'NOTE_EOF'
+API response wraps items under a nested data.results field
+NOTE_EOF
 quickcommerce-pp-cli playbook amend \
   --query "$STRUCTURAL_QUERY" \
   --add-note "$STRUCTURAL_NOTE"
