@@ -4,6 +4,7 @@
 package cliutil
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -127,9 +128,16 @@ func (l *AdaptiveLimiter) ObserveHeaders(remaining int, resetAt time.Time) {
 	l.successes = 0
 }
 
-func (l *AdaptiveLimiter) Wait() {
+// WaitContext blocks until the limiter's pacing interval has elapsed, or
+// ctx is done, whichever comes first -- so a caller can be canceled (e.g. a
+// signal-driven shutdown, or the --timeout deadline) while paced at a low
+// rate instead of having to wait out the full inter-request delay before
+// cancellation is even checked. Returns ctx.Err() if ctx ends first; nil
+// otherwise (including the nil-receiver case, matching every other method
+// on AdaptiveLimiter).
+func (l *AdaptiveLimiter) WaitContext(ctx context.Context) error {
 	if l == nil {
-		return
+		return nil
 	}
 	l.mu.Lock()
 	delay := time.Duration(float64(time.Second) / l.rate)
@@ -140,8 +148,16 @@ func (l *AdaptiveLimiter) Wait() {
 	}
 	l.lastRequest = time.Now().Add(sleep)
 	l.mu.Unlock()
-	if sleep > 0 {
-		time.Sleep(sleep)
+	if sleep <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(sleep)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
 

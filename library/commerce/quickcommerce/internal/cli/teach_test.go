@@ -363,6 +363,52 @@ func TestLearningsList_FiltersByQuery(t *testing.T) {
 	}
 }
 
+// TestLearningsForget_RequiresYes guards a permanent, cascading deletion
+// (search_learnings rows plus their learn_events measurement trail) that is
+// reachable from an MCP tool call (learnings forget is not mcp:hidden,
+// unlike its sibling learnings purge): without --yes it must refuse before
+// opening the store or deleting anything, matching the confirmation gate
+// every other destructive command in this codebase (profile delete,
+// platform client delete) already requires.
+func TestLearningsForget_RequiresYes(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+
+	if _, _, err := runRootArgs(t,
+		"teach", "--query", "find all widgets",
+		"--resource", "X",
+		"--resource-type", "items",
+		"--db", dbPath,
+	); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	if _, _, err := runRootArgs(t,
+		"learnings", "forget", "find all widgets",
+		"--all",
+		"--db", dbPath,
+	); err == nil {
+		t.Fatal("forget without --yes should have been refused")
+	}
+
+	stdout, _, err := runRootArgs(t,
+		"learnings", "list",
+		"--query", "widget",
+		"--db", dbPath,
+		"--json",
+	)
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	var rows []learningRow
+	if err := json.Unmarshal([]byte(stdout), &rows); err != nil {
+		t.Fatalf("list JSON: %v (stdout=%q)", err, stdout)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("forget without --yes deleted the row: want 1 row still present, got %d (%+v)", len(rows), rows)
+	}
+}
+
 func TestLearningsForget_TargetedAndAll(t *testing.T) {
 	home := withTempLearnHome(t)
 	dbPath := filepath.Join(home, "data.db")
@@ -381,6 +427,7 @@ func TestLearningsForget_TargetedAndAll(t *testing.T) {
 	_, _, err := runRootArgs(t,
 		"learnings", "forget", "find all widgets",
 		"--db", dbPath,
+		"--yes",
 	)
 	if err == nil {
 		t.Errorf("forget without filter should error")
@@ -391,6 +438,7 @@ func TestLearningsForget_TargetedAndAll(t *testing.T) {
 		"--resource", "Y",
 		"--db", dbPath,
 		"--agent",
+		"--yes",
 	)
 	if err != nil {
 		t.Fatalf("forget Y: %v", err)
@@ -406,6 +454,7 @@ func TestLearningsForget_TargetedAndAll(t *testing.T) {
 		"--all",
 		"--db", dbPath,
 		"--agent",
+		"--yes",
 	)
 	if err != nil {
 		t.Fatalf("forget all: %v", err)
@@ -1069,7 +1118,7 @@ func TestLearnEvents_ForgetCascadesFamilyEvents(t *testing.T) {
 	}
 
 	if _, _, err := runRootArgs(t,
-		"learnings", "forget", query, "--all", "--db", dbPath, "--agent",
+		"learnings", "forget", query, "--all", "--db", dbPath, "--agent", "--yes",
 	); err != nil {
 		t.Fatalf("forget: %v", err)
 	}

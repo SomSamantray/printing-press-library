@@ -275,9 +275,20 @@ func New(cfg *config.Config, timeout time.Duration, rateLimit float64) *Client {
 		}
 		// Never carry credential material across a host-changing redirect.
 		// Go strips Authorization and Cookie in common cases, but custom
-		// headers and URL query values need explicit removal here.
+		// headers and URL query values need explicit removal here. This
+		// covers X-API-Key plus every operator-configured header in
+		// c.Config.Headers (e.g. a corporate gateway credential in front of
+		// the real API) -- Go's redirect follower otherwise copies the
+		// original request's headers onto the redirected request verbatim,
+		// so anything not stripped here survives the hop to whatever host
+		// the server names in Location.
 		if req.URL.Host != via[0].URL.Host {
 			req.Header.Del("X-API-Key")
+			if c.Config != nil {
+				for k := range c.Config.Headers {
+					req.Header.Del(k)
+				}
+			}
 		}
 		// Same-host gate mirrors Go's shouldCopyHeaderOnRedirect: a
 		// cross-domain 3xx (open redirect or partner handoff) must not
@@ -909,7 +920,9 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 		}
 		// Proactive rate limiting — wait before sending
 		adaptiveStarted := time.Now()
-		c.limiter.Wait()
+		if err := c.limiter.WaitContext(ctx); err != nil {
+			return nil, 0, err
+		}
 		if c.platformSession != nil {
 			c.platformSession.RecordRateLimitWait(time.Since(adaptiveStarted))
 		}
@@ -1151,10 +1164,17 @@ func (c *Client) dryRun(method, targetURL, path string, params map[string]string
 	if body != nil {
 		var pretty json.RawMessage
 		if json.Unmarshal(body, &pretty) == nil {
-			enc := json.NewEncoder(os.Stderr)
+			var buf bytes.Buffer
+			enc := json.NewEncoder(&buf)
 			enc.SetIndent("  ", "  ")
-			fmt.Fprintf(os.Stderr, "  Body:\n")
-			enc.Encode(pretty)
+			// Mask before printing, same as the query params above: a
+			// credential-rotation or webhook-secret request body can
+			// legitimately carry a tracked credential value in its JSON
+			// fields, and dry-run output must not be the one place that
+			// value prints unmasked.
+			if enc.Encode(pretty) == nil {
+				fmt.Fprintf(os.Stderr, "  Body:\n%s", c.maskCredentialText(buf.String(), authHeader))
+			}
 		}
 	}
 	if authHeader != "" {
@@ -1407,6 +1427,14 @@ func (c *Client) maskCredentialText(text string, extraCredentials ...string) str
 		addCredential(c.Config.RefreshToken)
 		addCredential(c.Config.ClientSecret)
 		addCredential(c.Config.QuickcommerceApiKey)
+		// c.Config.Headers is the same operator-configured custom-header map
+		// CheckRedirect strips on a cross-host redirect (see New()) -- a
+		// corporate gateway credential stashed there must be masked here
+		// too, or a server that echoes request headers back in an error
+		// body (a common WAF/gateway diagnostic pattern) prints it in full.
+		for _, value := range c.Config.Headers {
+			addCredential(value)
+		}
 	}
 	sort.SliceStable(masks, func(i, j int) bool {
 		return len(masks[i].needle) > len(masks[j].needle)

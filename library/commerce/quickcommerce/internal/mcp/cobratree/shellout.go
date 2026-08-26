@@ -190,13 +190,27 @@ var reservedStructuredArgs = map[string]bool{
 }
 
 // MCP runs commands as the server account. Letting clients choose filesystem
-// destinations would let a tool write or truncate anything that account can
-// reach.
+// paths -- destinations to write, or sources to read -- would let a tool
+// write/truncate or read anything that account can reach. notes-file,
+// playbook-notes-file, and playbook-file are read sources: teach/
+// teach-playbook pass them straight to os.ReadFile with no root
+// confinement (resolvePlaybookInputs in teach_playbook.go, and
+// learn.ParsePlaybookFile), and the resulting content is stored verbatim
+// in the local learn store, readable back via the playbook_list tool --
+// an MCP client could otherwise read arbitrary local files (e.g. SSH
+// keys, .env) in one call and exfiltrate them in a second. This is a
+// deliberate MCP-only restriction, not a CLI one: a human running the
+// CLI directly still passes any path they choose (SKILL.md's own
+// examples use ~/playbooks/<shape>.json), so the fix belongs at this
+// MCP argument boundary, not inside the file-reading code itself.
 var blockedDestinationFlags = map[string]bool{
-	"audit-dir":    true,
-	"o":            true,
-	"output":       true,
-	"receipt-file": true,
+	"audit-dir":           true,
+	"o":                   true,
+	"output":              true,
+	"receipt-file":        true,
+	"notes-file":          true,
+	"playbook-notes-file": true,
+	"playbook-file":       true,
 }
 
 // blockedRootFlags are root-level CLI flags that an MCP client must not be

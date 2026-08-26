@@ -41,6 +41,31 @@ var sqliteDriverInit struct {
 // the parent's typed domain table exists at the moment of the lookup.
 var validIdentifierRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
+// reservedInternalTables are this store's own framework tables -- never a
+// per-resource-type domain table a spec could plausibly generate one of,
+// but exact-name matches all the same in a sqlite_master lookup keyed only
+// on table name. ListIDs/ListIDsScoped/ListField resolve resourceType to a
+// table via that lookup and then read every row with no resource_type
+// filter, on the assumption that a name match means "this is a dedicated
+// per-resource-type domain table". If resourceType happens to equal one of
+// these reserved names (e.g. a spec whose collection is itself literally
+// called "resources"), that assumption breaks: the query returns every
+// row across every resource type ever synced (for "resources") or
+// unrelated internal bookkeeping rows (for the learn-loop tables) instead
+// of erroring or falling back. Keep this in sync with the CREATE TABLE
+// statements in migrate()/backfillColumns.
+var reservedInternalTables = map[string]bool{
+	"resources":          true,
+	"resources_fts":      true,
+	"sync_state":         true,
+	"search_learnings":   true,
+	"entity_lookups":     true,
+	"search_patterns":    true,
+	"learning_playbooks": true,
+	"learn_candidates":   true,
+	"learn_events":       true,
+}
+
 // IsUUID returns true if the input looks like a UUID.
 func IsUUID(s string) bool {
 	return uuidPattern.MatchString(s)
@@ -2024,10 +2049,12 @@ func (s *Store) UpsertBatchDetailed(resourceType string, items []json.RawMessage
 		storageID := resourceStorageID(resourceType, id, obj)
 
 		if err := s.upsertGenericResourceTx(tx, resourceType, storageID, item); err != nil {
-			// Return the running stored count rather than zero so callers
-			// inspecting partial progress on failure see what already
-			// landed in earlier loop iterations.
-			return stored, extractFailures, typedFailures, fmt.Errorf("upserting %s/%s: %w", resourceType, storageID, err)
+			// The whole batch runs in one transaction with no commit yet
+			// reached, so the deferred tx.Rollback() above discards every
+			// earlier iteration's write too -- stored must report 0, not
+			// the running count, or a caller sees a positive "persisted"
+			// number for rows that never actually landed.
+			return 0, extractFailures, typedFailures, fmt.Errorf("upserting %s/%s: %w", resourceType, storageID, err)
 		}
 		stored++
 
@@ -2038,7 +2065,10 @@ func (s *Store) UpsertBatchDetailed(resourceType string, items []json.RawMessage
 
 		savepoint := fmt.Sprintf("pp_typed_%d", i)
 		if _, err := tx.Exec("SAVEPOINT " + savepoint); err != nil {
-			return stored, extractFailures, typedFailures, fmt.Errorf("savepoint begin for %s/%s: %w", resourceType, storageID, err)
+			// Same rollback-discards-everything reasoning as above: this
+			// error aborts the whole batch transaction, so nothing in it
+			// (including this and earlier iterations) is actually persisted.
+			return 0, extractFailures, typedFailures, fmt.Errorf("savepoint begin for %s/%s: %w", resourceType, storageID, err)
 		}
 
 		var typedErr error
@@ -2057,16 +2087,19 @@ func (s *Store) UpsertBatchDetailed(resourceType string, items []json.RawMessage
 
 		if typedErr != nil {
 			if _, rbErr := tx.Exec("ROLLBACK TO SAVEPOINT " + savepoint); rbErr != nil {
-				return stored, extractFailures, typedFailures, fmt.Errorf("rollback to savepoint for %s/%s (typed err: %v): %w", resourceType, storageID, typedErr, rbErr)
+				// The savepoint mechanism itself is broken here (not just
+				// the typed upsert) -- same whole-transaction-discarded
+				// reasoning as above.
+				return 0, extractFailures, typedFailures, fmt.Errorf("rollback to savepoint for %s/%s (typed err: %v): %w", resourceType, storageID, typedErr, rbErr)
 			}
 			if _, relErr := tx.Exec("RELEASE SAVEPOINT " + savepoint); relErr != nil {
-				return stored, extractFailures, typedFailures, fmt.Errorf("release savepoint after rollback for %s/%s: %w", resourceType, storageID, relErr)
+				return 0, extractFailures, typedFailures, fmt.Errorf("release savepoint after rollback for %s/%s: %w", resourceType, storageID, relErr)
 			}
 			typedFailures++
 			continue
 		}
 		if _, err := tx.Exec("RELEASE SAVEPOINT " + savepoint); err != nil {
-			return stored, extractFailures, typedFailures, fmt.Errorf("release savepoint for %s/%s: %w", resourceType, storageID, err)
+			return 0, extractFailures, typedFailures, fmt.Errorf("release savepoint for %s/%s: %w", resourceType, storageID, err)
 		}
 	}
 
@@ -2234,6 +2267,14 @@ func (s *Store) ListIDs(resourceType string) ([]string, error) {
 		`SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
 		resourceType,
 	).Scan(&table)
+	if reservedInternalTables[table] {
+		// A name match against one of the store's own framework tables is
+		// never a legitimate per-resource-type domain table; treat it as
+		// not-found so the generic-resources fallback below (correctly
+		// scoped by resource_type) runs instead of an unscoped read of
+		// every row in that framework table.
+		table = ""
+	}
 	var rows *sql.Rows
 	if err == nil && table != "" {
 		rows, err = s.db.Query(fmt.Sprintf(`SELECT id FROM "%s"`, strings.ReplaceAll(table, `"`, `""`)))
@@ -2277,6 +2318,11 @@ func (s *Store) ListIDsScoped(resourceType, scopeColumn, scopeValue string) ([]s
 		`SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
 		resourceType,
 	).Scan(&table)
+	if reservedInternalTables[table] {
+		// See ListIDs: a match against one of the store's own framework
+		// tables is never a legitimate per-resource-type domain table.
+		table = ""
+	}
 	if err == nil && table != "" {
 		var colName string
 		colErr := s.db.QueryRow(
@@ -2350,6 +2396,11 @@ func (s *Store) ListField(resourceType, field string) ([]string, error) {
 		`SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
 		resourceType,
 	).Scan(&table)
+	if reservedInternalTables[table] {
+		// See ListIDs: a match against one of the store's own framework
+		// tables is never a legitimate per-resource-type domain table.
+		table = ""
+	}
 	var rows *sql.Rows
 	if err == nil && table != "" {
 		// Validate the column exists on the resolved table before splicing

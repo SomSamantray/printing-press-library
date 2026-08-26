@@ -5,6 +5,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -56,15 +57,18 @@ func ParseDeliverSink(spec string) (DeliverSink, error) {
 
 // Deliver routes a captured output buffer to the configured sink. stdout
 // is a no-op because the buffer has already been streamed to stdout via
-// the MultiWriter set up in root.go.
-func Deliver(sink DeliverSink, body []byte, compact bool) error {
+// the MultiWriter set up in root.go. timeout is the user's --timeout value:
+// Deliver runs after Cobra's RunE has already returned (see root.go), so
+// there is no live command context to inherit a deadline from -- the
+// webhook sink derives its own from this value instead of a fixed constant.
+func Deliver(sink DeliverSink, body []byte, compact bool, timeout time.Duration) error {
 	switch sink.Scheme {
 	case "", "stdout":
 		return nil
 	case "file":
 		return deliverFile(sink.Target, body)
 	case "webhook":
-		return deliverWebhook(sink.Target, body, compact)
+		return deliverWebhook(sink.Target, body, compact, timeout)
 	default:
 		return fmt.Errorf("unsupported deliver sink %q", sink.Scheme)
 	}
@@ -89,12 +93,17 @@ func deliverFile(path string, body []byte) error {
 	return nil
 }
 
-func deliverWebhook(url string, body []byte, compact bool) error {
+func deliverWebhook(url string, body []byte, compact bool, timeout time.Duration) error {
 	contentType := "application/json"
 	if compact {
 		contentType = "application/x-ndjson"
 	}
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("building webhook request: %w", err)
 	}
@@ -105,7 +114,7 @@ func deliverWebhook(url string, body []byte, compact bool) error {
 		req.Header.Set("User-Agent", "quickcommerce-pp-cli/deliver")
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: timeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("posting to webhook: %w", err)

@@ -16,6 +16,7 @@ import (
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/mvanhorn/printing-press-library/library/commerce/quickcommerce/internal/cli"
 	"github.com/mvanhorn/printing-press-library/library/commerce/quickcommerce/internal/mcp/bound"
 	"github.com/spf13/cobra"
 )
@@ -196,6 +197,76 @@ func TestBlockedStructuredArgsOnlyDropsInheritedRootFlags(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("cliArgsFromMCP command-aware blocklist: got %v, want %v", got, want)
 	}
+}
+
+// TestBlockedStructuredArgs_BlocksTeachFileReadFlags guards the fix for a
+// real local-file-read-and-exfiltrate primitive: teach/teach-playbook pass
+// --notes-file, --playbook-notes-file, and --playbook-file straight to
+// os.ReadFile with no root confinement (resolvePlaybookInputs in
+// internal/cli/teach_playbook.go), and the content is stored verbatim,
+// readable back via the playbook_list MCP tool. Without these three names
+// in blockedDestinationFlags, an MCP client could point --notes-file at
+// e.g. ~/.ssh/id_rsa and exfiltrate it in a second call. This walks the
+// real command tree (cli.RootCmd(), the same entry point RegisterAll
+// uses) rather than a synthetic command, so a rename of either command or
+// either flag breaks this test instead of silently reopening the hole.
+func TestBlockedStructuredArgs_BlocksTeachFileReadFlags(t *testing.T) {
+	root := cli.RootCmd()
+
+	teachPlaybook := findCommand(t, root, "teach-playbook")
+	blocked := blockedStructuredArgsForCommand(teachPlaybook)
+	for _, name := range []string{"notes-file", "playbook-file"} {
+		if !blocked[name] {
+			t.Errorf("teach-playbook --%s is not blocked from MCP structured args: %#v", name, blocked)
+		}
+	}
+
+	teach := findCommand(t, root, "teach")
+	blocked = blockedStructuredArgsForCommand(teach)
+	for _, name := range []string{"playbook-notes-file", "playbook-file"} {
+		if !blocked[name] {
+			t.Errorf("teach --%s is not blocked from MCP structured args: %#v", name, blocked)
+		}
+	}
+
+	// Defense in depth: even if a client somehow supplied the flag anyway,
+	// cliArgsFromMCP must drop it rather than forward it to the subprocess.
+	got := cliArgsFromMCP(map[string]any{
+		"query":      "ignored",
+		"notes-file": "/Users/attacker/.ssh/id_rsa",
+	}, blockedStructuredArgsForCommand(teachPlaybook))
+	for _, tok := range got {
+		if tok == "--notes-file" {
+			t.Fatalf("--notes-file leaked through cliArgsFromMCP despite being blocked: %v", got)
+		}
+	}
+}
+
+// findCommand walks cmd's full subtree for a command named name (matching
+// cmd.Name(), the first whitespace-delimited token of Use). Fails the test
+// if no match is found, so a future rename surfaces as a clear failure
+// here instead of a silently-vacuous blocked-flag check.
+func findCommand(t *testing.T, cmd *cobra.Command, name string) *cobra.Command {
+	t.Helper()
+	var found *cobra.Command
+	var walk func(c *cobra.Command)
+	walk = func(c *cobra.Command) {
+		if found != nil {
+			return
+		}
+		if c.Name() == name {
+			found = c
+			return
+		}
+		for _, child := range c.Commands() {
+			walk(child)
+		}
+	}
+	walk(cmd)
+	if found == nil {
+		t.Fatalf("command %q not found in command tree rooted at %q", name, cmd.Name())
+	}
+	return found
 }
 
 // TestArgsFieldRejectsFlagLikeTokens covers the free-form "args" string

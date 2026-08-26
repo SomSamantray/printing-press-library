@@ -5,10 +5,13 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +20,13 @@ import (
 	"github.com/mvanhorn/printing-press-library/library/commerce/quickcommerce/internal/cliutil"
 	"github.com/spf13/cobra"
 )
+
+// redactedFeedbackEndpoint replaces QUICKCOMMERCE_FEEDBACK_ENDPOINT in any
+// user-facing surface. The endpoint is operator-configured and can carry an
+// embedded auth token as a path segment or query parameter -- a common
+// webhook-auth pattern -- so it must never reach stdout, stderr, or a JSON
+// envelope verbatim.
+const redactedFeedbackEndpoint = "<redacted:feedback-endpoint>"
 
 // FeedbackEntry is one line in the local feedback ledger. Every run of
 // the feedback command appends one entry; upstream POST is a separate,
@@ -71,20 +81,33 @@ func appendFeedback(entry FeedbackEntry) error {
 	return json.NewEncoder(f).Encode(entry)
 }
 
-func postFeedback(url string, entry FeedbackEntry) error {
+func postFeedback(ctx context.Context, url string, entry FeedbackEntry, timeout time.Duration) error {
 	body, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if timeout <= 0 {
+		timeout = 15 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("building feedback request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "quickcommerce-pp-cli/feedback")
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := &http.Client{Timeout: timeout}
 	resp, err := client.Do(req)
 	if err != nil {
+		// *url.Error's Error() method embeds the full request URL verbatim
+		// (scheme, host, path, and query) -- redact it in place before
+		// wrapping so a connection failure can't leak the configured
+		// endpoint the same way a successful response's echo would.
+		var uerr *neturl.Error
+		if errors.As(err, &uerr) {
+			uerr.URL = redactedFeedbackEndpoint
+		}
 		return fmt.Errorf("posting feedback: %w", err)
 	}
 	defer resp.Body.Close()
@@ -143,13 +166,13 @@ maintainer sees it.`,
 
 			upstreamResult := map[string]any{"sent": false}
 			if endpoint := feedbackEndpoint(); endpoint != "" && (send || feedbackAutoSend()) {
-				if err := postFeedback(endpoint, entry); err != nil {
+				if err := postFeedback(cmd.Context(), endpoint, entry, flags.timeout); err != nil {
 					fmt.Fprintf(cmd.ErrOrStderr(), "warning: feedback upstream POST failed: %v\n", err)
 					upstreamResult["sent"] = false
 					upstreamResult["error"] = err.Error()
 				} else {
 					upstreamResult["sent"] = true
-					upstreamResult["endpoint"] = endpoint
+					upstreamResult["endpoint"] = redactedFeedbackEndpoint
 				}
 			}
 

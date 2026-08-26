@@ -671,7 +671,9 @@ func TestAdaptiveLimiter_NewNilOnNonPositive(t *testing.T) {
 
 func TestAdaptiveLimiter_NilSafeMethods(t *testing.T) {
 	var l *AdaptiveLimiter
-	l.Wait()
+	if err := l.WaitContext(context.Background()); err != nil {
+		t.Errorf("nil limiter WaitContext() = %v, want nil", err)
+	}
 	l.OnSuccess()
 	l.OnRateLimit()
 	if got := l.Rate(); got != 0 {
@@ -733,12 +735,37 @@ func TestAdaptiveLimiter_DoesNotRampBelowFloorAfterRateLimit(t *testing.T) {
 
 func TestAdaptiveLimiter_WaitEnforcesPacing(t *testing.T) {
 	l := NewAdaptiveLimiter(10.0)
-	l.Wait()
+	_ = l.WaitContext(context.Background())
 	start := time.Now()
-	l.Wait()
+	_ = l.WaitContext(context.Background())
 	elapsed := time.Since(start)
 	if elapsed < 80*time.Millisecond {
-		t.Errorf("second Wait() took %v, want >= 80ms", elapsed)
+		t.Errorf("second WaitContext() took %v, want >= 80ms", elapsed)
+	}
+}
+
+// TestAdaptiveLimiter_WaitContextReturnsPromptlyOnCancel guards the fix for
+// a bug where Wait() ignored its caller's context entirely and did a plain
+// time.Sleep, so a canceled/timed-out context couldn't interrupt pacing at
+// a low rate until the full inter-request delay elapsed. A low rate
+// (0.5 req/s = 2s delay) plus an immediately-canceled context must return
+// near-instantly, not after ~2s.
+func TestAdaptiveLimiter_WaitContextReturnsPromptlyOnCancel(t *testing.T) {
+	l := NewAdaptiveLimiter(0.5)
+	_ = l.WaitContext(context.Background()) // consume the free first call; arms pacing for the next one
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	start := time.Now()
+	err := l.WaitContext(ctx)
+	elapsed := time.Since(start)
+
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("WaitContext with canceled ctx returned err=%v, want context.Canceled", err)
+	}
+	if elapsed > 200*time.Millisecond {
+		t.Fatalf("WaitContext with canceled ctx took %v; want it to return promptly instead of waiting out the ~2s pacing delay", elapsed)
 	}
 }
 

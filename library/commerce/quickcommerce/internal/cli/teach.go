@@ -808,6 +808,9 @@ Requires at least one of --resource, --action, or --all.`,
 			if dryRunOK(flags) {
 				return writeDryRun(cmd.OutOrStdout(), flags, "learnings forget")
 			}
+			if !flags.yes {
+				return errors.New("refusing to forget learnings without --yes")
+			}
 			query := strings.Join(args, " ")
 			dbPath = learnDBPath(dbPath)
 			s, err := store.OpenWithContext(cmd.Context(), dbPath)

@@ -129,7 +129,7 @@ func Execute() (retErr error) {
 	}
 	envelopeWritten := writeCredentialSaveErrorEnvelope(envelopeWriter, &flags, err)
 	if envelopeWritten && flags.deliverBuf != nil {
-		if derr := Deliver(flags.deliverSink, flags.deliverBuf.Bytes(), flags.compact); derr != nil {
+		if derr := Deliver(flags.deliverSink, flags.deliverBuf.Bytes(), flags.compact, flags.timeout); derr != nil {
 			fmt.Fprintf(os.Stderr, "warning: deliver to %s:%s failed: %v\n", flags.deliverSink.Scheme, flags.deliverSink.Target, derr)
 		}
 	}
@@ -158,7 +158,7 @@ func Execute() (retErr error) {
 		}
 	}
 	if err == nil && flags.deliverBuf != nil {
-		if derr := Deliver(flags.deliverSink, flags.deliverBuf.Bytes(), flags.compact); derr != nil {
+		if derr := Deliver(flags.deliverSink, flags.deliverBuf.Bytes(), flags.compact, flags.timeout); derr != nil {
 			fmt.Fprintf(os.Stderr, "warning: deliver to %s:%s failed: %v\n", flags.deliverSink.Scheme, flags.deliverSink.Target, derr)
 			return derr
 		}

@@ -210,3 +210,123 @@ func TestGetWithHeadersValuesPreservesRepeatedQueryParams(t *testing.T) {
 		t.Fatalf("GetWithHeadersValues returned error: %v", err)
 	}
 }
+
+// TestCrossHostRedirectStripsConfiguredCredentialHeaders guards against a
+// leak where a cross-host 3xx (open redirect, CDN handoff, or a
+// partner/migration bounce) carries every configured credential header to
+// the new host, not just X-API-Key. CheckRedirect explicitly deletes
+// X-API-Key on a host change, but Config.Headers -- an operator-configured
+// map of arbitrary headers applied to every request (e.g. a corporate
+// gateway credential in front of the real API) -- was never included in
+// that deletion. Go's redirect follower copies the original request's
+// headers onto the redirected request by default, so anything not
+// explicitly stripped here survives the hop to whatever host the server
+// names in Location.
+func TestCrossHostRedirectStripsConfiguredCredentialHeaders(t *testing.T) {
+	t.Parallel()
+
+	var gotAPIKey, gotCustomHeader string
+	var sawRequest bool
+	redirectTarget := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sawRequest = true
+		gotAPIKey = r.Header.Get("X-API-Key")
+		gotCustomHeader = r.Header.Get("X-Corp-Gateway-Secret")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	t.Cleanup(redirectTarget.Close)
+
+	origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, redirectTarget.URL+"/v1/items", http.StatusFound)
+	}))
+	t.Cleanup(origin.Close)
+
+	c := New(&config.Config{
+		BaseURL:             origin.URL,
+		QuickcommerceApiKey: "secret-api-key",
+		Headers:             map[string]string{"X-Corp-Gateway-Secret": "leaky-gateway-token"},
+	}, time.Second, 0)
+	c.NoCache = true
+
+	if _, err := c.Get(context.Background(), "/v1/items", nil); err != nil {
+		t.Fatalf("Get returned error: %v", err)
+	}
+	if !sawRequest {
+		t.Fatalf("redirect target never received a request; redirect did not follow")
+	}
+	if gotAPIKey != "" {
+		t.Fatalf("X-API-Key leaked to redirect target: %q", gotAPIKey)
+	}
+	if gotCustomHeader != "" {
+		t.Fatalf("configured custom header X-Corp-Gateway-Secret leaked to redirect target: %q", gotCustomHeader)
+	}
+}
+
+// TestMaskCredentialTextMasksConfiguredCustomHeaders guards a leak
+// alongside the redirect fix above: CheckRedirect strips every key in
+// c.Config.Headers on a cross-host redirect, but maskCredentialText --
+// used to sanitize error bodies, URLs, and transport errors before they
+// reach stderr/JSON output -- only masked the built-in credential fields
+// (AuthHeaderVal, AccessToken, etc.), not that same operator-configured
+// header map. A gateway that echoes request headers back in a 401/403
+// diagnostic body (a common WAF pattern) would print a custom credential
+// header in full.
+func TestMaskCredentialTextMasksConfiguredCustomHeaders(t *testing.T) {
+	t.Parallel()
+
+	c := New(&config.Config{
+		BaseURL: "https://example.com",
+		Headers: map[string]string{"X-Corp-Gateway-Secret": "leaky-gateway-token"},
+	}, time.Second, 0)
+
+	got := c.maskCredentialText(`server said: {"error":"unauthorized","received_header":"leaky-gateway-token"}`)
+	if strings.Contains(got, "leaky-gateway-token") {
+		t.Fatalf("maskCredentialText did not mask configured custom header value: %q", got)
+	}
+}
+
+// TestDryRunMasksRequestBody guards a masking gap on the same dry-run
+// output path as the query-param masking above: query params were run
+// through maskCredentialText, but the request body was pretty-printed
+// straight to stderr with no masking pass at all. A credential-rotation
+// or webhook-secret endpoint that submits the API key in its JSON body
+// would print it in full under --dry-run while the same value in a query
+// param would have been masked.
+func TestDryRunMasksRequestBody(t *testing.T) {
+	c := New(&config.Config{BaseURL: "https://example.com", QuickcommerceApiKey: "secret-api-key"}, time.Second, 0)
+	c.DryRun = true
+
+	stderr := captureStderr(t, func() {
+		_, _, err := c.dryRun(http.MethodPost, "https://example.com/v1/rotate", "/v1/rotate", nil,
+			[]byte(`{"new_key":"secret-api-key"}`), nil, "secret-api-key")
+		if err != nil {
+			t.Fatalf("dryRun returned error: %v", err)
+		}
+	})
+
+	if strings.Contains(stderr, "secret-api-key") {
+		t.Fatalf("dryRun printed an unmasked credential in the request body: %q", stderr)
+	}
+}
+
+// captureStderr redirects os.Stderr for the duration of fn and returns
+// everything written to it. Not parallel-safe (os.Stderr is process-global).
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("creating pipe: %v", err)
+	}
+	orig := os.Stderr
+	os.Stderr = w
+	fn()
+	os.Stderr = orig
+	if err := w.Close(); err != nil {
+		t.Fatalf("closing pipe writer: %v", err)
+	}
+	var buf bytes.Buffer
+	if _, err := buf.ReadFrom(r); err != nil {
+		t.Fatalf("reading captured stderr: %v", err)
+	}
+	return buf.String()
+}
