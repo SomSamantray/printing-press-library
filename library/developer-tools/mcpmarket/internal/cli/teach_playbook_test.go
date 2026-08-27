@@ -164,6 +164,52 @@ func TestTeachPlaybook_InlineAndFileMutuallyExclusive(t *testing.T) {
 	}
 }
 
+// TestTeachPlaybook_QueryFile_HappyPath covers the file-based query
+// alternative on `teach-playbook`, mirroring the `teach` coverage.
+func TestTeachPlaybook_QueryFile_HappyPath(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", `question with a "quote" and $VAR`)
+
+	_, _, err := runRootArgs(t,
+		"teach-playbook",
+		"--query-file", queryPath,
+		"--notes", "some gotcha",
+		"--db", dbPath,
+	)
+	if err != nil {
+		t.Fatalf("teach-playbook --query-file: %v", err)
+	}
+	s, _ := store.OpenWithContext(context.Background(), dbPath)
+	defer s.Close()
+	rows, _ := s.ListPlaybooks()
+	if len(rows) != 1 {
+		t.Fatalf("want 1 row, got %d", len(rows))
+	}
+}
+
+// TestTeachPlaybook_QueryAndQueryFileMutuallyExclusive covers R2 for
+// `teach-playbook`.
+func TestTeachPlaybook_QueryAndQueryFileMutuallyExclusive(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", "a question")
+
+	_, _, err := runRootArgs(t,
+		"teach-playbook",
+		"--query", "another question",
+		"--query-file", queryPath,
+		"--notes", "some gotcha",
+		"--db", dbPath,
+	)
+	if err == nil {
+		t.Fatal("expected error when both --query and --query-file are provided")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Errorf("error should name the mutual exclusion; got %v", err)
+	}
+}
+
 func TestTeachPlaybook_NotesOnly(t *testing.T) {
 	home := withTempLearnHome(t)
 	dbPath := filepath.Join(home, "data.db")
@@ -345,6 +391,101 @@ func TestPlaybookAmend_EmptyFamily_CreatesNotesOnly(t *testing.T) {
 	}
 	if !strings.Contains(rows[0].NotesText, "[amend ") {
 		t.Errorf("cold amend should still carry the timestamp marker; got %q", rows[0].NotesText)
+	}
+}
+
+// TestPlaybookAmend_QueryFileAndAddNoteFile_HappyPath covers the
+// file-based alternative for both free-form fields on `playbook
+// amend`, resolving independently as R2 requires.
+func TestPlaybookAmend_QueryFileAndAddNoteFile_HappyPath(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", "file based family")
+	notePath := writePlaybookFile(t, home, "note.txt", `correction with "quotes" and $(danger)`)
+
+	if _, _, err := runRootArgs(t,
+		"playbook", "amend",
+		"--query-file", queryPath,
+		"--add-note-file", notePath,
+		"--db", dbPath,
+	); err != nil {
+		t.Fatalf("amend: %v", err)
+	}
+
+	s, _ := store.OpenWithContext(context.Background(), dbPath)
+	defer s.Close()
+	rows, _ := s.ListPlaybooks()
+	if len(rows) != 1 {
+		t.Fatalf("want 1 row, got %d", len(rows))
+	}
+	if !strings.Contains(rows[0].NotesText, `correction with "quotes" and $(danger)`) {
+		t.Errorf("note content missing/mangled; got %q", rows[0].NotesText)
+	}
+}
+
+// TestPlaybookAmend_MixedFileAndStringFlags covers the plan's "mixed"
+// scenario: one field file-based, the other string-based, resolving
+// independently.
+func TestPlaybookAmend_MixedFileAndStringFlags(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", "mixed flag family")
+
+	if _, _, err := runRootArgs(t,
+		"playbook", "amend",
+		"--query-file", queryPath,
+		"--add-note", "inline note text",
+		"--db", dbPath,
+	); err != nil {
+		t.Fatalf("amend: %v", err)
+	}
+
+	s, _ := store.OpenWithContext(context.Background(), dbPath)
+	defer s.Close()
+	rows, _ := s.ListPlaybooks()
+	if len(rows) != 1 {
+		t.Fatalf("want 1 row, got %d", len(rows))
+	}
+	if !strings.Contains(rows[0].NotesText, "inline note text") {
+		t.Errorf("note content missing; got %q", rows[0].NotesText)
+	}
+}
+
+// TestPlaybookAmend_QueryAndQueryFileMutuallyExclusive covers R2 for
+// `playbook amend`'s --query/--query-file pair.
+func TestPlaybookAmend_QueryAndQueryFileMutuallyExclusive(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", "a question")
+
+	_, _, err := runRootArgs(t,
+		"playbook", "amend",
+		"--query", "another question",
+		"--query-file", queryPath,
+		"--add-note", "a note",
+		"--db", dbPath,
+	)
+	if err == nil {
+		t.Fatal("expected error when both --query and --query-file are provided")
+	}
+}
+
+// TestPlaybookAmend_AddNoteAndAddNoteFileMutuallyExclusive covers R2
+// for `playbook amend`'s --add-note/--add-note-file pair.
+func TestPlaybookAmend_AddNoteAndAddNoteFileMutuallyExclusive(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	notePath := writePlaybookFile(t, home, "note.txt", "a note")
+
+	_, _, err := runRootArgs(t,
+		"playbook", "amend",
+		"--query", "a question",
+		"--add-note", "another note",
+		"--add-note-file", notePath,
+		"--db", dbPath,
+	)
+	if err == nil {
+		t.Fatal("expected error when both --add-note and --add-note-file are provided")
 	}
 }
 

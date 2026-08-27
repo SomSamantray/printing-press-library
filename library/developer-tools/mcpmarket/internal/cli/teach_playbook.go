@@ -32,6 +32,7 @@ import (
 // so both surfaces land in one shot.
 func newTeachPlaybookCmd(flags *rootFlags, learnCfg *entities.Config) *cobra.Command {
 	var query string
+	var queryFile string
 	var playbookFile string
 	var playbookJSONInline string
 	var notesText string
@@ -58,8 +59,13 @@ notes verbatim.
 
 At least one of --playbook-json/--playbook-file and --notes/--notes-file
 must be set. --playbook-json takes the playbook body inline so MCP-only
-agents can record playbooks without a file on disk.`,
-		Example: `  mcpmarket-pp-cli teach-playbook --query "<question that anchors the family>" --playbook-file ~/playbooks/recipe.json --notes-file ~/playbooks/recipe-notes.md`,
+agents can record playbooks without a file on disk.
+
+--query-file reads the anchoring question from a file instead of the
+--query string, so arbitrary text (quotes, backticks, $, newlines)
+never needs to be shell-escaped or heredoc'd into the command line.`,
+		Example: `  mcpmarket-pp-cli teach-playbook --query "<question that anchors the family>" --playbook-file ~/playbooks/recipe.json --notes-file ~/playbooks/recipe-notes.md
+  mcpmarket-pp-cli teach-playbook --query-file /tmp/query.txt --playbook-file ~/playbooks/recipe.json --notes-file ~/playbooks/recipe-notes.md`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
@@ -69,6 +75,11 @@ agents can record playbooks without a file on disk.`,
 			if dryRunOK(flags) {
 				return writeDryRun(cmd.OutOrStdout(), flags, "teach-playbook")
 			}
+			resolvedQuery, qErr := resolveFreeformInput(query, queryFile, "--query", "--query-file")
+			if qErr != nil {
+				return usageErr(qErr)
+			}
+			query = resolvedQuery
 			if strings.TrimSpace(query) == "" {
 				return usageErr(fmt.Errorf("--query is required"))
 			}
@@ -138,7 +149,8 @@ agents can record playbooks without a file on disk.`,
 			}, flags)
 		},
 	}
-	cmd.Flags().StringVar(&query, "query", "", "Example query that anchors the family (required)")
+	cmd.Flags().StringVar(&query, "query", "", "Example query that anchors the family (required unless --query-file is set)")
+	cmd.Flags().StringVar(&queryFile, "query-file", "", "Path to a file containing the anchoring query verbatim (mutually exclusive with --query)")
 	cmd.Flags().StringVar(&playbookFile, "playbook-file", "", "Path to a JSON file with the playbook (steps, entity_slots, expected_tool_calls)")
 	cmd.Flags().StringVar(&playbookJSONInline, "playbook-json", "", "Inline playbook JSON (steps, entity_slots, expected_tool_calls) -- mutually exclusive with --playbook-file")
 	cmd.Flags().StringVar(&notesText, "notes", "", "Free-text notes (gotchas, workarounds) -- mutually exclusive with --notes-file")
@@ -172,7 +184,9 @@ func newPlaybookCmd(flags *rootFlags, learnCfg *entities.Config) *cobra.Command 
 // errors to teach.log, safe to background with &.
 func newPlaybookAmendCmd(flags *rootFlags, learnCfg *entities.Config) *cobra.Command {
 	var query string
+	var queryFile string
 	var addNote string
+	var addNoteFile string
 	var dbPath string
 
 	cmd := &cobra.Command{
@@ -196,8 +210,13 @@ undocumented endpoint shape, a stale field name, observed schema
 drift). Same fire-and-forget posture as teach: silent on success,
 errors to teach.log, safe to background with &.
 
+--query-file and --add-note-file read their text from a file instead
+of the --query/--add-note strings, so arbitrary text never needs to
+be shell-escaped or heredoc'd into the command line.
+
 Disabling: pass --no-learn or set ` + noLearnEnvVar + `=true.`,
-		Example: `  mcpmarket-pp-cli playbook amend --query "<exact recall query>" --add-note "summary endpoint envelope: data lives at .results.header, not .header"`,
+		Example: `  mcpmarket-pp-cli playbook amend --query "<exact recall query>" --add-note "summary endpoint envelope: data lives at .results.header, not .header"
+  mcpmarket-pp-cli playbook amend --query-file /tmp/query.txt --add-note-file /tmp/note.txt`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
@@ -207,6 +226,18 @@ Disabling: pass --no-learn or set ` + noLearnEnvVar + `=true.`,
 			if dryRunOK(flags) {
 				return writeDryRun(cmd.OutOrStdout(), flags, "playbook amend")
 			}
+			resolvedQuery, qErr := resolveFreeformInput(query, queryFile, "--query", "--query-file")
+			if qErr != nil {
+				writeTeachErrLog(fmt.Sprintf("playbook amend: %v", qErr))
+				return silentCodeErr(2)
+			}
+			query = resolvedQuery
+			resolvedNote, nErr := resolveFreeformInput(addNote, addNoteFile, "--add-note", "--add-note-file")
+			if nErr != nil {
+				writeTeachErrLog(fmt.Sprintf("playbook amend: %v", nErr))
+				return silentCodeErr(2)
+			}
+			addNote = resolvedNote
 			if strings.TrimSpace(query) == "" {
 				writeTeachErrLog(fmt.Sprintf("playbook amend: missing --query (args=%v)", args))
 				return silentCodeErr(2)
@@ -271,8 +302,10 @@ Disabling: pass --no-learn or set ` + noLearnEnvVar + `=true.`,
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&query, "query", "", "The exact recall query whose family should be amended (required)")
-	cmd.Flags().StringVar(&addNote, "add-note", "", "The note text to append to the family's playbook (required)")
+	cmd.Flags().StringVar(&query, "query", "", "The exact recall query whose family should be amended (required unless --query-file is set)")
+	cmd.Flags().StringVar(&queryFile, "query-file", "", "Path to a file containing the recall query verbatim (mutually exclusive with --query)")
+	cmd.Flags().StringVar(&addNote, "add-note", "", "The note text to append to the family's playbook (required unless --add-note-file is set)")
+	cmd.Flags().StringVar(&addNoteFile, "add-note-file", "", "Path to a file containing the note text verbatim (mutually exclusive with --add-note)")
 	cmd.Flags().StringVar(&dbPath, "db", "", "Database path (default: standard cache location)")
 	return cmd
 }
@@ -345,6 +378,29 @@ func resolveInlinePlaybook(playbookInline string) (string, error) {
 		return "", fmt.Errorf("teach-playbook: re-marshal: %w", err)
 	}
 	return out, nil
+}
+
+// resolveFreeformInput resolves a free-form text field that can be
+// supplied either as a direct string flag or a file-path alternative,
+// so callers (and the SKILL.md recipes that drive them) never need to
+// shell-escape or heredoc arbitrary user text into a string argument.
+// Exactly one of value/valueFile may be set; both empty resolves to an
+// empty string (the caller enforces required-ness) and both set is a
+// usage error naming the conflicting flags.
+func resolveFreeformInput(value, valueFile, flagName, fileFlagName string) (string, error) {
+	hasValue := strings.TrimSpace(value) != ""
+	hasFile := strings.TrimSpace(valueFile) != ""
+	if hasValue && hasFile {
+		return "", fmt.Errorf("%s and %s are mutually exclusive", flagName, fileFlagName)
+	}
+	if hasFile {
+		data, err := os.ReadFile(valueFile)
+		if err != nil {
+			return "", fmt.Errorf("read %s %s: %w", fileFlagName, valueFile, err)
+		}
+		return strings.TrimRight(string(data), "\n"), nil
+	}
+	return value, nil
 }
 
 // resolvePlaybookInputs loads the playbook JSON (if a file path was

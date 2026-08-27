@@ -150,6 +150,7 @@ func learnDBPath(explicit string) string {
 // IDs against the typed resources table.
 func newTeachCmd(flags *rootFlags, learnCfg *entities.Config) *cobra.Command {
 	var query string
+	var queryFile string
 	var resources []string
 	var venueArg string
 	var resourceType string
@@ -184,8 +185,13 @@ This command is designed to be backgrounded by an LLM right before it
 emits the user-facing response: silent on success, errors only to
 the CLI state directory's teach.log, safe to fire-and-forget.
 
+--query-file reads the question from a file instead of the --query
+string, so arbitrary text (quotes, backticks, $, newlines) never needs
+to be shell-escaped or heredoc'd into the command line.
+
 Disabling: pass --no-learn or set ` + noLearnEnvVar + `=true.`,
-		Example: `  mcpmarket-pp-cli teach --query "<question>" --resource-type <type> --resource <id> --resource <id> &`,
+		Example: `  mcpmarket-pp-cli teach --query "<question>" --resource-type <type> --resource <id> --resource <id> &
+  mcpmarket-pp-cli teach --query-file /tmp/query.txt --resource-type <type> --resource <id> &`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
@@ -195,6 +201,12 @@ Disabling: pass --no-learn or set ` + noLearnEnvVar + `=true.`,
 			if dryRunOK(flags) {
 				return writeDryRun(cmd.OutOrStdout(), flags, "teach")
 			}
+			resolvedQuery, qErr := resolveFreeformInput(query, queryFile, "--query", "--query-file")
+			if qErr != nil {
+				writeTeachErrLog(fmt.Sprintf("teach: %v", qErr))
+				return silentCodeErr(2)
+			}
+			query = resolvedQuery
 			if strings.TrimSpace(query) == "" {
 				writeTeachErrLog(fmt.Sprintf("teach: missing --query (args=%v resources=%v)", args, resources))
 				return silentCodeErr(2)
@@ -344,7 +356,8 @@ Disabling: pass --no-learn or set ` + noLearnEnvVar + `=true.`,
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&query, "query", "", "User's original natural-language question (required)")
+	cmd.Flags().StringVar(&query, "query", "", "User's original natural-language question (required unless --query-file is set)")
+	cmd.Flags().StringVar(&queryFile, "query-file", "", "Path to a file containing the question verbatim (mutually exclusive with --query)")
 	cmd.Flags().StringSliceVar(&resources, "resource", nil, "Resource ID — repeat for multiple (required)")
 	cmd.Flags().StringVar(&venueArg, "venue", "", "Optional venue scope tag stored with the learning")
 	cmd.Flags().StringVar(&resourceType, "resource-type", "", "Resource type (required; e.g. matches a row in the local resources table)")

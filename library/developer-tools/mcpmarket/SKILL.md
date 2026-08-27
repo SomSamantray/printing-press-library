@@ -359,16 +359,16 @@ Graceful degradation: if `learnings confirm` is an unknown command, you are driv
 
 Teaching is unconditional. After resolving a query the store could not answer, background-teach the final resource mapping - no call-count threshold, no judging whether it was "worth" learning. The teach is the anchor of the loop: it triggers playbook synthesis for a family without a playbook, and same-referent phrasings fold into one family so near-duplicate teaches do not fragment the store. Fire it after assembling your user-facing response but BEFORE emitting it, with a shell `&` so the call returns immediately.
 
-**Quote the question safely.** The user's question may contain characters that are unsafe to interpolate directly into a double-quoted shell argument (`"`, `` ` ``, `$`, backslash). Assign it to a variable through a quoted heredoc first — a quoted delimiter (e.g. `<<'EOF'`) stops the shell from interpreting anything *inside* the heredoc body, so quotes/backticks/`$`/backslashes in the question pass through as literal text. **The delimiter itself must be unpredictable, never the literal `EOF`, and never a fixed value copied from this doc** — a delimiter that's the same every time (including one lifted verbatim from this recipe) can be terminated early by a question that happens to contain a standalone line matching it, letting anything after it be parsed as shell commands. Generate a genuinely fresh random-suffixed delimiter **at the moment you run this** — never reuse the placeholder text below — so the user's text cannot contain it by coincidence:
+**Pass the question through a file, not the shell.** The user's question may contain characters that are unsafe to interpolate into a shell argument (`"`, `` ` ``, `$`, backslash, newlines). Do not build a shell string or heredoc to carry it — write the question verbatim to a local file using your own file-write capability, then pass that file's path to `--query-file`. Because the shell command below then contains only a static flag name and a static path, there is nothing in it for the user's text to escape or terminate:
+
+1. Write the question, verbatim, to a scratch file (e.g. `/tmp/mcpmarket-query.txt`) using your file-write tool.
+2. Invoke the CLI with `--query-file` pointing at that file:
 
 ```bash
-QUERY=$(cat <<'PP_EOF_<generate-8-hex-now>'
-<user's question, verbatim>
-PP_EOF_<generate-8-hex-now>
-)
-mcpmarket-pp-cli teach --query "$QUERY" --resource-type <type> --resource <id1> --resource <id2>
-# (append shell `&` to background it)
+mcpmarket-pp-cli teach --query-file /tmp/mcpmarket-query.txt --resource-type <type> --resource <id1> --resource <id2> &
 ```
+
+(`--query "<question>"` remains available for short, already-safe text — e.g. a fixed literal you wrote yourself, not raw user input — but `--query-file` is the recommended default since it has no shell-escaping surface at all.)
 
 Silent on success. Errors only land in `teach.log` under the resolved state dir. Teach the **most specific** resource - if the user asked a broad question and you walked through parent records to find the specific answer, teach the leaf id, not the parent. The CLI uses seeded `entity_lookups` for cross-alias resolution at recall time, so a teach under one alias (e.g., "Niners") satisfies future queries under another alias (e.g., "49ers", "San Francisco") automatically.
 
@@ -378,24 +378,19 @@ PII rule: teach the structural question with identifiers stripped - never includ
 
 You do not need to decide whether a session "deserves" a playbook: a teach on a family without one auto-synthesizes a `playbook_candidate` from the session's journal, and the next session judges it via confirm/reject. Attach explicit playbook flags only when you already hold choreography worth recording verbatim - workarounds the CLI didn't surface (silently-dropped flags, undocumented params, pagination tricks, payload gotchas). Prefer the **integrated one-call form** - record the resource learning and the playbook in the same `teach` invocation:
 
-Use the same safe-quoting pattern from Step 4 — assign the question to `QUERY` via a quoted heredoc with a fresh random-suffixed delimiter you generate at the moment you run this, never a fixed value or the literal `EOF`, before interpolating it:
+Use the same file-based pattern from Step 4 — write the question to a scratch file, then pass `--query-file`:
 
 ```bash
 # Common case: record both the resource learning AND the playbook in one call.
-QUERY=$(cat <<'PP_EOF_<generate-8-hex-now>'
-<user's question, verbatim>
-PP_EOF_<generate-8-hex-now>
-)
 mcpmarket-pp-cli teach \
-  --query "$QUERY" \
+  --query-file /tmp/mcpmarket-query.txt \
   --resource <id> \
   --playbook-file ~/playbooks/<shape>.json \
-  --playbook-notes-file ~/playbooks/<shape>-notes.md
-# (append shell `&` to background it)
+  --playbook-notes-file ~/playbooks/<shape>-notes.md &
 
 # Alternate: playbook-only (no resource to record alongside).
 mcpmarket-pp-cli teach-playbook \
-  --query "$QUERY" \
+  --query-file /tmp/mcpmarket-query.txt \
   --playbook-file ~/playbooks/<shape>.json \
   --notes-file ~/playbooks/<shape>-notes.md
 ```
@@ -408,19 +403,12 @@ When you DO find a playbook on a future recall, treat it as ground truth: replay
 
 If your debug-protocol response identifies a concrete correction the notes or playbook should know — a workaround, an undocumented endpoint shape, a stale field name, observed schema drift, an empty-payload fallback — fire `playbook amend` BEFORE emitting your user-facing response. Same fire-and-forget posture as `teach`.
 
+Write the recall query and the correction note, each verbatim, to their own scratch files, then pass both as `--query-file`/`--add-note-file` — the same file-based pattern as Step 4/5, applied to both free-form fields here:
+
 ```bash
-QUERY=$(cat <<'PP_EOF_<query-hex-generate-now>'
-<exact recall query string, verbatim>
-PP_EOF_<query-hex-generate-now>
-)
-NOTE=$(cat <<'PP_EOF_<note-hex-generate-now>'
-<your concrete correction, verbatim>
-PP_EOF_<note-hex-generate-now>
-)
 mcpmarket-pp-cli playbook amend \
-  --query "$QUERY" \
-  --add-note "$NOTE"
-# (append shell `&` to background it)
+  --query-file /tmp/mcpmarket-query.txt \
+  --add-note-file /tmp/mcpmarket-note.txt &
 ```
 
 What counts as worth amending: a behavior you OBSERVED this session that future-you would benefit from knowing. Examples worth amending:

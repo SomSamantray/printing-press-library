@@ -100,6 +100,88 @@ func TestTeachCommand_SilentOnSuccess(t *testing.T) {
 	}
 }
 
+// TestTeachCommand_QueryFile_HappyPath covers the file-based query
+// alternative added to eliminate shell-heredoc capture of arbitrary
+// user text: a file containing quotes, backticks, and a `$(...)`
+// substitution round-trips verbatim into the stored query.
+func TestTeachCommand_QueryFile_HappyPath(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt",
+		`what about "widgets" costing $(rm -rf /) or `+"`echo hi`"+`?`)
+
+	_, stderr, err := runRootArgs(t,
+		"teach",
+		"--query-file", queryPath,
+		"--resource", "widget-99",
+		"--resource-type", "items",
+		"--db", dbPath,
+	)
+	if err != nil {
+		t.Fatalf("teach --query-file: %v (stderr=%q)", err, stderr)
+	}
+
+	s, err := store.OpenWithContext(context.Background(), dbPath)
+	if err != nil {
+		t.Fatalf("reopen db: %v", err)
+	}
+	defer s.Close()
+	rows, err := listLearningsRows(context.Background(), s, store.ListLearningsFilter{})
+	if err != nil {
+		t.Fatalf("listLearnings: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("expected one row, got %d", len(rows))
+	}
+	// QueryPattern is learn.Normalize's structural form (punctuation and
+	// special characters stripped), same as every other teach path --
+	// this test proves the file's content reached the query variable
+	// intact (not truncated/misread), not that normalization is a no-op.
+	if !strings.Contains(rows[0].QueryPattern, "widgets") || !strings.Contains(rows[0].QueryPattern, "echo hi") {
+		t.Errorf("query file content did not reach the stored query pattern: %q", rows[0].QueryPattern)
+	}
+}
+
+// TestTeachCommand_QueryAndQueryFileMutuallyExclusive covers R2: both
+// --query and --query-file set is a validation error, not a silent
+// pick-one.
+func TestTeachCommand_QueryAndQueryFileMutuallyExclusive(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", "a question")
+
+	_, _, err := runRootArgs(t,
+		"teach",
+		"--query", "another question",
+		"--query-file", queryPath,
+		"--resource", "widget-1",
+		"--resource-type", "items",
+		"--db", dbPath,
+	)
+	if err == nil {
+		t.Fatal("expected error when both --query and --query-file are provided")
+	}
+}
+
+// TestTeachCommand_QueryFile_MissingFile covers the file-read error
+// path: a nonexistent --query-file path fails clearly rather than
+// silently teaching an empty query.
+func TestTeachCommand_QueryFile_MissingFile(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+
+	_, _, err := runRootArgs(t,
+		"teach",
+		"--query-file", filepath.Join(home, "nonexistent.txt"),
+		"--resource", "widget-1",
+		"--resource-type", "items",
+		"--db", dbPath,
+	)
+	if err == nil {
+		t.Fatal("expected error for missing --query-file")
+	}
+}
+
 func TestTeachCommand_JSONOutputRespectsExplicitQuiet(t *testing.T) {
 	tests := []struct {
 		name       string
