@@ -463,9 +463,10 @@ func newRecallCmd(flags *rootFlags, learnCfg *entities.Config) *cobra.Command {
 	var limit int
 	var dbPath string
 	var debugMismatches bool
+	var queryFile string
 
 	cmd := &cobra.Command{
-		Use:   "recall <query>",
+		Use:   "recall [query]",
 		Short: "Check prior learnings for a query before running discovery (LLM-fired, pre-discovery)",
 		Long: `Returns prior learnings matching the supplied query by token-set
 overlap (Jaccard >= 0.6) plus entity-aware validation. The LLM should
@@ -477,19 +478,35 @@ returned resource IDs.
 Empty match returns {"found": false, "results": []} with exit 0 — this
 is an information query, not a not-found error.
 
+--query-file reads the question from a file instead of the positional
+argument, so arbitrary text (quotes, backticks, $, newlines) never
+needs to be shell-escaped into the command line.
+
 Disabling: ` + noLearnEnvVar + `=true returns the empty shape even
 when learnings exist.`,
 		Example: `  mcpmarket-pp-cli recall "<question>" --agent
-  mcpmarket-pp-cli recall "<question>" --agent --min-confidence 2`,
+  mcpmarket-pp-cli recall "<question>" --agent --min-confidence 2
+  mcpmarket-pp-cli recall --query-file /tmp/mcpmarket-query.txt --agent`,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			hasQueryFile := strings.TrimSpace(queryFile) != ""
+			if len(args) == 0 && !hasQueryFile {
 				return cmd.Help()
+			}
+			if len(args) > 0 && hasQueryFile {
+				return usageErr(fmt.Errorf("a positional query and --query-file are mutually exclusive"))
 			}
 			if dryRunOK(flags) {
 				return writeDryRun(cmd.OutOrStdout(), flags, "recall")
 			}
 			query := strings.Join(args, " ")
+			if hasQueryFile {
+				data, err := os.ReadFile(queryFile)
+				if err != nil {
+					return fmt.Errorf("recall: read --query-file %s: %w", queryFile, err)
+				}
+				query = string(data)
+			}
 			envelope := recallEnvelope{
 				Query:         query,
 				QueryEntities: []string{},
@@ -549,6 +566,7 @@ when learnings exist.`,
 	cmd.Flags().IntVar(&limit, "limit", 10, "Maximum number of learnings to return")
 	cmd.Flags().StringVar(&dbPath, "db", "", "SQLite database file path (default: resolved data directory data.db)")
 	cmd.Flags().BoolVar(&debugMismatches, "debug-mismatches", false, "Include cross-entity mismatches in the envelope under mismatches[]")
+	cmd.Flags().StringVar(&queryFile, "query-file", "", "Path to a file containing the question verbatim (mutually exclusive with the positional query)")
 	return cmd
 }
 

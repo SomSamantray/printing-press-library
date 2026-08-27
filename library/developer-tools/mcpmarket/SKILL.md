@@ -255,6 +255,12 @@ Before list/search/drill commands on a new user question, run:
 mcpmarket-pp-cli recall "<user's question>" --agent
 ```
 
+**Pass the question through a file, not the shell.** As with `teach` (Step 4 below), the question may contain characters unsafe to interpolate into a shell argument — double quotes do **not** stop `` ` `` or `$(...)` command substitution. Write the question verbatim to a scratch file and pass `--query-file` instead of a positional argument whenever the question is not a short literal you wrote yourself:
+
+```bash
+mcpmarket-pp-cli recall --query-file /tmp/mcpmarket-query.txt --agent
+```
+
 The response envelope:
 
 ```json

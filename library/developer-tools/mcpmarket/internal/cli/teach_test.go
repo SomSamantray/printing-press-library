@@ -313,6 +313,58 @@ func TestTeachCommand_RespectsNoLearnEnvVar(t *testing.T) {
 	}
 }
 
+// TestRecallCommand_QueryFile_HappyPath covers the file-based query
+// alternative on `recall` -- the highest-frequency call site (fired
+// on every user question), so its own heredoc/positional-arg exposure
+// needed the same fix as teach/teach-playbook/playbook-amend.
+func TestRecallCommand_QueryFile_HappyPath(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", "find all widgets in inventory")
+
+	if _, _, err := runRootArgs(t,
+		"teach",
+		"--query", "find all widgets in inventory",
+		"--resource", "widget-42",
+		"--resource-type", "items",
+		"--db", dbPath,
+	); err != nil {
+		t.Fatalf("seed teach: %v", err)
+	}
+
+	stdout, _, err := runRootArgs(t,
+		"recall", "--query-file", queryPath,
+		"--db", dbPath,
+		"--agent",
+	)
+	if err != nil {
+		t.Fatalf("recall --query-file: %v", err)
+	}
+	var env recallEnvelope
+	unmarshalAgentResults(t, stdout, &env)
+	if !env.Found || len(env.Results) != 1 {
+		t.Errorf("recall --query-file: want found+1 result, got %+v", env)
+	}
+}
+
+// TestRecallCommand_PositionalAndQueryFileMutuallyExclusive covers R2
+// for `recall`'s positional-arg/--query-file pair.
+func TestRecallCommand_PositionalAndQueryFileMutuallyExclusive(t *testing.T) {
+	home := withTempLearnHome(t)
+	dbPath := filepath.Join(home, "data.db")
+	queryPath := writePlaybookFile(t, home, "query.txt", "a question")
+
+	_, _, err := runRootArgs(t,
+		"recall", "another question",
+		"--query-file", queryPath,
+		"--db", dbPath,
+		"--agent",
+	)
+	if err == nil {
+		t.Fatal("expected error when both a positional query and --query-file are provided")
+	}
+}
+
 func TestRecallCommand_FoundAndNotFound(t *testing.T) {
 	home := withTempLearnHome(t)
 	dbPath := filepath.Join(home, "data.db")

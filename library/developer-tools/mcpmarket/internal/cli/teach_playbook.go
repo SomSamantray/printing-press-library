@@ -386,7 +386,9 @@ func resolveInlinePlaybook(playbookInline string) (string, error) {
 // shell-escape or heredoc arbitrary user text into a string argument.
 // Exactly one of value/valueFile may be set; both empty resolves to an
 // empty string (the caller enforces required-ness) and both set is a
-// usage error naming the conflicting flags.
+// usage error naming the conflicting flags. File content is returned
+// byte-for-byte with no trimming, consistent with resolvePlaybookInputs'
+// notes-file handling below -- "verbatim" means verbatim.
 func resolveFreeformInput(value, valueFile, flagName, fileFlagName string) (string, error) {
 	hasValue := strings.TrimSpace(value) != ""
 	hasFile := strings.TrimSpace(valueFile) != ""
@@ -398,7 +400,7 @@ func resolveFreeformInput(value, valueFile, flagName, fileFlagName string) (stri
 		if err != nil {
 			return "", fmt.Errorf("read %s %s: %w", fileFlagName, valueFile, err)
 		}
-		return strings.TrimRight(string(data), "\n"), nil
+		return string(data), nil
 	}
 	return value, nil
 }
