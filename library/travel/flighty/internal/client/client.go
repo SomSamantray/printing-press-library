@@ -34,6 +34,12 @@ import (
 const BinaryResponseHeader = "X-Printing-Press-Binary-Response"
 const maxErrorBodyBytes = 4096
 
+// maxResponseBodyBytes caps a single live response read. Flighty's RSC-laden
+// airport pages run a few hundred KB; this leaves headroom while preventing
+// an unexpectedly large or malicious upstream response from exhausting
+// memory before RSC parsing gets a chance to fail cleanly.
+const maxResponseBodyBytes = 16 << 20
+
 type Client struct {
 	BaseURL           string
 	Config            *config.Config
@@ -1031,7 +1037,7 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 			return nil, 0, lastErr
 		}
 
-		respBody, err := io.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodyBytes))
 		_ = resp.Body.Close()
 		if err != nil {
 			return nil, 0, fmt.Errorf("reading response: %w", err)
