@@ -42,9 +42,21 @@ func autoRefreshIfStale(cmd *cobra.Command, flags *rootFlags) error {
 	}
 	defer s.Close()
 
+	// Use an isolated command for the internal GraphQL calls below, not the
+	// invoking cmd itself: gqlExec inspects cmd.Flags().Changed("query"/
+	// "variables") to support a raw-GraphQL-override escape hatch, and most
+	// commands (including `teach`, whose --query is a required, unrelated
+	// natural-language field) declare their own --query/--variables flags.
+	// Passing the invoking cmd straight through would let e.g.
+	// `teach --query "<question>"` bleed its raw text into these internal
+	// getCategoriesByCtx/GetCollectionsCollapsed/searchApis calls as a bogus
+	// GraphQL document override.
+	refreshCmd := &cobra.Command{}
+	refreshCmd.SetContext(ctx)
+
 	allOK := true
 	for _, res := range defaultSyncResources() {
-		if _, err := syncResource(cmd, flags, s, res, autoRefreshLimit, autoRefreshMaxPages); err != nil {
+		if _, err := syncResource(refreshCmd, flags, s, res, autoRefreshLimit, autoRefreshMaxPages); err != nil {
 			allOK = false
 		}
 	}

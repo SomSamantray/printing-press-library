@@ -4,9 +4,11 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -147,4 +149,65 @@ func TestAutoRefreshIfStale_FailedRefreshRetriesOnNextAttempt(t *testing.T) {
 	if fresh {
 		t.Fatal("store reported fresh after a failed refresh; want stale so the next invocation retries")
 	}
+}
+
+// TestAutoRefreshIfStale_InvokingCommandsQueryFlagDoesNotLeakIntoRefresh is
+// the regression test for a real bug ce-code-review's correctness pass
+// caught: autoRefreshIfStale takes the actually-invoked cobra.Command (e.g.
+// `teach`, whose own --query flag is a required, unrelated natural-language
+// field) and must NOT pass that command straight through to gqlExec, which
+// inspects cmd.Flags().Changed("query"/"variables") as a raw-GraphQL-
+// override escape hatch. Simulates `teach --query "<question>"` being the
+// invoking command while the store is stale, and asserts the internal
+// getCategoriesByCtx/GetCollectionsCollapsed/searchApis calls still carry
+// their real baked GraphQL documents, not the teach question text.
+func TestAutoRefreshIfStale_InvokingCommandsQueryFlagDoesNotLeakIntoRefresh(t *testing.T) {
+	const injectedTeachQuestion = "how do I get pricing for stripe"
+
+	var gotQueries []string
+	restore, err := cliutil.SetHomeOverride(t.TempDir())
+	if err != nil {
+		t.Fatalf("SetHomeOverride: %v", err)
+	}
+	t.Cleanup(restore)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Query string `json:"query"`
+		}
+		_ = decodeJSONBody(r, &body)
+		gotQueries = append(gotQueries, body.Query)
+		writeGraphQLResponse(w, `{"data":{"categoriesByCtx":[],"collections":[],"products":{"nodes":[],"pageInfo":{"endCursor":"","hasNextPage":false}}}}`)
+	}))
+	t.Cleanup(server.Close)
+	t.Setenv("RAPIDAPI_BASE_URL", server.URL)
+
+	// Mirror teach.go's flag registration: a required --query flag with an
+	// unrelated meaning, set (and therefore Changed) on the invoking command.
+	teachCmd := &cobra.Command{}
+	teachCmd.SetContext(t.Context())
+	teachCmd.Flags().String("query", "", "User's original natural-language question (required)")
+	if err := teachCmd.Flags().Set("query", injectedTeachQuestion); err != nil {
+		t.Fatalf("setting teach --query: %v", err)
+	}
+
+	if err := autoRefreshIfStale(teachCmd, &rootFlags{}); err != nil {
+		t.Fatalf("autoRefreshIfStale: %v", err)
+	}
+
+	if len(gotQueries) == 0 {
+		t.Fatal("no GraphQL requests were captured; expected at least one from the default resources")
+	}
+	for i, q := range gotQueries {
+		if q == injectedTeachQuestion {
+			t.Fatalf("request %d sent the invoking command's --query value as the GraphQL document: %q", i, q)
+		}
+		if !strings.Contains(q, "query ") {
+			t.Fatalf("request %d's GraphQL document does not look like a baked query: %q", i, q)
+		}
+	}
+}
+
+func decodeJSONBody(r *http.Request, v any) error {
+	return json.NewDecoder(r.Body).Decode(v)
 }

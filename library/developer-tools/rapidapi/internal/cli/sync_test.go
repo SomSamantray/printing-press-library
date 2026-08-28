@@ -326,6 +326,108 @@ func TestSyncCollectionResource_LegacyTimestampCursorTreatedAsNoCursor(t *testin
 	}
 }
 
+// TestSyncCollectionResource_NonPositiveCursorTreatedAsNoCursor covers the
+// `p > 0` guard's other branch: a syntactically valid but non-positive page
+// number (e.g. a corrupted or manually-edited sync_state row) must also
+// resume from page 1, not request page 0 or a negative page.
+func TestSyncCollectionResource_NonPositiveCursorTreatedAsNoCursor(t *testing.T) {
+	for _, cursor := range []string{"0", "-1"} {
+		t.Run(cursor, func(t *testing.T) {
+			var gotPages []float64
+			cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+				var body struct {
+					Variables struct {
+						Page float64 `json:"page"`
+					} `json:"variables"`
+				}
+				bodyBytes, _ := io.ReadAll(r.Body)
+				_ = json.Unmarshal(bodyBytes, &body)
+				gotPages = append(gotPages, body.Variables.Page)
+				writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c1"}]}}`)
+			})
+
+			if err := s.SaveSyncState("collection", cursor, 10); err != nil {
+				t.Fatalf("seed SaveSyncState: %v", err)
+			}
+			if _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
+				t.Fatalf("syncResource: %v", err)
+			}
+			if len(gotPages) != 1 || gotPages[0] != 1 {
+				t.Fatalf("first request's page = %v, want [1] (non-positive cursor %q must not be used)", gotPages, cursor)
+			}
+		})
+	}
+}
+
+// TestSyncCollectionResource_CapHitPreservesCursor mirrors
+// TestSyncAPIResource_CapHitPreservesCursor for the collection branch's
+// independent capped-cursor implementation (page-number persistence, not an
+// opaque GraphQL cursor) — the two are separately reachable bugs.
+func TestSyncCollectionResource_CapHitPreservesCursor(t *testing.T) {
+	calls := 0
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		// A full page (2 items, matching limit) each time signals more data.
+		writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c1"},{"id":"c2"}]}}`)
+	})
+
+	count, err := syncResource(cmd, flags, s, "collection", 2, 2 /* maxPages */)
+	if err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if count != 4 {
+		t.Fatalf("count = %d, want 4 (cap hit after 2 full pages)", count)
+	}
+	if calls != 2 {
+		t.Fatalf("made %d calls, want 2 (cap must stop the loop)", calls)
+	}
+	cursor, _, _, _ := s.GetSyncState("collection")
+	if cursor != "2" {
+		t.Fatalf("cursor after cap hit = %q, want %q (must be preserved, not cleared)", cursor, "2")
+	}
+}
+
+// TestSyncAPIResource_PartialUpsertFailureDoesNotStallPagination proves the
+// loop-continuation decision is driven by the raw GraphQL response shape
+// (rawNodes/hasNextPage), not by cacheDomainRows' successful-upsert count —
+// so a page where some items fail to upsert still advances to the next page
+// instead of being mistaken for a short/final page.
+func TestSyncAPIResource_PartialUpsertFailureDoesNotStallPagination(t *testing.T) {
+	var calls []string
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, operationName(t, r))
+		switch len(calls) {
+		case 1:
+			// Two nodes, but one has no extractable ID (no id/name/uuid/...
+			// field) — cacheDomainRows will silently drop it, returning 1
+			// stored despite 2 raw nodes. hasNextPage is still true.
+			writeGraphQLResponse(w, `{"data":{"products":{"nodes":[{"id":"api-1"},{"unrelated_field":"no-id-here"}],"pageInfo":{"endCursor":"cursor-1","hasNextPage":true}}}}`)
+		case 2:
+			writeGraphQLResponse(w, `{"data":{"products":{"nodes":[{"id":"api-2"}],"pageInfo":{"endCursor":"cursor-2","hasNextPage":false}}}}`)
+		default:
+			t.Fatalf("unexpected extra request %d", len(calls))
+		}
+	})
+
+	count, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	if err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("made %d calls, want 2 (a partial-upsert page must not be mistaken for the final page)", len(calls))
+	}
+	if count != 2 {
+		t.Fatalf("count = %d, want 2 (1 successful upsert per page x 2 pages)", count)
+	}
+	cursor, _, storedCount, _ := s.GetSyncState("api")
+	if cursor != "" {
+		t.Fatalf("cursor = %q after full sync, want empty", cursor)
+	}
+	if storedCount != 2 {
+		t.Fatalf("stored count = %d, want 2 (successful-only total, not corrupted by the dropped item)", storedCount)
+	}
+}
+
 // TestSyncCategoryResource_PersistsEmptyCursor is the regression test for
 // the "category" branch of "sync cursor never advances": no fake
 // timestamp-shaped cursor should ever land in sync_state.last_cursor.

@@ -4,8 +4,8 @@
   "applied_at": "2026-08-28",
   "base_run_id": "20260828-090622-dd9c3930",
   "base_printing_press_version": "4.31.1",
-  "summary": "Sync must resume from a real upstream cursor and propagate failures; auto-refresh must not falsely advance freshness. SearchApis must treat an empty query as \"match everything\".",
-  "reason": "The generated sync loop wrote a wall-clock timestamp as its \"cursor\" (never resumable, never paginated past page one), swallowed hard fetch/decode failures into an always-success exit, and the auto-refresh hook advanced the local freshness marker without ever fetching anything. The store's empty-query search path also short-circuited to zero rows instead of the full cache, breaking the default (unfiltered) export command.",
+  "summary": "Sync must resume from a real upstream cursor and propagate every failure (including a malformed page shape) rather than treating it as \"no more data\"; auto-refresh must not falsely advance freshness, and must run its internal GraphQL calls on an isolated cobra.Command rather than the invoking command (whose own --query/--variables flags, e.g. teach's unrelated required --query, must never leak into gqlExec's raw-override escape hatch). SearchApis must treat an empty query as \"match everything\".",
+  "reason": "The generated sync loop wrote a wall-clock timestamp as its \"cursor\" (never resumable, never paginated past page one), swallowed hard fetch/decode failures (including a malformed pagination payload) into an always-success exit, and the auto-refresh hook advanced the local freshness marker without ever fetching anything. Auto-refresh's first fix pass also introduced a real cross-command bug: passing the actually-invoked cobra.Command into the internal sync calls let gqlExec's --query/--variables raw-override escape hatch pick up an unrelated invoking command's own flags (e.g. `teach --query \"<question>\"`), corrupting the internal GraphQL requests. The store's empty-query search path also short-circuited to zero rows instead of the full cache, breaking the default (unfiltered) export command.",
   "files": [
     "internal/store/store.go",
     "internal/cli/sync.go",
