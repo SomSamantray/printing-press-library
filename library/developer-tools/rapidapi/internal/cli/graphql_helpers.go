@@ -89,6 +89,12 @@ var gqlDocs = map[string]string{
 // (relative to the GraphQL "data" wrapper), matching the spec's response_path.
 var gqlResponsePaths = map[string]string{
 	"searchApis":            "data.products.nodes",
+	// searchApisPage is a distinct entry from "searchApis" above: it keeps
+	// the pageInfo envelope (endCursor/hasNextPage) intact for sync.go's
+	// cursor-pagination loop, whereas "searchApis" strips down to the bare
+	// nodes array for search.go/promoted_marketplace.go's output rendering.
+	// Do not merge these two entries — they serve different response shapes.
+	"searchApisPage":        "data.products",
 	"getCategoriesByCtx":    "data.categoriesByCtx",
 	"GetCollectionsCollapsed": "data.collections",
 	"getCollectionBySlug":   "data.collection",

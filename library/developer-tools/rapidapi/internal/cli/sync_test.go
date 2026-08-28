@@ -1,0 +1,384 @@
+// Copyright 2026 Som Samantray and contributors. Licensed under Apache-2.0. See LICENSE.
+// Hand-authored: sync.go pagination and failure-propagation tests.
+
+package cli
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/mvanhorn/printing-press-library/library/developer-tools/rapidapi/internal/client"
+	"github.com/mvanhorn/printing-press-library/library/developer-tools/rapidapi/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/developer-tools/rapidapi/internal/store"
+	"github.com/spf13/cobra"
+)
+
+// The real client transport uses a Chrome-fingerprint uTLS/HTTP2 dialer
+// (client.go's newHTTPClient) to pass the hub's Cloudflare bot gate — it
+// can't complete a handshake against a plain httptest.NewServer. This
+// hook swaps in a plain HTTP transport whenever RAPIDAPI_BASE_URL is set
+// (the documented "point at mock/test servers" signal, config.go), which
+// is exactly and only when these tests point the client at a fixture
+// server. Production behavior is untouched: the hook is a no-op unless a
+// caller has already opted into RAPIDAPI_BASE_URL.
+func init() {
+	registerClientHook(func(c *client.Client) error {
+		if os.Getenv("RAPIDAPI_BASE_URL") == "" {
+			return nil
+		}
+		c.HTTPClient = &http.Client{Transport: http.DefaultTransport}
+		return nil
+	})
+}
+
+// newSyncTestFixture opens a temp store and builds a cobra.Command/rootFlags
+// pair pointed at the given GraphQL handler via RAPIDAPI_BASE_URL, isolated
+// from the real user config via cliutil.SetHomeOverride.
+func newSyncTestFixture(t *testing.T, handler http.HandlerFunc) (*cobra.Command, *rootFlags, *store.Store) {
+	t.Helper()
+
+	restore, err := cliutil.SetHomeOverride(t.TempDir())
+	if err != nil {
+		t.Fatalf("SetHomeOverride: %v", err)
+	}
+	t.Cleanup(restore)
+
+	server := httptest.NewServer(handler)
+	t.Cleanup(server.Close)
+	t.Setenv("RAPIDAPI_BASE_URL", server.URL)
+
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	s, err := store.Open(dbPath)
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	t.Cleanup(func() { s.Close() })
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(t.Context())
+	cmd.Flags().String("query", "", "")
+	cmd.Flags().String("variables", "", "")
+	flags := &rootFlags{}
+
+	return cmd, flags, s
+}
+
+// operationName extracts the GraphQL operationName from a request body.
+func operationName(t *testing.T, r *http.Request) string {
+	t.Helper()
+	var body struct {
+		OperationName string `json:"operationName"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		t.Fatalf("decoding GraphQL request body: %v", err)
+	}
+	return body.OperationName
+}
+
+func writeGraphQLResponse(w http.ResponseWriter, payload string) {
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, payload)
+}
+
+// TestSyncAPIResource_PaginatesUntilHasNextPageFalse is the regression test
+// for "sync cursor never advances": a 2-page searchApis response sequence
+// must land both pages' items and persist an empty cursor at the end.
+func TestSyncAPIResource_PaginatesUntilHasNextPageFalse(t *testing.T) {
+	var calls []string
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, operationName(t, r))
+		switch len(calls) {
+		case 1:
+			writeGraphQLResponse(w, `{"data":{"products":{"nodes":[{"id":"api-1"},{"id":"api-2"}],"pageInfo":{"endCursor":"cursor-1","hasNextPage":true}}}}`)
+		case 2:
+			writeGraphQLResponse(w, `{"data":{"products":{"nodes":[{"id":"api-3"}],"pageInfo":{"endCursor":"cursor-2","hasNextPage":false}}}}`)
+		default:
+			t.Fatalf("unexpected extra request %d", len(calls))
+		}
+	})
+
+	count, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	if err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if count != 3 {
+		t.Fatalf("count = %d, want 3 (both pages)", count)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("made %d GraphQL calls, want 2", len(calls))
+	}
+
+	cursor, _, storedCount, err := s.GetSyncState("api")
+	if err != nil {
+		t.Fatalf("GetSyncState: %v", err)
+	}
+	if cursor != "" {
+		t.Fatalf("cursor = %q after full sync, want empty (fully synced)", cursor)
+	}
+	if storedCount != 3 {
+		t.Fatalf("stored count = %d, want 3", storedCount)
+	}
+}
+
+// TestSyncAPIResource_SinglePageDoesNotLoop guards the single-page happy
+// path: hasNextPage:false on the first response must not trigger a second
+// request, and must persist an empty cursor.
+func TestSyncAPIResource_SinglePageDoesNotLoop(t *testing.T) {
+	calls := 0
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		writeGraphQLResponse(w, `{"data":{"products":{"nodes":[{"id":"api-1"}],"pageInfo":{"endCursor":"cursor-1","hasNextPage":false}}}}`)
+	})
+
+	count, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	if err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("count = %d, want 1", count)
+	}
+	if calls != 1 {
+		t.Fatalf("made %d calls, want 1 (single page must not loop)", calls)
+	}
+	cursor, _, _, _ := s.GetSyncState("api")
+	if cursor != "" {
+		t.Fatalf("cursor = %q, want empty", cursor)
+	}
+}
+
+// TestSyncAPIResource_ResumesFromPersistedCursor confirms a previously-saved
+// cursor is sent as `after` on the very first request of the next call.
+func TestSyncAPIResource_ResumesFromPersistedCursor(t *testing.T) {
+	var gotAfter []string
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Variables struct {
+				PaginationInput struct {
+					After string `json:"after"`
+				} `json:"paginationInput"`
+			} `json:"variables"`
+		}
+		bodyBytes, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(bodyBytes, &body)
+		gotAfter = append(gotAfter, body.Variables.PaginationInput.After)
+		writeGraphQLResponse(w, `{"data":{"products":{"nodes":[{"id":"api-x"}],"pageInfo":{"endCursor":"cursor-final","hasNextPage":false}}}}`)
+	})
+
+	if err := s.SaveSyncState("api", "resume-cursor", 5); err != nil {
+		t.Fatalf("seed SaveSyncState: %v", err)
+	}
+
+	if _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages); err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if len(gotAfter) != 1 || gotAfter[0] != "resume-cursor" {
+		t.Fatalf("first request's after = %v, want [\"resume-cursor\"]", gotAfter)
+	}
+}
+
+// TestSyncAPIResource_CapHitPreservesCursor is the boundary test for KTD3's
+// deliberate deviation from the Shopify pattern: hitting maxPages must stop
+// the loop but leave the real, resumable cursor in place (not clear it).
+func TestSyncAPIResource_CapHitPreservesCursor(t *testing.T) {
+	calls := 0
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		cursor := fmt.Sprintf("cursor-%d", calls)
+		writeGraphQLResponse(w, fmt.Sprintf(`{"data":{"products":{"nodes":[{"id":"api-%d"}],"pageInfo":{"endCursor":%q,"hasNextPage":true}}}}`, calls, cursor))
+	})
+
+	count, err := syncResource(cmd, flags, s, "api", 50, 2 /* maxPages */)
+	if err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("count = %d, want 2 (cap hit after 2 pages)", count)
+	}
+	if calls != 2 {
+		t.Fatalf("made %d calls, want 2 (cap must stop the loop)", calls)
+	}
+	cursor, _, _, _ := s.GetSyncState("api")
+	if cursor != "cursor-2" {
+		t.Fatalf("cursor after cap hit = %q, want %q (must be preserved, not cleared)", cursor, "cursor-2")
+	}
+}
+
+// TestSyncAPIResource_RequestErrorPropagates is the regression test for
+// "sync failures report success": a hard GraphQL error must be returned to
+// the caller, not swallowed.
+func TestSyncAPIResource_RequestErrorPropagates(t *testing.T) {
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, `{"errors":[{"message":"internal error"}]}`)
+	})
+
+	_, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	if err == nil {
+		t.Fatal("syncResource returned nil error for a hard GraphQL failure, want non-nil")
+	}
+}
+
+// TestSyncCollectionResource_PaginatesUntilPartialPage covers the
+// collection branch's page-fill heuristic: a full page followed by a
+// partial page must land both pages and clear the cursor.
+func TestSyncCollectionResource_PaginatesUntilPartialPage(t *testing.T) {
+	var calls []string
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, operationName(t, r))
+		switch len(calls) {
+		case 1:
+			writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c1"},{"id":"c2"}]}}`)
+		case 2:
+			writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c3"}]}}`)
+		default:
+			t.Fatalf("unexpected extra request %d", len(calls))
+		}
+	})
+
+	count, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages)
+	if err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if count != 3 {
+		t.Fatalf("count = %d, want 3", count)
+	}
+	cursor, _, _, _ := s.GetSyncState("collection")
+	if cursor != "" {
+		t.Fatalf("cursor = %q after full sync, want empty", cursor)
+	}
+}
+
+// TestSyncCollectionResource_ResumesFromPersistedPage confirms a saved page
+// number is sent as-is on the next call, not restarted at page 1.
+func TestSyncCollectionResource_ResumesFromPersistedPage(t *testing.T) {
+	var gotPages []float64
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Variables struct {
+				Page float64 `json:"page"`
+			} `json:"variables"`
+		}
+		bodyBytes, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(bodyBytes, &body)
+		gotPages = append(gotPages, body.Variables.Page)
+		writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c1"}]}}`)
+	})
+
+	if err := s.SaveSyncState("collection", "3", 10); err != nil {
+		t.Fatalf("seed SaveSyncState: %v", err)
+	}
+	if _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if len(gotPages) != 1 || gotPages[0] != 3 {
+		t.Fatalf("first request's page = %v, want [3]", gotPages)
+	}
+}
+
+// TestSyncCollectionResource_LegacyTimestampCursorTreatedAsNoCursor is the
+// edge case for a pre-existing "page:<timestamp>" cursor left over from
+// before this fix: it must resume from page 1, not error or misparse.
+func TestSyncCollectionResource_LegacyTimestampCursorTreatedAsNoCursor(t *testing.T) {
+	var gotPages []float64
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Variables struct {
+				Page float64 `json:"page"`
+			} `json:"variables"`
+		}
+		bodyBytes, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(bodyBytes, &body)
+		gotPages = append(gotPages, body.Variables.Page)
+		writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c1"}]}}`)
+	})
+
+	if err := s.SaveSyncState("collection", "page:1735689600", 10); err != nil {
+		t.Fatalf("seed SaveSyncState: %v", err)
+	}
+	if _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if len(gotPages) != 1 || gotPages[0] != 1 {
+		t.Fatalf("first request's page = %v, want [1] (legacy cursor must not misparse)", gotPages)
+	}
+}
+
+// TestSyncCategoryResource_PersistsEmptyCursor is the regression test for
+// the "category" branch of "sync cursor never advances": no fake
+// timestamp-shaped cursor should ever land in sync_state.last_cursor.
+func TestSyncCategoryResource_PersistsEmptyCursor(t *testing.T) {
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		writeGraphQLResponse(w, `{"data":{"categoriesByCtx":[{"id":"cat-1"},{"id":"cat-2"}]}}`)
+	})
+
+	count, err := syncResource(cmd, flags, s, "category", 50, maxSyncPages)
+	if err != nil {
+		t.Fatalf("syncResource: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("count = %d, want 2", count)
+	}
+	cursor, lastSynced, _, err := s.GetSyncState("category")
+	if err != nil {
+		t.Fatalf("GetSyncState: %v", err)
+	}
+	if cursor != "" {
+		t.Fatalf("cursor = %q, want empty (no fake page:<timestamp> value)", cursor)
+	}
+	if strings.HasPrefix(cursor, "page:") {
+		t.Fatalf("cursor %q still looks like the old fake timestamp cursor", cursor)
+	}
+	if lastSynced.IsZero() {
+		t.Fatal("last_synced_at was not recorded")
+	}
+}
+
+// TestSyncCmd_ReturnsErrorWhenAResourceHardFails is the end-to-end
+// regression test for "sync failures report success": `sync`'s RunE must
+// return a non-nil error when any resource hard-fails, while still
+// attempting every other resource.
+func TestSyncCmd_ReturnsErrorWhenAResourceHardFails(t *testing.T) {
+	restore, err := cliutil.SetHomeOverride(t.TempDir())
+	if err != nil {
+		t.Fatalf("SetHomeOverride: %v", err)
+	}
+	t.Cleanup(restore)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		op := operationName(t, r)
+		if op == "getCategoriesByCtx" {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, `{"errors":[{"message":"boom"}]}`)
+			return
+		}
+		if op == "GetCollectionsCollapsed" {
+			writeGraphQLResponse(w, `{"data":{"collections":[]}}`)
+			return
+		}
+		writeGraphQLResponse(w, `{"data":{"products":{"nodes":[],"pageInfo":{"endCursor":"","hasNextPage":false}}}}`)
+	}))
+	t.Cleanup(server.Close)
+	t.Setenv("RAPIDAPI_BASE_URL", server.URL)
+	t.Setenv("RAPIDAPI_HOME", t.TempDir())
+
+	cmd := newSyncCmd(&rootFlags{})
+	cmd.SetContext(t.Context())
+	var stdout, stderr strings.Builder
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
+
+	err = cmd.RunE(cmd, nil)
+	if err == nil {
+		t.Fatal("sync RunE returned nil error when a resource hard-failed, want non-nil")
+	}
+	if !strings.Contains(stdout.String(), "synced collection") {
+		t.Fatalf("expected the collection resource to still be attempted after category failed; stdout=%q", stdout.String())
+	}
+}
