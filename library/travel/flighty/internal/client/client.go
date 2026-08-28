@@ -1042,14 +1042,6 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 		if err != nil {
 			return nil, 0, fmt.Errorf("reading response: %w", err)
 		}
-		// io.LimitReader alone can't distinguish "body was exactly N bytes"
-		// from "body was truncated at N bytes" — both return a nil error at
-		// the cap. Reading one extra byte surfaces truncation: if it comes
-		// through, the real body exceeded the cap and must not be treated
-		// as a complete, successful response.
-		if len(respBody) > maxResponseBodyBytes {
-			return nil, 0, fmt.Errorf("%s %s: response exceeds %d byte limit", method, c.displayURL(path, authHeader), maxResponseBodyBytes)
-		}
 
 		// Pace to the server-advertised budget when it ships rate-limit
 		// headers (every response, success or 429). This takes priority over
@@ -1061,6 +1053,18 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 
 		// Success
 		if resp.StatusCode < 400 {
+			// io.LimitReader alone can't distinguish "body was exactly N
+			// bytes" from "body was truncated at N bytes" — both return a
+			// nil error at the cap. Reading one extra byte surfaces
+			// truncation: if it comes through, the real body exceeded the
+			// cap and must not be treated as a complete, successful
+			// response. Scoped to the success branch so an oversized
+			// error-response body (e.g. a large WAF/CDN incident page on a
+			// 429 or 5xx) still reaches the retry/rate-limit classification
+			// below instead of hard-failing ahead of it.
+			if len(respBody) > maxResponseBodyBytes {
+				return nil, 0, fmt.Errorf("%s %s: response exceeds %d byte limit", method, c.displayURL(path, authHeader), maxResponseBodyBytes)
+			}
 			c.lastContentType = resp.Header.Get("Content-Type")
 			c.limiter.OnSuccess()
 			if !readOnlyIntent && (mutationIntent || method != http.MethodGet) && !c.DryRun {

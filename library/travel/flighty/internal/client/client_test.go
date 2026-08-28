@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,6 +17,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/mvanhorn/printing-press-library/library/travel/flighty/internal/cliutil"
 	"github.com/mvanhorn/printing-press-library/library/travel/flighty/internal/config"
 	"github.com/mvanhorn/printing-press-library/library/travel/flighty/internal/platform"
 )
@@ -202,6 +204,35 @@ func TestDoInternalRejectsResponseOverCap(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "exceeds") {
 		t.Fatalf("error = %q, want a message indicating the response exceeded the byte limit", err.Error())
+	}
+}
+
+func TestDoInternalClassifiesOversizedErrorResponseByStatus(t *testing.T) {
+	// Not t.Parallel(): sets the process-wide verify env var to force
+	// maxRetries to 0 for a deterministic single-attempt assertion.
+	t.Setenv(cliutil.VerifyEnvVar, "1")
+
+	oversized := strings.Repeat("e", maxResponseBodyBytes+1024)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(oversized))
+	}))
+	t.Cleanup(server.Close)
+
+	c := New(&config.Config{BaseURL: server.URL}, time.Second, 0)
+	c.HTTPClient = server.Client()
+	c.NoCache = true
+
+	_, err := c.Get(context.Background(), "/oversized-error", nil)
+	if err == nil {
+		t.Fatal("expected an error for a 503 response, got nil")
+	}
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("error = %v (%T), want an *APIError carrying the real 503 status -- the byte-size cap must not short-circuit status-code classification for error responses", err, err)
+	}
+	if apiErr.StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("APIError.StatusCode = %d, want %d", apiErr.StatusCode, http.StatusServiceUnavailable)
 	}
 }
 
