@@ -1037,10 +1037,18 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 			return nil, 0, lastErr
 		}
 
-		respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodyBytes))
+		respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodyBytes+1))
 		_ = resp.Body.Close()
 		if err != nil {
 			return nil, 0, fmt.Errorf("reading response: %w", err)
+		}
+		// io.LimitReader alone can't distinguish "body was exactly N bytes"
+		// from "body was truncated at N bytes" — both return a nil error at
+		// the cap. Reading one extra byte surfaces truncation: if it comes
+		// through, the real body exceeded the cap and must not be treated
+		// as a complete, successful response.
+		if len(respBody) > maxResponseBodyBytes {
+			return nil, 0, fmt.Errorf("%s %s: response exceeds %d byte limit", method, c.displayURL(path, authHeader), maxResponseBodyBytes)
 		}
 
 		// Pace to the server-advertised budget when it ships rate-limit

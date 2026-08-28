@@ -182,6 +182,52 @@ func TestMutationInvalidatesOnlyItsResourceTag(t *testing.T) {
 	}
 }
 
+func TestDoInternalRejectsResponseOverCap(t *testing.T) {
+	t.Parallel()
+
+	oversized := strings.Repeat("a", maxResponseBodyBytes+1024)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(oversized))
+	}))
+	t.Cleanup(server.Close)
+
+	c := New(&config.Config{BaseURL: server.URL}, time.Second, 0)
+	c.HTTPClient = server.Client()
+	c.NoCache = true
+
+	_, err := c.Get(context.Background(), "/oversized", nil)
+	if err == nil {
+		t.Fatal("expected an error for a response exceeding the byte cap, got nil")
+	}
+	if !strings.Contains(err.Error(), "exceeds") {
+		t.Fatalf("error = %q, want a message indicating the response exceeded the byte limit", err.Error())
+	}
+}
+
+func TestDoInternalAcceptsResponseAtExactCap(t *testing.T) {
+	t.Parallel()
+
+	exact := strings.Repeat("a", maxResponseBodyBytes)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(exact))
+	}))
+	t.Cleanup(server.Close)
+
+	c := New(&config.Config{BaseURL: server.URL}, time.Second, 0)
+	c.HTTPClient = server.Client()
+	c.NoCache = true
+
+	body, err := c.Get(context.Background(), "/exact-cap", nil)
+	if err != nil {
+		t.Fatalf("Get returned error for a response at exactly the cap: %v", err)
+	}
+	if len(body) != len(exact) {
+		t.Fatalf("body length = %d, want %d", len(body), len(exact))
+	}
+}
+
 func TestGetWithHeadersValuesPreservesRepeatedQueryParams(t *testing.T) {
 	t.Parallel()
 
