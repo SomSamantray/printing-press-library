@@ -51,7 +51,7 @@ func newSyncCmd(flags *rootFlags) *cobra.Command {
 
 			errCount := 0
 			for _, res := range resources {
-				count, err := syncResource(cmd, flags, s, res, limit, maxSyncPages)
+				count, _, err := syncResource(cmd, flags, s, res, limit, maxSyncPages)
 				if err != nil {
 					fmt.Fprintf(cmd.ErrOrStderr(), "sync %s: %v\n", res, err)
 					errCount++
@@ -78,20 +78,26 @@ func newSyncCmd(flags *rootFlags) *cobra.Command {
 // fetch in this single call: the `sync` command passes maxSyncPages (a full
 // sync), while autoRefreshIfStale passes a much smaller value so its
 // background check stays a quick check, not a full sync (see auto_refresh.go).
-func syncResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resource string, limit int, maxPages int) (int, error) {
+// The returned bool reports whether the loop stopped because maxPages was
+// hit rather than because the upstream genuinely ran out of data — callers
+// that treat "fully refreshed" as a precondition (autoRefreshIfStale) must
+// not ignore this: a capped resource is only partially synced even though
+// no error occurred.
+func syncResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resource string, limit int, maxPages int) (int, bool, error) {
 	switch resource {
 	case "category":
 		// getCategoriesByCtx has no pagination construct at all — the hub
 		// returns the full weighted list in one call. There is no cursor to
 		// persist; last_synced_at (recorded regardless of the cursor value)
-		// is what makes this sync's recency observable.
+		// is what makes this sync's recency observable. Never capped: a
+		// single call either succeeds or fails outright.
 		variables := map[string]any{"limit": limit}
 		data, err := gqlExec(cmd, flags, "getCategoriesByCtx", variables, gqlResponsePaths["getCategoriesByCtx"])
 		if err != nil {
-			return 0, err
+			return 0, false, err
 		}
 		count := cacheDomainRows(cmd, s, "category", data, s.UpsertCategories)
-		return count, s.SaveSyncState(resource, "", count)
+		return count, false, s.SaveSyncState(resource, "", count)
 
 	case "collection":
 		return syncCollectionResource(cmd, flags, s, resource, limit, maxPages)
@@ -100,17 +106,17 @@ func syncResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resource
 		return syncAPIResource(cmd, flags, s, resource, limit, maxPages)
 
 	default:
-		return 0, fmt.Errorf("unknown resource %q (use category, collection, or api)", resource)
+		return 0, false, fmt.Errorf("unknown resource %q (use category, collection, or api)", resource)
 	}
 }
 
 // syncAPIResource paginates searchApis via its real GraphQL cursor
 // (pageInfo.endCursor/hasNextPage), resuming from the persisted cursor and
 // looping until the upstream reports no more pages or maxPages is hit.
-func syncAPIResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resource string, limit int, maxPages int) (int, error) {
+func syncAPIResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resource string, limit int, maxPages int) (int, bool, error) {
 	cursor, _, _, err := s.GetSyncState(resource)
 	if err != nil {
-		return 0, fmt.Errorf("reading sync state for %s: %w", resource, err)
+		return 0, false, fmt.Errorf("reading sync state for %s: %w", resource, err)
 	}
 
 	total := 0
@@ -128,7 +134,7 @@ func syncAPIResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resou
 		}
 		data, err := gqlExec(cmd, flags, "searchApis", variables, gqlResponsePaths["searchApisPage"])
 		if err != nil {
-			return total, fmt.Errorf("fetching %s: %w", resource, err)
+			return total, false, fmt.Errorf("fetching %s: %w", resource, err)
 		}
 
 		var page struct {
@@ -139,12 +145,12 @@ func syncAPIResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resou
 			} `json:"pageInfo"`
 		}
 		if err := json.Unmarshal(data, &page); err != nil {
-			return total, fmt.Errorf("parsing %s page: %w", resource, err)
+			return total, false, fmt.Errorf("parsing %s page: %w", resource, err)
 		}
 
 		var rawNodes []json.RawMessage
 		if err := json.Unmarshal(page.Nodes, &rawNodes); err != nil {
-			return total, fmt.Errorf("parsing %s nodes: %w", resource, err)
+			return total, false, fmt.Errorf("parsing %s nodes: %w", resource, err)
 		}
 		if len(rawNodes) == 0 {
 			break
@@ -172,20 +178,20 @@ func syncAPIResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resou
 
 	if !capped {
 		if err := s.SaveSyncState(resource, "", total); err != nil {
-			return total, fmt.Errorf("clearing sync cursor for %s: %w", resource, err)
+			return total, false, fmt.Errorf("clearing sync cursor for %s: %w", resource, err)
 		}
 	}
-	return total, nil
+	return total, capped, nil
 }
 
 // syncCollectionResource paginates GetCollectionsCollapsed via a real page
 // number (this query has no pageInfo; a full page signals more data
 // remains), resuming from the persisted page and looping until a partial
 // page arrives or maxPages is hit.
-func syncCollectionResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resource string, limit int, maxPages int) (int, error) {
+func syncCollectionResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resource string, limit int, maxPages int) (int, bool, error) {
 	cursor, _, _, err := s.GetSyncState(resource)
 	if err != nil {
-		return 0, fmt.Errorf("reading sync state for %s: %w", resource, err)
+		return 0, false, fmt.Errorf("reading sync state for %s: %w", resource, err)
 	}
 	page := 1
 	if cursor != "" {
@@ -204,12 +210,12 @@ func syncCollectionResource(cmd *cobra.Command, flags *rootFlags, s *store.Store
 		variables := map[string]any{"page": page, "limit": limit}
 		data, err := gqlExec(cmd, flags, "GetCollectionsCollapsed", variables, gqlResponsePaths["GetCollectionsCollapsed"])
 		if err != nil {
-			return total, fmt.Errorf("fetching %s: %w", resource, err)
+			return total, false, fmt.Errorf("fetching %s: %w", resource, err)
 		}
 
 		var rawItems []json.RawMessage
 		if err := json.Unmarshal(data, &rawItems); err != nil {
-			return total, fmt.Errorf("parsing %s page: %w", resource, err)
+			return total, false, fmt.Errorf("parsing %s page: %w", resource, err)
 		}
 		if len(rawItems) == 0 {
 			break
@@ -233,14 +239,20 @@ func syncCollectionResource(cmd *cobra.Command, flags *rootFlags, s *store.Store
 
 	if !capped {
 		if err := s.SaveSyncState(resource, "", total); err != nil {
-			return total, fmt.Errorf("clearing sync cursor for %s: %w", resource, err)
+			return total, false, fmt.Errorf("clearing sync cursor for %s: %w", resource, err)
 		}
 	}
-	return total, nil
+	return total, capped, nil
 }
 
 // cacheDomainRows upserts a JSON array of records via a domain-specific
 // store helper (e.g. UpsertApis) so records land in the typed domain tables.
+// Per-item upsert failures are non-fatal by design (matching the Shopify
+// CLI's anomaly-warning convention in this repo): a single malformed record
+// must not fail the whole page. When any item in the page fails to store,
+// a warning is emitted so the gap is visible instead of silent — the
+// caller's own count/cursor bookkeeping already tracks only the successful
+// total, so a later `sync` naturally re-fetches the same page's data.
 func cacheDomainRows(cmd *cobra.Command, s *store.Store, resource string, data json.RawMessage, upsert func(json.RawMessage) error) int {
 	var items []map[string]any
 	if err := json.Unmarshal(data, &items); err != nil {
@@ -251,6 +263,9 @@ func cacheDomainRows(cmd *cobra.Command, s *store.Store, resource string, data j
 		if err := upsert(mustJSON(it)); err == nil {
 			count++
 		}
+	}
+	if count < len(items) {
+		fmt.Fprintf(cmd.ErrOrStderr(), "warning: %s — %d of %d fetched record(s) failed to store\n", resource, len(items)-count, len(items))
 	}
 	return count
 }

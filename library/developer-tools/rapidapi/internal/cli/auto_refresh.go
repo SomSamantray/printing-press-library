@@ -56,7 +56,17 @@ func autoRefreshIfStale(cmd *cobra.Command, flags *rootFlags) error {
 
 	allOK := true
 	for _, res := range defaultSyncResources() {
-		if _, err := syncResource(refreshCmd, flags, s, res, autoRefreshLimit, autoRefreshMaxPages); err != nil {
+		// The capped return is intentionally not treated as a failure here:
+		// autoRefreshLimit/autoRefreshMaxPages are small by design (a quick
+		// heartbeat, not a full sync — see the const doc above), so a large
+		// catalog like `api` will routinely hit the one-page cap. Gating
+		// freshness on "never capped" would mean the marker never advances
+		// for such resources, turning every single command invocation into
+		// a live background fetch forever — exactly the "slow down every
+		// invocation" outcome this hook must avoid. Completeness is the
+		// explicit `sync` command's job; auto-refresh only promises a
+		// recent, real (if partial) check.
+		if _, _, err := syncResource(refreshCmd, flags, s, res, autoRefreshLimit, autoRefreshMaxPages); err != nil {
 			allOK = false
 		}
 	}

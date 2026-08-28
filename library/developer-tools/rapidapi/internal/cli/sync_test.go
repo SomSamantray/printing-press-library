@@ -104,7 +104,7 @@ func TestSyncAPIResource_PaginatesUntilHasNextPageFalse(t *testing.T) {
 		}
 	})
 
-	count, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	count, _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
 	if err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestSyncAPIResource_SinglePageDoesNotLoop(t *testing.T) {
 		writeGraphQLResponse(w, `{"data":{"products":{"nodes":[{"id":"api-1"}],"pageInfo":{"endCursor":"cursor-1","hasNextPage":false}}}}`)
 	})
 
-	count, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	count, _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
 	if err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestSyncAPIResource_ResumesFromPersistedCursor(t *testing.T) {
 		t.Fatalf("seed SaveSyncState: %v", err)
 	}
 
-	if _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages); err != nil {
+	if _, _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages); err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
 	if len(gotAfter) != 1 || gotAfter[0] != "resume-cursor" {
@@ -194,7 +194,7 @@ func TestSyncAPIResource_CapHitPreservesCursor(t *testing.T) {
 		writeGraphQLResponse(w, fmt.Sprintf(`{"data":{"products":{"nodes":[{"id":"api-%d"}],"pageInfo":{"endCursor":%q,"hasNextPage":true}}}}`, calls, cursor))
 	})
 
-	count, err := syncResource(cmd, flags, s, "api", 50, 2 /* maxPages */)
+	count, capped, err := syncResource(cmd, flags, s, "api", 50, 2 /* maxPages */)
 	if err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
@@ -203,6 +203,9 @@ func TestSyncAPIResource_CapHitPreservesCursor(t *testing.T) {
 	}
 	if calls != 2 {
 		t.Fatalf("made %d calls, want 2 (cap must stop the loop)", calls)
+	}
+	if !capped {
+		t.Fatal("capped = false, want true (the loop stopped because maxPages was hit, not because data ran out)")
 	}
 	cursor, _, _, _ := s.GetSyncState("api")
 	if cursor != "cursor-2" {
@@ -219,7 +222,7 @@ func TestSyncAPIResource_RequestErrorPropagates(t *testing.T) {
 		fmt.Fprint(w, `{"errors":[{"message":"internal error"}]}`)
 	})
 
-	_, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	_, _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
 	if err == nil {
 		t.Fatal("syncResource returned nil error for a hard GraphQL failure, want non-nil")
 	}
@@ -235,7 +238,7 @@ func TestSyncAPIResource_MalformedNodesPropagatesError(t *testing.T) {
 		writeGraphQLResponse(w, `{"data":{"products":{"nodes":{"unexpected":"shape"},"pageInfo":{"endCursor":"","hasNextPage":false}}}}`)
 	})
 
-	_, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	_, _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
 	if err == nil {
 		t.Fatal("syncResource returned nil error for a malformed nodes field, want non-nil")
 	}
@@ -258,7 +261,7 @@ func TestSyncCollectionResource_PaginatesUntilPartialPage(t *testing.T) {
 		}
 	})
 
-	count, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages)
+	count, _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages)
 	if err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
@@ -290,7 +293,7 @@ func TestSyncCollectionResource_ResumesFromPersistedPage(t *testing.T) {
 	if err := s.SaveSyncState("collection", "3", 10); err != nil {
 		t.Fatalf("seed SaveSyncState: %v", err)
 	}
-	if _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
+	if _, _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
 	if len(gotPages) != 1 || gotPages[0] != 3 {
@@ -318,7 +321,7 @@ func TestSyncCollectionResource_LegacyTimestampCursorTreatedAsNoCursor(t *testin
 	if err := s.SaveSyncState("collection", "page:1735689600", 10); err != nil {
 		t.Fatalf("seed SaveSyncState: %v", err)
 	}
-	if _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
+	if _, _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
 	if len(gotPages) != 1 || gotPages[0] != 1 {
@@ -349,7 +352,7 @@ func TestSyncCollectionResource_NonPositiveCursorTreatedAsNoCursor(t *testing.T)
 			if err := s.SaveSyncState("collection", cursor, 10); err != nil {
 				t.Fatalf("seed SaveSyncState: %v", err)
 			}
-			if _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
+			if _, _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
 				t.Fatalf("syncResource: %v", err)
 			}
 			if len(gotPages) != 1 || gotPages[0] != 1 {
@@ -371,7 +374,7 @@ func TestSyncCollectionResource_CapHitPreservesCursor(t *testing.T) {
 		writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c1"},{"id":"c2"}]}}`)
 	})
 
-	count, err := syncResource(cmd, flags, s, "collection", 2, 2 /* maxPages */)
+	count, capped, err := syncResource(cmd, flags, s, "collection", 2, 2 /* maxPages */)
 	if err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
@@ -380,6 +383,9 @@ func TestSyncCollectionResource_CapHitPreservesCursor(t *testing.T) {
 	}
 	if calls != 2 {
 		t.Fatalf("made %d calls, want 2 (cap must stop the loop)", calls)
+	}
+	if !capped {
+		t.Fatal("capped = false, want true (the loop stopped because maxPages was hit, not because data ran out)")
 	}
 	cursor, _, _, _ := s.GetSyncState("collection")
 	if cursor != "2" {
@@ -409,7 +415,7 @@ func TestSyncAPIResource_PartialUpsertFailureDoesNotStallPagination(t *testing.T
 		}
 	})
 
-	count, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	count, _, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
 	if err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
@@ -436,7 +442,7 @@ func TestSyncCategoryResource_PersistsEmptyCursor(t *testing.T) {
 		writeGraphQLResponse(w, `{"data":{"categoriesByCtx":[{"id":"cat-1"},{"id":"cat-2"}]}}`)
 	})
 
-	count, err := syncResource(cmd, flags, s, "category", 50, maxSyncPages)
+	count, _, err := syncResource(cmd, flags, s, "category", 50, maxSyncPages)
 	if err != nil {
 		t.Fatalf("syncResource: %v", err)
 	}
