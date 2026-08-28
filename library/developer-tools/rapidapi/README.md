@@ -120,6 +120,28 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 
 </details>
 
+## Authentication
+
+The RapidAPI hub gateway authenticates with a **session cookie** (`rapidapi-context-id`) plus a **session-bound CSRF token** auto-fetched at request time — even public marketplace queries need the CSRF bootstrap.
+
+Set the cookie (your RapidAPI user ID — find it in Chrome DevTools → Application → Cookies → `https://rapidapi.com` → `rapidapi-context-id`):
+
+```bash
+export RAPIDAPI_COOKIE="<rapidapi-context-id value>"
+# or persist it
+rapidapi-pp-cli auth login --cookie "<value>"
+```
+
+**Cloudflare-gated networks:** set the `cf_clearance` cookie (DevTools → Application → Cookies) too:
+
+```bash
+export RAPIDAPI_CLEARANCE="<cf_clearance value>"
+# or
+rapidapi-pp-cli auth login --clearance "<value>"
+```
+
+Account commands (`account whoami`, `account subscriptions`, `account notifications`) additionally require the browser session's HttpOnly cookies and return empty results without them.
+
 ## Quick Start
 
 ### 1. Install
@@ -200,6 +222,25 @@ Precedence matters in fleets: an ambient per-kind variable such as `RAPIDAPI_DAT
 Relocation is one-way. Unsetting `RAPIDAPI_HOME` does not move files back to platform defaults, and `doctor` cannot find credentials left under a former root. Move the files manually before unsetting relocation variables.
 
 Existing installs keep working because the platform-default rung matches the legacy layout. On the first auth write, stored secrets leave `config.toml` and are consolidated into `credentials.toml` under the data directory. Run `rapidapi-pp-cli doctor --fail-on warn` to check path and credential-location warnings in automation.
+
+## Unique Features
+
+These capabilities aren't available in any other tool for this API.
+
+### Offline marketplace sync & search
+- **`sync`** — Pull categories, collections, and top APIs into a local SQLite store with sync-state tracking; `search` then queries the cached data offline.
+
+  _Choose this when you need repeated marketplace research without re-hitting the hub every time._
+
+### Hub analytics with local aggregation
+- **`analytics`** / **`stats`** / **`trends`** — Hub-wide metrics (APIs, users, traffic) plus per-day request/error aggregates computed locally (SUM, AVG, error rates, day-over-day deltas).
+
+  _Choose this when you need usage trends or a hub pulse without a dashboard._
+
+### Chrome TLS transport
+- **`system csrf`** — The CLI's uTLS Chrome-fingerprint HTTP/2 transport passes the Cloudflare bot gate, so live GraphQL queries work from the terminal like a browser.
+
+  _Choose this when direct HTTP to the hub gateway would otherwise 403._
 
 ## Commands
 
@@ -336,7 +377,7 @@ This CLI is designed for AI agent consumption:
 
 Exit codes: `0` success, `2` usage error, `3` not found, `4` auth error, `5` API error, `7` rate limited, `10` config error.
 
-## Doctor
+## Health Check
 
 ```bash
 rapidapi-pp-cli doctor

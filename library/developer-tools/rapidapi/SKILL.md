@@ -39,6 +39,62 @@ If `--version` reports "command not found" after install, the runtime cannot see
 
 RapidAPI Hub marketplace CLI - search APIs, browse categories & collections, inspect providers, and manage your account (subscriptions, favorites, notifications, workspace) via the hub's own GraphQL gateway
 
+## When to Use This CLI
+
+Use RapidAPI when an agent needs to discover APIs on the world's largest API marketplace, compare providers by score/latency/service level, or manage the user's RapidAPI account (subscriptions, favorites, notifications, workspace). Prefer the offline commands (`sync`, `search`, `export`) when the task involves repeated marketplace research or building a comparison across many APIs.
+
+## Anti-triggers
+
+Do not use this CLI for:
+- Do not call a provider API directly through this CLI; it wraps the hub marketplace, not individual provider APIs.
+- Do not treat cached sync data as live; refresh with `sync` when current marketplace state matters.
+- Do not use account commands (`account whoami`, `account subscriptions`, `account notifications`) without a valid session; they return empty results without one.
+
+## Unique Capabilities
+
+These capabilities aren't available in any other tool for this API.
+
+### Offline marketplace sync & search
+- **`sync`** — Pull categories, collections, and top APIs into a local SQLite store with sync-state tracking; `search` then queries the cached data offline.
+
+  _Choose this when an agent needs repeated marketplace research without re-hitting the hub every time._
+
+### Hub analytics with local aggregation
+- **`analytics`** / **`stats`** / **`trends`** — Hub-wide metrics (APIs, users, traffic) plus per-day request/error aggregates computed locally (SUM, AVG, error rates, day-over-day deltas).
+
+  _Choose this when the task needs usage trends or hub pulse without a dashboard._
+
+### Chrome TLS transport
+- **`system csrf`** — The CLI's uTLS Chrome-fingerprint HTTP/2 transport passes the Cloudflare bot gate, so live GraphQL queries work from the terminal like a browser.
+
+  _Choose this when direct HTTP to the hub gateway would otherwise 403._
+
+## Recipes
+
+### Search the marketplace
+```bash
+rapidapi-pp-cli search --term weather --category Weather --limit 10
+```
+
+### Sync for offline research
+```bash
+rapidapi-pp-cli sync --resource api --limit 50
+rapidapi-pp-cli export --resource api --format csv --out apis.csv
+```
+
+### Check hub pulse
+```bash
+rapidapi-pp-cli analytics --from 2026-01-01 --to 2026-12-31
+rapidapi-pp-cli trends --days 14
+```
+
+### Manage your account
+```bash
+rapidapi-pp-cli account subscriptions --status ACTIVE
+rapidapi-pp-cli account notifications --limit 5
+rapidapi-pp-cli account analytics --from 2026-08-01 --to 2026-08-28
+```
+
 ## Command Reference
 
 **account** — Your RapidAPI account (requires login)
