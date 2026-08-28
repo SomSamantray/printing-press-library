@@ -674,6 +674,66 @@ func TestSearchApisQuotesFTSQuerySyntax(t *testing.T) {
 	}
 }
 
+// TestSearchApisEmptyQueryReturnsAllCachedRecords is the regression test
+// for the "empty query breaks export" defect: an empty/blank query must
+// return every cached API record instead of none, since it's the read
+// path the default (unfiltered) `export` command relies on.
+func TestSearchApisEmptyQueryReturnsAllCachedRecords(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	s, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer s.Close()
+
+	items := []json.RawMessage{
+		json.RawMessage(`{"id": "api-1", "name": "Alpha"}`),
+		json.RawMessage(`{"id": "api-2", "name": "Beta"}`),
+		json.RawMessage(`{"id": "api-3", "name": "Gamma"}`),
+	}
+	if stored, failed, err := s.UpsertBatch("apis", items); err != nil {
+		t.Fatalf("UpsertBatch: %v", err)
+	} else if failed != 0 || stored != len(items) {
+		t.Fatalf("UpsertBatch stored=%d failed=%d, want stored=%d failed=0", stored, failed, len(items))
+	}
+
+	results, err := s.SearchApis("", 0)
+	if err != nil {
+		t.Fatalf(`SearchApis("", 0): %v`, err)
+	}
+	if len(results) != len(items) {
+		t.Fatalf(`SearchApis("", 0) returned %d rows, want %d (all cached records)`, len(results), len(items))
+	}
+
+	limited, err := s.SearchApis("", 2)
+	if err != nil {
+		t.Fatalf(`SearchApis("", 2): %v`, err)
+	}
+	if len(limited) != 2 {
+		t.Fatalf(`SearchApis("", 2) returned %d rows, want 2`, len(limited))
+	}
+}
+
+// TestSearchApisEmptyQueryOnEmptyStoreReturnsNoRows guards the boundary
+// where the apis table has no rows at all — must return an empty result
+// with no error, not panic or surface a driver-level failure.
+func TestSearchApisEmptyQueryOnEmptyStoreReturnsNoRows(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	s, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer s.Close()
+
+	results, err := s.SearchApis("", 0)
+	if err != nil {
+		t.Fatalf(`SearchApis("", 0) on empty store: %v`, err)
+	}
+	if len(results) != 0 {
+		t.Fatalf(`SearchApis("", 0) on empty store returned %d rows, want 0`, len(results))
+	}
+}
+
 // TestUpsertBatch_PopulatesCategoriesTable verifies that UpsertBatch
 // dispatches paginated items into both the generic resources table AND the
 // typed categories table. Regression for issue #268: before the fix, paginated

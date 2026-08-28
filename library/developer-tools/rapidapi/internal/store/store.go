@@ -2341,22 +2341,29 @@ func (s *Store) SearchAccount(query string, limit int) ([]json.RawMessage, error
 	return results, rows.Err()
 }
 
-// SearchApis searches the apis_fts index with optional filters.
+// SearchApis searches the apis_fts index with optional filters. An empty
+// query returns all cached API records (no FTS filter applied) instead of
+// none, so callers using SearchApis as an "export everything cached" read
+// path get the full cache rather than a silently empty result.
 func (s *Store) SearchApis(query string, limit int) ([]json.RawMessage, error) {
 	if limit <= 0 {
 		limit = 50
 	}
 	matchQuery := FTSMatchQuery(query)
+
+	var rows *sql.Rows
+	var err error
 	if matchQuery == "" {
-		return nil, nil
+		rows, err = s.db.Query(`SELECT data FROM "apis" ORDER BY rowid LIMIT ?`, limit)
+	} else {
+		rows, err = s.db.Query(
+			`SELECT t.data FROM "apis" t
+			 JOIN "apis_fts" ON "apis_fts".rowid = t.rowid
+			 WHERE "apis_fts" MATCH ?
+			 ORDER BY "apis_fts".rank LIMIT ?`,
+			matchQuery, limit,
+		)
 	}
-	rows, err := s.db.Query(
-		`SELECT t.data FROM "apis" t
-		 JOIN "apis_fts" ON "apis_fts".rowid = t.rowid
-		 WHERE "apis_fts" MATCH ?
-		 ORDER BY "apis_fts".rank LIMIT ?`,
-		matchQuery, limit,
-	)
 	if err != nil {
 		return nil, err
 	}
