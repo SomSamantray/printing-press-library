@@ -225,6 +225,22 @@ func TestSyncAPIResource_RequestErrorPropagates(t *testing.T) {
 	}
 }
 
+// TestSyncAPIResource_MalformedNodesPropagatesError guards against silently
+// treating a malformed `nodes` field as "no more data": the sync must
+// error out rather than exit the loop and report success on partial data.
+func TestSyncAPIResource_MalformedNodesPropagatesError(t *testing.T) {
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		// "nodes" is an object, not an array — malformed relative to the
+		// expected shape.
+		writeGraphQLResponse(w, `{"data":{"products":{"nodes":{"unexpected":"shape"},"pageInfo":{"endCursor":"","hasNextPage":false}}}}`)
+	})
+
+	_, err := syncResource(cmd, flags, s, "api", 50, maxSyncPages)
+	if err == nil {
+		t.Fatal("syncResource returned nil error for a malformed nodes field, want non-nil")
+	}
+}
+
 // TestSyncCollectionResource_PaginatesUntilPartialPage covers the
 // collection branch's page-fill heuristic: a full page followed by a
 // partial page must land both pages and clear the cursor.

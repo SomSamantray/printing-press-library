@@ -143,7 +143,9 @@ func syncAPIResource(cmd *cobra.Command, flags *rootFlags, s *store.Store, resou
 		}
 
 		var rawNodes []json.RawMessage
-		_ = json.Unmarshal(page.Nodes, &rawNodes)
+		if err := json.Unmarshal(page.Nodes, &rawNodes); err != nil {
+			return total, fmt.Errorf("parsing %s nodes: %w", resource, err)
+		}
 		if len(rawNodes) == 0 {
 			break
 		}
