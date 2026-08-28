@@ -50,7 +50,7 @@ var gqlDocs = map[string]string{
 	"consumerAnalytics": `query consumerAnalytics($where: MetricsInput!) { metrics(where: $where) { apiCallVolumeConsumer { currentPeriodValue previousPeriodValue } totalApiCostConsumer { currentPeriodValue previousPeriodValue } totalActiveApiConsumer { currentPeriodValue previousPeriodValue } apiUsageDaysConsumer { currentPeriodValue previousPeriodValue } apiSuccessRateConsumer { currentPeriodValue previousPeriodValue } } }`,
 
 	"providerAnalyticsMetrics": `query providerAnalyticsMetrics($where: MetricsInput!) { metrics(where: $where) { apiCallVolumeProvider { currentPeriodValue previousPeriodValue } totalApiRevenue { currentPeriodValue previousPeriodValue } totalApiEstimatedRevenueByProvider { currentPeriodValue previousPeriodValue } apiErrorRateProvider { currentPeriodValue previousPeriodValue } pricePerThousandCallsByProvider { currentPeriodValue previousPeriodValue } totalApiCreatedByProvider { currentPeriodValue previousPeriodValue } } }`,
-	"teams": `query teams($orgId: Int, $slugifiedName: String) { teams(where: { orgId: $orgId, slugifiedName: $slugifiedName }) { id name status usersCount description slugifiedName } }`,
+	"teams":                    `query teams($orgId: Int, $slugifiedName: String) { teams(where: { orgId: $orgId, slugifiedName: $slugifiedName }) { id name status usersCount description slugifiedName } }`,
 
 	"apiBillingPlans": `query apiBillingPlans($apiId: ID!, $entityId: ID!) { api(id: $apiId) { id slugifiedName websiteUrl billingItems { id title name displayName description type allEndpoints } owner { id slugifiedName } billingPlans: nacBillingPlans(pagingArgs: { limit: -1 }) { id name recommended visibility } } entityById(id: $entityId) { id type } }`,
 
@@ -88,24 +88,24 @@ var gqlDocs = map[string]string{
 // gqlResponsePaths maps operation name -> JSON path to the payload rows/object
 // (relative to the GraphQL "data" wrapper), matching the spec's response_path.
 var gqlResponsePaths = map[string]string{
-	"searchApis":            "data.products.nodes",
+	"searchApis": "data.products.nodes",
 	// searchApisPage is a distinct entry from "searchApis" above: it keeps
 	// the pageInfo envelope (endCursor/hasNextPage) intact for sync.go's
 	// cursor-pagination loop, whereas "searchApis" strips down to the bare
 	// nodes array for search.go/promoted_marketplace.go's output rendering.
 	// Do not merge these two entries — they serve different response shapes.
-	"searchApisPage":        "data.products",
-	"getCategoriesByCtx":    "data.categoriesByCtx",
+	"searchApisPage":          "data.products",
+	"getCategoriesByCtx":      "data.categoriesByCtx",
 	"GetCollectionsCollapsed": "data.collections",
-	"getCollectionBySlug":   "data.collection",
-	"getApiBySlugAndOwner":  "data.apiBySlugifiedNameAndOwnerName",
-	"getUserProfile":        "data.userProfile",
-	"getHubMetrics":         "data.publicMetrics",
-	"activeUser":            "data.activeUser",
-	"getUserSavedApis":      "data.userSavedApis",
-	"getApiSubscriptions":   "data.getApiSubscriptions.rows",
-	"getNotifications":      "data.newNotificationsByUserId",
-	"getWorkspaceData":      "data.workspaceData",
+	"getCollectionBySlug":     "data.collection",
+	"getApiBySlugAndOwner":    "data.apiBySlugifiedNameAndOwnerName",
+	"getUserProfile":          "data.userProfile",
+	"getHubMetrics":           "data.publicMetrics",
+	"activeUser":              "data.activeUser",
+	"getUserSavedApis":        "data.userSavedApis",
+	"getApiSubscriptions":     "data.getApiSubscriptions.rows",
+	"getNotifications":        "data.newNotificationsByUserId",
+	"getWorkspaceData":        "data.workspaceData",
 }
 
 // gqlExec executes a GraphQL operation against the hub gateway with a

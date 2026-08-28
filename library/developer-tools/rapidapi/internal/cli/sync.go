@@ -222,7 +222,14 @@ func syncCollectionResource(cmd *cobra.Command, flags *rootFlags, s *store.Store
 		}
 
 		total += cacheDomainRows(cmd, s, resource, data, s.UpsertCollections)
-		if err := s.SaveSyncState(resource, strconv.Itoa(page), total); err != nil {
+		// Persist the NEXT page to fetch, not the page just consumed — the
+		// cursor's contract is "resume from here", matching the api
+		// resource's endCursor semantics. Saving the current page here
+		// instead would make a capped resume re-fetch the same page
+		// forever (the interim value is what survives on a cap-hit break
+		// below; the final "fully synced" branch overwrites it with "").
+		nextPage := page + 1
+		if err := s.SaveSyncState(resource, strconv.Itoa(nextPage), total); err != nil {
 			fmt.Fprintf(cmd.ErrOrStderr(), "warning: failed to save sync state for %s: %v\n", resource, err)
 		}
 
@@ -234,7 +241,7 @@ func syncCollectionResource(cmd *cobra.Command, flags *rootFlags, s *store.Store
 			capped = true
 			break
 		}
-		page++
+		page = nextPage
 	}
 
 	if !capped {
@@ -250,9 +257,14 @@ func syncCollectionResource(cmd *cobra.Command, flags *rootFlags, s *store.Store
 // Per-item upsert failures are non-fatal by design (matching the Shopify
 // CLI's anomaly-warning convention in this repo): a single malformed record
 // must not fail the whole page. When any item in the page fails to store,
-// a warning is emitted so the gap is visible instead of silent — the
-// caller's own count/cursor bookkeeping already tracks only the successful
-// total, so a later `sync` naturally re-fetches the same page's data.
+// a warning is emitted so the gap is visible instead of silent. This is a
+// real, accepted tradeoff, not a false safety net: the caller's cursor
+// still advances past this page regardless of per-item failures here
+// (matching Shopify's own cursor semantics in this repo), so a failed
+// item is not automatically retried by a later `sync` invocation — it
+// requires clearing that resource's sync_state (e.g. via a future --full
+// flag, not currently implemented) to force a full resync. Recorded here
+// as a known limitation, not silently assumed away.
 func cacheDomainRows(cmd *cobra.Command, s *store.Store, resource string, data json.RawMessage, upsert func(json.RawMessage) error) int {
 	var items []map[string]any
 	if err := json.Unmarshal(data, &items); err != nil {

@@ -13,6 +13,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// exportAPILimit is passed to SearchApis for the default (unfiltered) api
+// export so it isn't capped at SearchApis' own interactive-style default of
+// 50 — the marketplace has 79k+ APIs, and export's whole purpose is
+// dumping everything cached, matching the uncapped generic resource-type
+// export path below.
+const exportAPILimit = 1_000_000
+
 func newExportCmd(flags *rootFlags) *cobra.Command {
 	var format string
 	var out string
@@ -46,7 +53,15 @@ func newExportCmd(flags *rootFlags) *cobra.Command {
 			// Prefer the typed domain search when exporting APIs: it returns
 			// structured records from the local cache (offline-capable).
 			if resource == "api" {
-				rows, err := s.SearchApis("", 0)
+				// SearchApis treats limit<=0 as its own default page size
+				// (50), not "unlimited" — that default exists for
+				// interactive-style callers, but this command's whole
+				// purpose is exporting everything cached (the generic
+				// resource-type branch below has no cap at all). Pass an
+				// explicit large limit so an api export isn't silently
+				// truncated the way an empty query used to return zero
+				// rows before this fix.
+				rows, err := s.SearchApis("", exportAPILimit)
 				if err != nil {
 					return err
 				}

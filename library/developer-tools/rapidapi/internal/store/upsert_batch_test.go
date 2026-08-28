@@ -714,6 +714,47 @@ func TestSearchApisEmptyQueryReturnsAllCachedRecords(t *testing.T) {
 	}
 }
 
+// TestSearchApisEmptyQueryWithZeroLimitDefaultsToFiftyNotUnlimited pins
+// SearchApis' own limit<=0 default (50) so a future change to that default
+// doesn't silently break callers relying on it — and, paired with the next
+// test, documents that "unlimited" requires an explicit large limit, which
+// is exactly what export.go's api export path now passes (it doesn't rely
+// on 0 meaning "everything").
+func TestSearchApisEmptyQueryWithZeroLimitDefaultsToFiftyNotUnlimited(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	s, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer s.Close()
+
+	items := make([]json.RawMessage, 0, 60)
+	for i := 0; i < 60; i++ {
+		items = append(items, json.RawMessage(fmt.Sprintf(`{"id": "api-%d", "name": "API %d"}`, i, i)))
+	}
+	if stored, failed, err := s.UpsertBatch("apis", items); err != nil {
+		t.Fatalf("UpsertBatch: %v", err)
+	} else if failed != 0 || stored != len(items) {
+		t.Fatalf("UpsertBatch stored=%d failed=%d, want stored=%d failed=0", stored, failed, len(items))
+	}
+
+	capped, err := s.SearchApis("", 0)
+	if err != nil {
+		t.Fatalf(`SearchApis("", 0): %v`, err)
+	}
+	if len(capped) != 50 {
+		t.Fatalf(`SearchApis("", 0) with 60 cached rows returned %d, want 50 (the documented default cap)`, len(capped))
+	}
+
+	all, err := s.SearchApis("", 1_000_000)
+	if err != nil {
+		t.Fatalf(`SearchApis("", 1_000_000): %v`, err)
+	}
+	if len(all) != 60 {
+		t.Fatalf(`SearchApis("", 1_000_000) with 60 cached rows returned %d, want all 60 (an explicit large limit must not be capped)`, len(all))
+	}
+}
+
 // TestSearchApisEmptyQueryOnEmptyStoreReturnsNoRows guards the boundary
 // where the apis table has no rows at all — must return an empty result
 // with no error, not panic or surface a driver-level failure.

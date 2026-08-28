@@ -365,7 +365,14 @@ func TestSyncCollectionResource_NonPositiveCursorTreatedAsNoCursor(t *testing.T)
 // TestSyncCollectionResource_CapHitPreservesCursor mirrors
 // TestSyncAPIResource_CapHitPreservesCursor for the collection branch's
 // independent capped-cursor implementation (page-number persistence, not an
-// opaque GraphQL cursor) — the two are separately reachable bugs.
+// opaque GraphQL cursor) — the two are separately reachable bugs. The
+// persisted cursor must be the NEXT page to fetch (page 3, after fetching
+// pages 1 and 2), not the page just consumed — a page-consumed cursor would
+// make a resumed sync re-fetch the same page forever. This is the
+// regression test for a real bug ce-code-review's Greptile re-review pass
+// caught: the resume test below actually drives a second syncResource call
+// and asserts it requests page 3, not merely that the persisted string
+// value looks plausible.
 func TestSyncCollectionResource_CapHitPreservesCursor(t *testing.T) {
 	calls := 0
 	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
@@ -388,8 +395,52 @@ func TestSyncCollectionResource_CapHitPreservesCursor(t *testing.T) {
 		t.Fatal("capped = false, want true (the loop stopped because maxPages was hit, not because data ran out)")
 	}
 	cursor, _, _, _ := s.GetSyncState("collection")
-	if cursor != "2" {
-		t.Fatalf("cursor after cap hit = %q, want %q (must be preserved, not cleared)", cursor, "2")
+	if cursor != "3" {
+		t.Fatalf("cursor after cap hit = %q, want %q (must be the NEXT page to fetch, not the page just consumed)", cursor, "3")
+	}
+}
+
+// TestSyncCollectionResource_ResumeAfterCapFetchesNextPageNotSamePage is the
+// end-to-end regression test: after a capped run, a second syncResource
+// call must request the page AFTER the last one fetched — proving the
+// resume cursor actually advances pagination instead of stalling on a
+// repeatedly-refetched page.
+func TestSyncCollectionResource_ResumeAfterCapFetchesNextPageNotSamePage(t *testing.T) {
+	var gotPages []float64
+	cmd, flags, s := newSyncTestFixture(t, func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Variables struct {
+				Page float64 `json:"page"`
+			} `json:"variables"`
+		}
+		bodyBytes, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(bodyBytes, &body)
+		gotPages = append(gotPages, body.Variables.Page)
+		if body.Variables.Page < 3 {
+			// Pages 1 and 2: full pages (more data signaled).
+			writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c1"},{"id":"c2"}]}}`)
+			return
+		}
+		// Page 3 onward: a partial (final) page.
+		writeGraphQLResponse(w, `{"data":{"collections":[{"id":"c5"}]}}`)
+	})
+
+	// First call: caps after pages 1 and 2 (maxPages=2).
+	if _, capped, err := syncResource(cmd, flags, s, "collection", 2, 2); err != nil {
+		t.Fatalf("first syncResource call: %v", err)
+	} else if !capped {
+		t.Fatal("first call: capped = false, want true")
+	}
+	if len(gotPages) != 2 || gotPages[0] != 1 || gotPages[1] != 2 {
+		t.Fatalf("first call's requested pages = %v, want [1 2]", gotPages)
+	}
+
+	// Second call: must resume at page 3, not re-fetch page 1 or 2.
+	if _, _, err := syncResource(cmd, flags, s, "collection", 2, maxSyncPages); err != nil {
+		t.Fatalf("second syncResource call: %v", err)
+	}
+	if len(gotPages) != 3 || gotPages[2] != 3 {
+		t.Fatalf("second call's requested pages = %v, want a 3rd request for page 3 (resume must not re-fetch an already-consumed page)", gotPages)
 	}
 }
 
