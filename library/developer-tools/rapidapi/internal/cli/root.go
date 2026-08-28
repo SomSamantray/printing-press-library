@@ -290,7 +290,7 @@ Run 'rapidapi-pp-cli doctor' to verify auth and connectivity.`,
 		// Gated the same way as the learn hook: framework commands (auth,
 		// doctor, version, completion, help) must never create the default DB.
 		if !flags.dryRun && !flags.noCache && !shouldSkipLearnHook(cmd.CommandPath()) {
-			_ = autoRefreshIfStale(cmd.Context()) // advisory; never blocks
+			_ = autoRefreshIfStale(cmd, flags) // advisory; never blocks
 		}
 		if flags.deliverSpec != "" {
 			sink, err := ParseDeliverSink(flags.deliverSpec)
