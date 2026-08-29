@@ -188,7 +188,7 @@ When JSON output uses the generated provenance envelope, freshness metadata appe
 When you know what you want to do but not which command does it, ask the CLI directly:
 
 ```bash
-groq-pp-cli which "<capability in your own words>"
+groq-pp-cli which '<capability in your own words>'
 ```
 
 `which` resolves a natural-language capability query to the best matching command from this CLI's curated feature index. Exit code `0` means at least one match; exit code `2` means no confident match — fall back to `--help` or use a narrower query.
@@ -441,7 +441,7 @@ You do not need to decide whether a session "deserves" a playbook: a teach on a 
 ```bash
 # Common case: record both the resource learning AND the playbook in one call.
 groq-pp-cli teach \
-  --query "<user's question>" \
+  --query '<user question>' \
   --resource <id> \
   --playbook-file ~/playbooks/<shape>.json \
   --playbook-notes-file ~/playbooks/<shape>-notes.md
@@ -449,7 +449,7 @@ groq-pp-cli teach \
 
 # Alternate: playbook-only (no resource to record alongside).
 groq-pp-cli teach-playbook \
-  --query "<user's question>" \
+  --query '<user question>' \
   --playbook-file ~/playbooks/<shape>.json \
   --notes-file ~/playbooks/<shape>-notes.md
 ```
@@ -464,8 +464,8 @@ If your debug-protocol response identifies a concrete correction the notes or pl
 
 ```bash
 groq-pp-cli playbook amend \
-  --query "<exact recall query string>" \
-  --add-note "<your concrete correction>"
+  --query '<exact recall query string>' \
+  --add-note '<your concrete correction>'
 # (append shell `&` to background it)
 ```
 

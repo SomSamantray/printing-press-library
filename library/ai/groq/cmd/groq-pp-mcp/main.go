@@ -49,6 +49,8 @@ func main() {
 	transport := flag.String("transport", defaultTransport(), "MCP transport: stdio | http")
 	addr := flag.String("addr", defaultHTTPAddr, "bind address for http transport (host:port or :port)")
 	httpToken := flag.String("http-token", "", "bearer token required from HTTP transport callers (or set PP_MCP_HTTP_TOKEN); mandatory when binding a non-loopback address")
+	tlsCert := flag.String("tls-cert", "", "TLS certificate file for the http transport; required with a token on a non-loopback address")
+	tlsKey := flag.String("tls-key", "", "TLS private key file for the http transport; required with a token on a non-loopback address")
 	flag.Parse()
 
 	switch strings.ToLower(*transport) {
@@ -63,24 +65,47 @@ func main() {
 		if token == "" {
 			token = os.Getenv("PP_MCP_HTTP_TOKEN")
 		}
-		if !isLoopbackAddr(*addr) && token == "" {
-			fmt.Fprintf(os.Stderr, "refusing to serve MCP over HTTP on non-loopback address %q without a caller token: set --http-token (or PP_MCP_HTTP_TOKEN) or bind to a loopback address\n", *addr)
+		loopback := isLoopbackAddr(*addr)
+		useTLS := *tlsCert != "" || *tlsKey != ""
+		if useTLS && (*tlsCert == "" || *tlsKey == "") {
+			fmt.Fprintf(os.Stderr, "both --tls-cert and --tls-key are required when TLS is enabled\n")
+			os.Exit(2)
+		}
+		if !loopback && token == "" {
+			fmt.Fprintf(os.Stderr, "refusing to serve MCP over HTTP on non-loopback address %q without a caller token: set --http-token (or PP_MCP_HTTP_TOKEN)\n", *addr)
+			os.Exit(2)
+		}
+		if !loopback && token != "" && !useTLS {
+			fmt.Fprintf(os.Stderr, "refusing to send a bearer token over plaintext HTTP on non-loopback address %q: provide --tls-cert and --tls-key\n", *addr)
 			os.Exit(2)
 		}
 		if token != "" {
-			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over streamable HTTP at %s (bearer-token authenticated)\n", *addr)
+			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over %s at %s (bearer-token authenticated)\n", tlsLabel(useTLS), *addr)
 		} else {
-			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over streamable HTTP at %s\n", *addr)
+			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over %s at %s (loopback only)\n", tlsLabel(useTLS), *addr)
 		}
 		srv := &http.Server{Addr: *addr, Handler: requireHTTPToken(token, httpSrv)}
-		if err := srv.ListenAndServe(); err != nil {
-			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
+		var serveErr error
+		if useTLS {
+			serveErr = srv.ListenAndServeTLS(*tlsCert, *tlsKey)
+		} else {
+			serveErr = srv.ListenAndServe()
+		}
+		if serveErr != nil {
+			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", serveErr)
 			os.Exit(1)
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "unknown --transport %q (supported: stdio, http)\n", *transport)
 		os.Exit(2)
 	}
+}
+
+func tlsLabel(useTLS bool) string {
+	if useTLS {
+		return "HTTPS"
+	}
+	return "HTTP"
 }
 
 // requireHTTPToken wraps the MCP HTTP handler with a bearer-token gate. With an
@@ -106,8 +131,9 @@ func requireHTTPToken(token string, next http.Handler) http.Handler {
 }
 
 // isLoopbackAddr reports whether an http bind address binds a loopback
-// interface. A bare ":port" binds all interfaces, so it is treated as
-// reachable.
+// interface by IP literal only. A bare ":port" binds all interfaces and a
+// hostname such as "localhost" resolves through DNS, so neither is exempted
+// from caller authentication — only explicit loopback IP literals are.
 func isLoopbackAddr(addr string) bool {
 	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -116,10 +142,11 @@ func isLoopbackAddr(addr string) bool {
 	if host == "" {
 		return false // ":port" binds all interfaces
 	}
-	if ip := net.ParseIP(host); ip != nil {
-		return ip.IsLoopback()
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false // hostname; resolve-through-DNS is not trusted
 	}
-	return strings.EqualFold(host, "localhost")
+	return ip.IsLoopback()
 }
 
 // defaultTransport reads PP_MCP_TRANSPORT env when set, otherwise falls back

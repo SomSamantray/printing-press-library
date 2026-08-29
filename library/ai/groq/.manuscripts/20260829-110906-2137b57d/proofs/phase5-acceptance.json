@@ -12,10 +12,10 @@
     "type": "bearer_token",
     "api_key_available": true
   },
-  "source_fingerprint": "cb8198fc30d6d62a730bf94faa3a084838515c0a5f97f604e131e3312567785a",
+  "source_fingerprint": "97a98ecc87e28a125b95ecff11d838014c541efe510f4aceef8ed9b46dfe5ddc",
   "source_files": {
     "cmd/groq-pp-cli/main.go": "a7b40e0bb54f4f6b009b7a5c358997d81434a9b30749a5257fba7983aa6b73d4",
-    "cmd/groq-pp-mcp/main.go": "40d2414ec8379bd50cba419e07d62fb0ae1f5d4ee1a8f85a51d1ab377a934bc8",
+    "cmd/groq-pp-mcp/main.go": "20be92831d7698922c9e004f9e9faff9d3078ea94c6cbba676c2ebe22f191860",
     "go.mod": "7d11273ea10297caeff92cccad9cc1939855750622757dc8068ad31a7562071e",
     "go.sum": "3d168ced4b630c0f6320209227bd73007c420042c61234003a2ac6d2363d663f",
     "internal/cache/cache.go": "e24c190931078115e2ba2b4c5ef9dc7e8eb184018ff35c612c65b183753a4dde",
