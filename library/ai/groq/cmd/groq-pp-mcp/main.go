@@ -65,25 +65,21 @@ func main() {
 		if token == "" {
 			token = os.Getenv("PP_MCP_HTTP_TOKEN")
 		}
+		if token == "" {
+			fmt.Fprintf(os.Stderr, "refusing to serve MCP over HTTP without a caller token: set --http-token (or PP_MCP_HTTP_TOKEN)\n")
+			os.Exit(2)
+		}
 		loopback := isLoopbackAddr(*addr)
 		useTLS := *tlsCert != "" || *tlsKey != ""
 		if useTLS && (*tlsCert == "" || *tlsKey == "") {
 			fmt.Fprintf(os.Stderr, "both --tls-cert and --tls-key are required when TLS is enabled\n")
 			os.Exit(2)
 		}
-		if !loopback && token == "" {
-			fmt.Fprintf(os.Stderr, "refusing to serve MCP over HTTP on non-loopback address %q without a caller token: set --http-token (or PP_MCP_HTTP_TOKEN)\n", *addr)
-			os.Exit(2)
-		}
-		if !loopback && token != "" && !useTLS {
+		if !loopback && !useTLS {
 			fmt.Fprintf(os.Stderr, "refusing to send a bearer token over plaintext HTTP on non-loopback address %q: provide --tls-cert and --tls-key\n", *addr)
 			os.Exit(2)
 		}
-		if token != "" {
-			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over %s at %s (bearer-token authenticated)\n", tlsLabel(useTLS), *addr)
-		} else {
-			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over %s at %s (loopback only)\n", tlsLabel(useTLS), *addr)
-		}
+		fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over %s at %s (bearer-token authenticated)\n", tlsLabel(useTLS), *addr)
 		srv := &http.Server{Addr: *addr, Handler: requireHTTPToken(token, httpSrv)}
 		var serveErr error
 		if useTLS {
