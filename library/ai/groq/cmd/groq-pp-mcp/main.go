@@ -4,8 +4,11 @@
 package main
 
 import (
+	"crypto/subtle"
 	"flag"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"strings"
 
@@ -45,6 +48,7 @@ func main() {
 
 	transport := flag.String("transport", defaultTransport(), "MCP transport: stdio | http")
 	addr := flag.String("addr", defaultHTTPAddr, "bind address for http transport (host:port or :port)")
+	httpToken := flag.String("http-token", "", "bearer token required from HTTP transport callers (or set PP_MCP_HTTP_TOKEN); mandatory when binding a non-loopback address")
 	flag.Parse()
 
 	switch strings.ToLower(*transport) {
@@ -55,8 +59,21 @@ func main() {
 		}
 	case "http":
 		httpSrv := server.NewStreamableHTTPServer(s)
-		fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over streamable HTTP at %s\n", *addr)
-		if err := httpSrv.Start(*addr); err != nil {
+		token := *httpToken
+		if token == "" {
+			token = os.Getenv("PP_MCP_HTTP_TOKEN")
+		}
+		if !isLoopbackAddr(*addr) && token == "" {
+			fmt.Fprintf(os.Stderr, "refusing to serve MCP over HTTP on non-loopback address %q without a caller token: set --http-token (or PP_MCP_HTTP_TOKEN) or bind to a loopback address\n", *addr)
+			os.Exit(2)
+		}
+		if token != "" {
+			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over streamable HTTP at %s (bearer-token authenticated)\n", *addr)
+		} else {
+			fmt.Fprintf(os.Stderr, "groq-pp-mcp serving MCP over streamable HTTP at %s\n", *addr)
+		}
+		srv := &http.Server{Addr: *addr, Handler: requireHTTPToken(token, httpSrv)}
+		if err := srv.ListenAndServe(); err != nil {
 			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
 			os.Exit(1)
 		}
@@ -64,6 +81,45 @@ func main() {
 		fmt.Fprintf(os.Stderr, "unknown --transport %q (supported: stdio, http)\n", *transport)
 		os.Exit(2)
 	}
+}
+
+// requireHTTPToken wraps the MCP HTTP handler with a bearer-token gate. With an
+// empty token it passes every request through unchanged (loopback-only use);
+// with a token set it requires `Authorization: Bearer <token>` on every
+// request and rejects anything else with 401, so a remote caller that can
+// reach the listener cannot invoke tools under the operator's credentials.
+func requireHTTPToken(token string, next http.Handler) http.Handler {
+	if token == "" {
+		return next
+	}
+	expected := "Bearer " + token
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if subtle.ConstantTimeCompare([]byte(auth), []byte(expected)) != 1 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// isLoopbackAddr reports whether an http bind address binds a loopback
+// interface. A bare ":port" binds all interfaces, so it is treated as
+// reachable.
+func isLoopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	if host == "" {
+		return false // ":port" binds all interfaces
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+	return strings.EqualFold(host, "localhost")
 }
 
 // defaultTransport reads PP_MCP_TRANSPORT env when set, otherwise falls back

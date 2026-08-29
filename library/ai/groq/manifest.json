@@ -15,7 +15,8 @@
       "command": "${__dirname}/bin/groq-pp-mcp",
       "args": [],
       "env": {
-        "PRINTING_PRESS_CLIENT_PROFILE": "${user_config.printing_press_client_profile}"
+        "PRINTING_PRESS_CLIENT_PROFILE": "${user_config.printing_press_client_profile}",
+        "GROQ_API_KEY": "${user_config.groq_api_key}"
       }
     }
   },
@@ -24,6 +25,12 @@
       "type": "string",
       "title": "Client profile",
       "description": "Binds the MCP server to an existing tenant-gated Printing Press client profile.",
+      "required": true
+    },
+    "groq_api_key": {
+      "type": "string",
+      "title": "Groq API Key",
+      "description": "Groq API key (create one at console.groq.com/keys).",
       "required": true
     }
   },
