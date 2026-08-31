@@ -5,7 +5,7 @@
   "base_run_id": "20260504-004256",
   "base_printing_press_version": "3.8.0",
   "summary": "An untyped `search` against the local store must run the same FTS `db.Search` query the typed default arm runs, so `--data-source local` and the auto-mode network-failure fallback return real hits instead of a silent `results: []`.",
-  "reason": "The generated search command's `case \"\":` branch (no --type) was a stub that allocated a `seen` map, discarded it, and never assigned `results`, so offline searches always printed an empty result set and exited 0 — indistinguishable from a successful search over an empty corpus. The default arm already called `db.Search(query, limit)` and returned real hits; the untyped branch must call it too. A regen that restores the empty stub reintroduces the silent-wrong-answer defect.",
+  "reason": "The generated search command's `case \"\":` branch (no --type) was a stub that allocated a `seen` map, discarded it, and never assigned `results`, so offline searches always printed an empty result set and exited 0 \u2014 indistinguishable from a successful search over an empty corpus. The default arm already called `db.Search(query, limit)` and returned real hits; the untyped branch must call it too. A regen that restores the empty stub reintroduces the silent-wrong-answer defect.",
   "files": [
     "internal/cli/search.go",
     "internal/cli/search_test.go"

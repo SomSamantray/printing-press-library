@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/mvanhorn/printing-press-library/library/media-and-entertainment/movie-goat/internal/store"
@@ -120,7 +121,7 @@ func TestSearchUntypedLocalMatchesTypedControl(t *testing.T) {
 	if len(untypedTitles) != 2 {
 		t.Fatalf("untyped local search returned %d hits, want 2: %v", len(untypedTitles), untypedTitles)
 	}
-	if !titlesEqual(untypedTitles, typedTitles) {
+	if !slices.Equal(untypedTitles, typedTitles) {
 		t.Fatalf("untyped local search results differ from typed control: untyped=%v typed=%v", untypedTitles, typedTitles)
 	}
 }
@@ -150,16 +151,4 @@ func TestSearchNoMatchesReturnsEmpty(t *testing.T) {
 	if len(titles) != 0 {
 		t.Fatalf("no-match query should return zero hits, got %v", titles)
 	}
-}
-
-func titlesEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
