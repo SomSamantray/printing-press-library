@@ -627,26 +627,28 @@ func (s *Store) Search(query string, limit int) ([]json.RawMessage, error) {
 
 // ftsMetaChars are FTS5 query-language metacharacters. A token containing any
 // of these must be quoted so it is treated as literal text rather than syntax.
-const ftsMetaChars = "\"`():*/+-{}[]^~<>,'"
+const ftsMetaChars = "\"`():*/+-{}[]^~<>,'&#?!@$%=;\\|."
 
-// ftsKeywords are FTS5 boolean-operator keywords. A bare token equal to one of
-// these (case-insensitively) must be quoted or SQLite raises a MATCH parse
-// error.
-var ftsKeywords = map[string]bool{"and": true, "or": true, "not": true}
+// ftsKeywords are FTS5 operator keywords. A bare token equal to one of these
+// (case-insensitively) must be quoted or SQLite interprets it as query
+// operators (NEAR/ANDNOT) instead of a literal term, which can raise a MATCH
+// parse error or silently change semantics.
+var ftsKeywords = map[string]bool{"and": true, "or": true, "not": true, "near": true, "andnot": true}
 
 // ftsSafeQuery neutralizes FTS5 query-language syntax in a user-supplied
 // search query while preserving implicit-AND semantics for ordinary multi-word
-// queries. A token is quoted (wrapped in double quotes, with embedded quotes
-// doubled per FTS5 string-literal rules) when it contains a metacharacter or
-// is a bare AND/OR/NOT keyword; syntax-free tokens pass through unchanged. A
-// whitespace-only query yields "" so the caller can short-circuit to an empty
-// result instead of constructing MATCH '""'.
+// queries and prefix search for trailing-* tokens. A token is quoted (wrapped
+// in double quotes, with embedded quotes doubled per FTS5 string-literal rules)
+// when it contains a metacharacter or is a bare AND/OR/NOT/NEAR/ANDNOT keyword;
+// syntax-free tokens pass through unchanged. A trailing-* prefix token with no
+// other metacharacter passes through unquoted so FTS5 keeps prefix semantics.
 func ftsSafeQuery(query string) string {
-	if strings.TrimSpace(query) == "" {
-		return ""
-	}
 	tokens := strings.Fields(query)
 	for i, tok := range tokens {
+		prefix := strings.TrimSuffix(tok, "*")
+		if prefix != tok && prefix != "" && !strings.ContainsAny(prefix, ftsMetaChars) {
+			continue // legal prefix search, e.g. "incept*"
+		}
 		if strings.ContainsAny(tok, ftsMetaChars) || ftsKeywords[strings.ToLower(tok)] {
 			tokens[i] = `"` + strings.ReplaceAll(tok, `"`, `""`) + `"`
 		}

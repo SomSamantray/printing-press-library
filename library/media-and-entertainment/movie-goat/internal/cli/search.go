@@ -146,14 +146,9 @@ In local mode: searches locally synced data only.`,
 			defer db.Close()
 
 			var results []json.RawMessage
-			switch resourceType {
-			case "":
-				// Untyped search covers the whole FTS index.
-				results, err = db.Search(query, limit)
-			default:
-				// Unrecognized type — fall back to generic search
-				results, err = db.Search(query, limit)
-			}
+			// Both the untyped and unrecognized --type paths search the whole
+			// FTS index; --type does not filter the local query.
+			results, err = db.Search(query, limit)
 			if err != nil {
 				return fmt.Errorf("search failed: %w", err)
 			}

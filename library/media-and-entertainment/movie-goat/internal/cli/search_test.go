@@ -20,8 +20,12 @@ import (
 // fixtures via the store's own upsert path. A file-backed store is required:
 // the store opens with SetMaxOpenConns(2) + WAL, and SQLite :memory: databases
 // are per-connection, so an in-memory DB could silently use a different
-// connection than the migration.
-func seedSearchStore(t *testing.T, query string) string {
+// connection than the migration. An optional variadic fixture list replaces
+// the default Inception fixtures.
+func seedSearchStore(t *testing.T, query string, extraFixtures ...struct {
+	id   string
+	data string
+}) string {
 	t.Helper()
 
 	dbPath := filepath.Join(t.TempDir(), "search_test.db")
@@ -39,6 +43,7 @@ func seedSearchStore(t *testing.T, query string) string {
 		{"27205", `{"id":27205,"title":"Inception","type":"movie"}`},
 		{"1234", `{"id":1234,"title":"A Very Different Film","type":"movie"}`},
 	}
+	fixtures = append(fixtures, extraFixtures...)
 	for _, f := range fixtures {
 		if err := s.Upsert("movies", f.id, json.RawMessage(f.data)); err != nil {
 			t.Fatalf("upserting fixture %s: %v", f.id, err)
@@ -46,13 +51,14 @@ func seedSearchStore(t *testing.T, query string) string {
 	}
 
 	// Prove the fixture store's FTS index is actually populated — a silently
-	// empty index would let a parity-only test false-pass.
+	// empty index would let a parity-only test false-pass. Expect at least one
+	// hit for the proving query.
 	got, err := s.Search(query, 50)
 	if err != nil {
 		t.Fatalf("seeding search: %v", err)
 	}
-	if len(got) != 2 {
-		t.Fatalf("seed store FTS index should hold 2 hits for %q, got %d", query, len(got))
+	if len(got) == 0 {
+		t.Fatalf("seed store FTS index should hold hits for %q, got 0", query)
 	}
 	return dbPath
 }
@@ -157,18 +163,12 @@ func TestSearchNoMatchesReturnsEmpty(t *testing.T) {
 // syntax (the ":" column operator) searches literally through the untyped
 // local path instead of raising a MATCH parse error.
 func TestSearchFTSSyntaxQueryReturnsLiteralHits(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "fts_cli_test.db")
-	s, err := store.Open(dbPath)
-	if err != nil {
-		t.Fatalf("opening temp store: %v", err)
-	}
-	defer s.Close()
-	if err := s.Upsert("movies", "9999", json.RawMessage(`{"id":9999,"title":"Space: 1999","type":"movie"}`)); err != nil {
-		t.Fatalf("upserting fixture: %v", err)
-	}
-	if err := s.Close(); err != nil {
-		t.Fatalf("closing seed store: %v", err)
-	}
+	dbPath := seedSearchStore(t, "Space: 1999",
+		struct {
+			id   string
+			data string
+		}{"9999", `{"id":9999,"title":"Space: 1999","type":"movie"}`},
+	)
 
 	envelope := runSearch(t, dbPath, "Space: 1999", "--data-source", "local")
 	titles := titlesFromEnvelope(t, envelope)
