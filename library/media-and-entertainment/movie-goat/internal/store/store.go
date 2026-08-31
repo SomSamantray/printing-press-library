@@ -595,13 +595,16 @@ func (s *Store) Search(query string, limit int) ([]json.RawMessage, error) {
 	if limit <= 0 {
 		limit = 50
 	}
+	if strings.TrimSpace(query) == "" {
+		return []json.RawMessage{}, nil
+	}
 	rows, err := s.db.Query(
 		`SELECT r.data FROM resources r
 		 JOIN resources_fts f ON r.id = f.id
 		 WHERE resources_fts MATCH ?
 		 ORDER BY rank
 		 LIMIT ?`,
-		query, limit,
+		ftsSafeQuery(query), limit,
 	)
 	if err != nil {
 		return nil, err
@@ -616,7 +619,39 @@ func (s *Store) Search(query string, limit int) ([]json.RawMessage, error) {
 		}
 		results = append(results, json.RawMessage(data))
 	}
+	if results == nil {
+		results = []json.RawMessage{}
+	}
 	return results, rows.Err()
+}
+
+// ftsMetaChars are FTS5 query-language metacharacters. A token containing any
+// of these must be quoted so it is treated as literal text rather than syntax.
+const ftsMetaChars = "\"`():*/+-{}[]^~<>,'"
+
+// ftsKeywords are FTS5 boolean-operator keywords. A bare token equal to one of
+// these (case-insensitively) must be quoted or SQLite raises a MATCH parse
+// error.
+var ftsKeywords = map[string]bool{"and": true, "or": true, "not": true}
+
+// ftsSafeQuery neutralizes FTS5 query-language syntax in a user-supplied
+// search query while preserving implicit-AND semantics for ordinary multi-word
+// queries. A token is quoted (wrapped in double quotes, with embedded quotes
+// doubled per FTS5 string-literal rules) when it contains a metacharacter or
+// is a bare AND/OR/NOT keyword; syntax-free tokens pass through unchanged. A
+// whitespace-only query yields "" so the caller can short-circuit to an empty
+// result instead of constructing MATCH '""'.
+func ftsSafeQuery(query string) string {
+	if strings.TrimSpace(query) == "" {
+		return ""
+	}
+	tokens := strings.Fields(query)
+	for i, tok := range tokens {
+		if strings.ContainsAny(tok, ftsMetaChars) || ftsKeywords[strings.ToLower(tok)] {
+			tokens[i] = `"` + strings.ReplaceAll(tok, `"`, `""`) + `"`
+		}
+	}
+	return strings.Join(tokens, " ")
 }
 
 func extractObjectID(obj map[string]any) string {

@@ -152,3 +152,27 @@ func TestSearchNoMatchesReturnsEmpty(t *testing.T) {
 		t.Fatalf("no-match query should return zero hits, got %v", titles)
 	}
 }
+
+// TestSearchFTSSyntaxQueryReturnsLiteralHits asserts a query containing FTS5
+// syntax (the ":" column operator) searches literally through the untyped
+// local path instead of raising a MATCH parse error.
+func TestSearchFTSSyntaxQueryReturnsLiteralHits(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "fts_cli_test.db")
+	s, err := store.Open(dbPath)
+	if err != nil {
+		t.Fatalf("opening temp store: %v", err)
+	}
+	defer s.Close()
+	if err := s.Upsert("movies", "9999", json.RawMessage(`{"id":9999,"title":"Space: 1999","type":"movie"}`)); err != nil {
+		t.Fatalf("upserting fixture: %v", err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatalf("closing seed store: %v", err)
+	}
+
+	envelope := runSearch(t, dbPath, "Space: 1999", "--data-source", "local")
+	titles := titlesFromEnvelope(t, envelope)
+	if len(titles) != 1 || titles[0] != "Space: 1999" {
+		t.Fatalf("FTS-syntax query should return the literal hit, got %v", titles)
+	}
+}
