@@ -1,0 +1,9 @@
+{
+  "dir": "\u003ccli-dir\u003e/swiggy-pp-cli",
+  "research_dir": "\u003ccli-dir\u003e/20260913-115332-8cbd64e9",
+  "verdict": "pass",
+  "actors": null,
+  "issues": [
+    "no Apify actor references found, skipping"
+  ]
+}
