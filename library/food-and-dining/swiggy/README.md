@@ -2,7 +2,7 @@
 
 **Every Swiggy Builders Club tool, one persistent OAuth session, and a local order history no Swiggy surface shows you.**
 
-Wraps all 51 official Swiggy MCP tools across Food, Instamart, and Dineout into one CLI that respects Swiggy's own session-reuse rules instead of tripping rate limits. Adds cross-domain spend history, a safe-retry guard for non-idempotent order placement,.
+Wraps all 51 official Swiggy MCP tools across Food, Instamart, and Dineout into one CLI that respects Swiggy's own session-reuse rules instead of tripping rate limits. Adds cross-domain spend history, a safe-retry guard for non-idempotent order placement, and a UPI payment-wait command on top.
 
 ## Install
 
