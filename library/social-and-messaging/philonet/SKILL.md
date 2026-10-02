@@ -117,7 +117,7 @@ These capabilities aren't available in any other tool for this API.
 
 - `today`, `owed`, `queue` and `resonance` read live endpoints only. They reject `--data-source local` with a clear error.
 - `rhythm`, `digest` and `voices` keep account-keyed history in a per-account local file. By default they refresh from the API first. `--no-refresh` or `--data-source local` reads stored history without any API call (a token is still needed to identify the account). `--data-source live` always refreshes and fails instead of serving stored data; it conflicts with `--no-refresh`.
-- History is keyed by the account in the token, so switching tokens never mixes history and a refreshed token keeps it. `rhythm` history starts at your first run because Philonet only reports the last week.
+- History is keyed by the account in the token, so switching tokens never mixes history and a refreshed token keeps it. History saved by an earlier build at the previous default location is imported into the per-account file once. `rhythm` history starts at your first run because Philonet only reports the last week.
 - This is an unofficial client of an undocumented API; endpoints can change without notice.
 
 ## Discovery Signals

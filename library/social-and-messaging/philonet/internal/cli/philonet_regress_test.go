@@ -10,6 +10,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -419,5 +420,234 @@ func TestPrepareHistoryReportsCancellationWhileBusy(t *testing.T) {
 	err = pnPrepareHistory(short, st.DB())
 	if err == nil || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("want the context deadline surfaced, got %v", err)
+	}
+}
+
+// History saved at the previous default location (the generator's token-keyed
+// file) must follow the account to its new per-account file, once, and only
+// for that account.
+func TestPriorDefaultHistoryIsImportedOncePerAccount(t *testing.T) {
+	testenv.Isolate(t)
+	ctx := context.Background()
+
+	prior := defaultDBPath("philonet-pp-cli")
+	old, err := store.OpenWithContext(ctx, prior)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := old.DB().Exec(pnSchema); err != nil {
+		t.Fatal(err)
+	}
+	for _, uid := range []string{"uA", "uB"} {
+		if _, err := old.DB().Exec(`INSERT INTO pn_reading_days(uid,day,seconds,captured_at) VALUES(?,?,?,?)`, uid, "2026-09-28", 600, "x"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := old.DB().Exec(`INSERT INTO pn_snapshots(uid,day,captured_at,streak_current,streak_max,my_rank,participants) VALUES(?,?,?,?,?,?,?)`, uid, "2026-09-28", "x", 1, 4, 2, 3); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := old.DB().Exec(`INSERT INTO pn_feed_cards(uid,card_key,starter_id,starter_name,first_seen) VALUES(?,?,?,?,?)`, uid, "1:1", "s", "Sam", "2026-09-28T00:00:00Z"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_ = old.Close()
+
+	count := func(db *store.Store, table, uid string) int {
+		var n int
+		if err := db.DB().QueryRow(`SELECT COUNT(*) FROM `+table+` WHERE uid = ?`, uid).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	for pass := 1; pass <= 2; pass++ { // second open must not duplicate or fail
+		db, err := pnOpenStore(ctx, "", "uA")
+		if err != nil {
+			t.Fatalf("pass %d: %v", pass, err)
+		}
+		for _, tbl := range []string{"pn_reading_days", "pn_snapshots", "pn_feed_cards"} {
+			if got := count(db, tbl, "uA"); got != 1 {
+				t.Fatalf("pass %d: %s should carry account A's 1 prior row, got %d", pass, tbl, got)
+			}
+			if got := count(db, tbl, "uB"); got != 0 {
+				t.Fatalf("pass %d: %s must not import account B's rows into A's file, got %d", pass, tbl, got)
+			}
+		}
+		_ = db.Close()
+	}
+	// Account B gets its own import into its own file.
+	dbB, err := pnOpenStore(ctx, "", "uB")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dbB.Close()
+	if count(dbB, "pn_reading_days", "uB") != 1 || count(dbB, "pn_reading_days", "uA") != 0 {
+		t.Fatal("account B must import only its own prior history")
+	}
+}
+
+// An explicit --db path is the caller's choice: nothing is imported into it.
+func TestExplicitDBPathSkipsPriorImport(t *testing.T) {
+	testenv.Isolate(t)
+	ctx := context.Background()
+	prior := defaultDBPath("philonet-pp-cli")
+	old, err := store.OpenWithContext(ctx, prior)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := old.DB().Exec(pnSchema); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := old.DB().Exec(`INSERT INTO pn_reading_days(uid,day,seconds,captured_at) VALUES('uA','2026-09-28',600,'x')`); err != nil {
+		t.Fatal(err)
+	}
+	_ = old.Close()
+	db, err := pnOpenStore(ctx, filepath.Join(t.TempDir(), "explicit.db"), "uA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	var n int
+	if err := db.DB().QueryRow(`SELECT COUNT(*) FROM pn_reading_days`).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("explicit --db must not import prior history, got %d rows err=%v", n, err)
+	}
+}
+
+func markCount(t *testing.T, db *store.Store, uid string) int {
+	t.Helper()
+	var n int
+	if err := db.DB().QueryRow(`SELECT COUNT(*) FROM pn_import_marks WHERE uid = ?`, uid).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+// Copy by column NAME: a prior table with a different column order and an extra
+// column must land every value in the right place, never shifted.
+func TestPriorImportCopiesByColumnNameNotPosition(t *testing.T) {
+	testenv.Isolate(t)
+	ctx := context.Background()
+	old, err := store.OpenWithContext(ctx, defaultDBPath("philonet-pp-cli"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := old.DB().Exec(`CREATE TABLE pn_reading_days (captured_at TEXT, seconds INTEGER, legacy_extra TEXT, day TEXT, uid TEXT, PRIMARY KEY (uid, day));
+INSERT INTO pn_reading_days VALUES ('stamp', 777, 'junk', '2026-09-28', 'uA');`); err != nil {
+		t.Fatal(err)
+	}
+	_ = old.Close()
+	db, err := pnOpenStore(ctx, "", "uA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	var day, stamp string
+	var secs int
+	if err := db.DB().QueryRow(`SELECT day, seconds, captured_at FROM pn_reading_days WHERE uid = 'uA'`).Scan(&day, &secs, &stamp); err != nil {
+		t.Fatalf("drifted prior table must still import: %v", err)
+	}
+	if day != "2026-09-28" || secs != 777 || stamp != "stamp" {
+		t.Fatalf("values shifted by column order: day=%q seconds=%d captured_at=%q", day, secs, stamp)
+	}
+}
+
+// A prior table that lacks a uid column cannot be attributed to an account.
+func TestPriorImportSkipsTablesWithoutUID(t *testing.T) {
+	testenv.Isolate(t)
+	ctx := context.Background()
+	old, err := store.OpenWithContext(ctx, defaultDBPath("philonet-pp-cli"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := old.DB().Exec(`CREATE TABLE pn_reading_days (day TEXT PRIMARY KEY, seconds INTEGER NOT NULL, captured_at TEXT NOT NULL);
+INSERT INTO pn_reading_days VALUES ('2026-09-28', 3600, 'x');`); err != nil {
+		t.Fatal(err)
+	}
+	_ = old.Close()
+	db, err := pnOpenStore(ctx, "", "uA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	var n int
+	if err := db.DB().QueryRow(`SELECT COUNT(*) FROM pn_reading_days`).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("unattributable rows must never be imported, got %d err=%v", n, err)
+	}
+}
+
+// The import is optional: a corrupt prior file must not stop the command, and
+// must not be recorded as imported.
+func TestCorruptPriorFileDoesNotBlockOpen(t *testing.T) {
+	testenv.Isolate(t)
+	ctx := context.Background()
+	prior := defaultDBPath("philonet-pp-cli")
+	if err := os.MkdirAll(filepath.Dir(prior), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(prior, []byte("this is not a sqlite database at all"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	db, err := pnOpenStore(ctx, "", "uA")
+	if err != nil {
+		t.Fatalf("a broken prior file must not block opening the new history: %v", err)
+	}
+	defer db.Close()
+	if markCount(t, db, "uA") != 0 {
+		t.Fatal("a failed import must not be recorded as done")
+	}
+}
+
+// No prior file -> no marker, so a prior file that appears later is still
+// imported; once imported, later prior rows are not.
+func TestPriorImportMarkerSemantics(t *testing.T) {
+	testenv.Isolate(t)
+	ctx := context.Background()
+	db, err := pnOpenStore(ctx, "", "uA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if markCount(t, db, "uA") != 0 {
+		t.Fatal("no prior file must not write the imported marker")
+	}
+	_ = db.Close()
+
+	old, err := store.OpenWithContext(ctx, defaultDBPath("philonet-pp-cli"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := old.DB().Exec(pnSchema); err != nil {
+		t.Fatal(err)
+	}
+	ins := func(day string) {
+		if _, err := old.DB().Exec(`INSERT INTO pn_reading_days(uid,day,seconds,captured_at) VALUES('uA',?,60,'x')`, day); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ins("2026-09-27")
+	_ = old.Close()
+
+	db, err = pnOpenStore(ctx, "", "uA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	_ = db.DB().QueryRow(`SELECT COUNT(*) FROM pn_reading_days WHERE uid='uA'`).Scan(&n)
+	if n != 1 || markCount(t, db, "uA") != 1 {
+		t.Fatalf("a prior file that appears later must still be imported once: rows=%d marks=%d", n, markCount(t, db, "uA"))
+	}
+	_ = db.Close()
+
+	old, err = store.OpenWithContext(ctx, defaultDBPath("philonet-pp-cli"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ins("2026-09-26")
+	_ = old.Close()
+	db, err = pnOpenStore(ctx, "", "uA")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	_ = db.DB().QueryRow(`SELECT COUNT(*) FROM pn_reading_days WHERE uid='uA'`).Scan(&n)
+	if n != 1 {
+		t.Fatalf("after the marker is set, later prior rows must not be imported, got %d rows", n)
 	}
 }

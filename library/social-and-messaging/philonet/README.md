@@ -489,7 +489,7 @@ If you use agentcookie to sync secrets across machines, this CLI auto-adopts age
 ## Known limits
 
 - Unofficial client of an undocumented API (`api.typepilot.app`); endpoints can change without notice.
-- `rhythm`, `digest` and `voices` keep their own history in a per-account local file, keyed by the account in your token, so switching tokens never mixes history and a refreshed token keeps the same history. `--data-source local` (or `--no-refresh`) reads that history without contacting the API; a token is still needed to identify the account. `--data-source live` refreshes from the API and fails rather than falling back to stored data.
+- `rhythm`, `digest` and `voices` keep their own history in a per-account local file, keyed by the account in your token, so switching tokens never mixes history and a refreshed token keeps the same history. History saved by an earlier build at the previous default location is imported into the per-account file once. `--data-source local` (or `--no-refresh`) reads that history without contacting the API; a token is still needed to identify the account. `--data-source live` refreshes from the API and fails rather than falling back to stored data.
 - `today`, `owed`, `queue` and `resonance` are live-only and reject `--data-source local`. `owed` scans only your most recent thoughts (`--max-scan`); `resonance` scans a bounded number of pages of your thoughts (`--max-scan-pages`); `queue` merges up to 50 read-later and 50 bookmarked items (`--fits`, `--limit`, `--include-unknown`).
 
 ## Troubleshooting

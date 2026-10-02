@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -16,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -192,6 +194,10 @@ CREATE TABLE IF NOT EXISTS pn_reading_days (
 	day TEXT NOT NULL, seconds INTEGER NOT NULL, captured_at TEXT NOT NULL,
 	PRIMARY KEY (uid, day)
 );
+CREATE TABLE IF NOT EXISTS pn_import_marks (
+	uid TEXT NOT NULL PRIMARY KEY,
+	imported_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS pn_account_meta (
 	uid TEXT NOT NULL PRIMARY KEY,
 	timezone TEXT NOT NULL
@@ -222,7 +228,8 @@ func pnHistoryDBPath(uid string) string {
 }
 
 func pnOpenStore(ctx context.Context, dbPath, uid string) (*store.Store, error) {
-	if dbPath == "" {
+	defaulted := dbPath == ""
+	if defaulted {
 		dbPath = pnHistoryDBPath(uid)
 	}
 	db, err := store.OpenWithContext(ctx, dbPath)
@@ -233,6 +240,19 @@ func pnOpenStore(ctx context.Context, dbPath, uid string) (*store.Store, error) 
 		_ = db.Close()
 		return nil, err
 	}
+	if defaulted {
+		// Carry this account's history forward from the previous default
+		// location (once). An explicit --db is the caller's choice: no import.
+		// The import is optional, so a problem with the old file is a warning,
+		// never a reason to refuse to open the new history.
+		if err := pnImportPriorHistory(ctx, db.DB(), defaultDBPath("philonet-pp-cli"), dbPath, uid); err != nil {
+			if ctx.Err() != nil {
+				_ = db.Close()
+				return nil, err
+			}
+			fmt.Fprintf(os.Stderr, "warning: could not import earlier history (continuing without it): %v\n", err)
+		}
+	}
 	return db, nil
 }
 
@@ -242,9 +262,16 @@ func pnOpenStore(ctx context.Context, dbPath, uid string) (*store.Store, error) 
 // (busy_timeout) and then sees the finished migration instead of racing the
 // check-then-rename and failing.
 func pnPrepareHistory(ctx context.Context, db *sql.DB) error {
+	return pnRetryBusy(ctx, func() error { return pnPrepareHistoryOnce(ctx, db) })
+}
+
+// pnRetryBusy runs fn, retrying a bounded number of times when another process
+// holds the SQLite write lock. Cancellation is reported together with the last
+// busy error.
+func pnRetryBusy(ctx context.Context, fn func() error) error {
 	var err error
 	for attempt := 1; attempt <= pnBusyAttempts; attempt++ {
-		if err = pnPrepareHistoryOnce(ctx, db); err == nil || !pnIsBusy(err) {
+		if err = fn(); err == nil || !pnIsBusy(err) {
 			return err
 		}
 		select {
@@ -568,4 +595,153 @@ func pnStoredLocation(ctx context.Context, db *sql.DB, uid string) *time.Locatio
 		return loc
 	}
 	return time.Local
+}
+
+// pnImportPriorHistory copies this account's rows from the previous default
+// history file (the generator's token-keyed database) into the new per-account
+// file, once. Only tables that carry a uid column in BOTH files are read, only
+// the columns the two files share are copied (by name, never by position), and
+// only rows whose uid matches. Rows that cannot be attributed to an account are
+// never imported. A missing prior file writes no marker, so an import can still
+// happen if the file turns up later; the marker is written after a successful
+// import, or when the prior file is the new file itself.
+func pnImportPriorHistory(ctx context.Context, db *sql.DB, priorPath, newPath, uid string) error {
+	var marked int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pn_import_marks WHERE uid = ?`, uid).Scan(&marked); err != nil {
+		return fmt.Errorf("checking history import: %w", err)
+	}
+	if marked > 0 {
+		return nil
+	}
+	if a, aerr := filepath.Abs(priorPath); aerr == nil {
+		if b, berr := filepath.Abs(newPath); berr == nil && a == b {
+			return pnMarkImported(ctx, db, uid)
+		}
+	}
+	if _, err := os.Stat(priorPath); err != nil {
+		return nil // nothing to import (yet)
+	}
+	return pnRetryBusy(ctx, func() error { return pnImportOnce(ctx, db, priorPath, uid) })
+}
+
+func pnMarkImported(ctx context.Context, db *sql.DB, uid string) error {
+	_, err := db.ExecContext(ctx, `INSERT OR IGNORE INTO pn_import_marks(uid, imported_at) VALUES(?, ?)`, uid, time.Now().UTC().Format(time.RFC3339))
+	return err
+}
+
+// pnHistoryKeys are the columns that must exist on both sides for a table to be
+// copied: the owning account and the row key.
+var pnHistoryKeys = map[string][]string{
+	"pn_feed_cards":   {"uid", "card_key"},
+	"pn_reading_days": {"uid", "day"},
+	"pn_snapshots":    {"uid", "day"},
+}
+
+var pnSafeIdent = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+func pnImportOnce(ctx context.Context, db *sql.DB, priorPath, uid string) (retErr error) {
+	conn, err := db.Conn(ctx) // ATTACH is per-connection
+	if err != nil {
+		return err
+	}
+	attached := false
+	defer func() {
+		if attached {
+			if _, derr := conn.ExecContext(context.Background(), `DETACH DATABASE prior`); derr != nil {
+				// Never hand a still-attached connection back to the pool.
+				_ = conn.Raw(func(any) error { return driver.ErrBadConn })
+			}
+		}
+		_ = conn.Close()
+	}()
+	if _, err := conn.ExecContext(ctx, `ATTACH DATABASE ? AS prior`, priorPath); err != nil {
+		return fmt.Errorf("opening prior history: %w", err)
+	}
+	attached = true
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	for _, table := range []string{"pn_feed_cards", "pn_reading_days", "pn_snapshots"} {
+		cols, err := pnSharedColumns(ctx, tx, table)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		if cols == nil {
+			continue // not attributable to an account, or nothing shared
+		}
+		list := strings.Join(cols, ", ")
+		// Table names are constants and column names were validated against
+		// pnSafeIdent and read from the schema, never from input.
+		stmt := `INSERT OR IGNORE INTO main.` + table + ` (` + list + `) SELECT ` + list + ` FROM prior.` + table + ` WHERE uid = ?`
+		if _, err := tx.ExecContext(ctx, stmt, uid); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("importing prior %s: %w", table, err)
+		}
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO main.pn_import_marks(uid, imported_at) VALUES(?, ?)`, uid, time.Now().UTC().Format(time.RFC3339)); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+// pnSharedColumns returns the columns present in both main.table and
+// prior.table, in main's order, or nil when the prior table is missing or lacks
+// the key columns (an older unscoped build, or an unrelated schema).
+func pnSharedColumns(ctx context.Context, q pnQuerier, table string) ([]string, error) {
+	read := func(query string) (map[string]bool, []string, error) {
+		rows, err := q.QueryContext(ctx, query, table)
+		if err != nil {
+			return nil, nil, err
+		}
+		set := map[string]bool{}
+		var order []string
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				_ = rows.Close()
+				return nil, nil, err
+			}
+			set[name] = true
+			order = append(order, name)
+		}
+		if err := rows.Err(); err != nil {
+			_ = rows.Close()
+			return nil, nil, err
+		}
+		return set, order, rows.Close()
+	}
+	prior, _, err := read(`SELECT name FROM pragma_table_info(?, 'prior')`)
+	if err != nil {
+		return nil, err
+	}
+	_, mainOrder, err := read(`SELECT name FROM pragma_table_info(?, 'main')`)
+	if err != nil {
+		return nil, err
+	}
+	for _, k := range pnHistoryKeys[table] {
+		if !prior[k] {
+			return nil, nil
+		}
+	}
+	var shared []string
+	for _, c := range mainOrder {
+		if prior[c] && pnSafeIdent.MatchString(c) {
+			shared = append(shared, c)
+		}
+	}
+	for _, k := range pnHistoryKeys[table] {
+		found := false
+		for _, c := range shared {
+			if c == k {
+				found = true
+			}
+		}
+		if !found {
+			return nil, nil
+		}
+	}
+	return shared, nil
 }
