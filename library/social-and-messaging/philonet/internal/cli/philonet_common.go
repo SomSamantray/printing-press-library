@@ -326,7 +326,7 @@ type pnQuerier interface {
 func pnMigrateUnscoped(ctx context.Context, db pnQuerier) error {
 	// Table names below are constants plus an integer suffix; nothing is built
 	// from input.
-	for _, table := range []string{"pn_feed_cards", "pn_reading_days", "pn_snapshots"} {
+	for _, table := range []string{"pn_feed_cards", "pn_reading_days", "pn_snapshots", "pn_account_meta"} {
 		exists, hasUID, err := pnTableShape(ctx, db, table)
 		if err != nil {
 			return err
@@ -635,6 +635,7 @@ var pnHistoryKeys = map[string][]string{
 	"pn_feed_cards":   {"uid", "card_key"},
 	"pn_reading_days": {"uid", "day"},
 	"pn_snapshots":    {"uid", "day"},
+	"pn_account_meta": {"uid"},
 }
 
 var pnSafeIdent = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
@@ -662,7 +663,7 @@ func pnImportOnce(ctx context.Context, db *sql.DB, priorPath, uid string) (retEr
 	if err != nil {
 		return err
 	}
-	for _, table := range []string{"pn_feed_cards", "pn_reading_days", "pn_snapshots"} {
+	for _, table := range []string{"pn_feed_cards", "pn_reading_days", "pn_snapshots", "pn_account_meta"} {
 		cols, err := pnSharedColumns(ctx, tx, table)
 		if err != nil {
 			_ = tx.Rollback()

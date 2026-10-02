@@ -12,7 +12,7 @@
     "type": "bearer_token",
     "api_key_available": true
   },
-  "source_fingerprint": "25e95b8de9eb6b7ed31b24af99fb8b04b5a40f52e40be6bfe270cefc4bde8e8c",
+  "source_fingerprint": "23f80e3dcf901cd9b6019cd2f23774af213aedc75f27dbc73ad7f4044910b29d",
   "source_files": {
     "cmd/philonet-pp-cli/main.go": "9b181dba6929573d44f14b263c409e2788643a33215432658f4b76c301fe3315",
     "cmd/philonet-pp-mcp/main.go": "6797934db5b35a4736bbe3303998852f3414e003082aa0cd19ce1eda5418648e",
@@ -85,9 +85,9 @@
     "internal/cli/me_thoughts.go": "d10806bcd276fbc825e496295f9d746cd8ab6e93f9fa5173a33211577c0453f7",
     "internal/cli/owed.go": "bfef42a8eed122ffb0dfd03391a0d94649a86f6ad0a7266aa5e339dac00a33c3",
     "internal/cli/owed_test.go": "eb6ac5db4aa3ea697a506d9ef905e2ca763e35410c78faf744669092360fd7a7",
-    "internal/cli/philonet_common.go": "d5e96d8c20eb3ae8390f3d6c77d4d1236c080a360208853d7aee57102d6ada92",
+    "internal/cli/philonet_common.go": "24fb8196d5ec4c1bcc92d0e6e23a0a7eadbbe40a094ea7d2db0e3163db75bea4",
     "internal/cli/philonet_novel_test.go": "6e0b49f79509b9b614615a76e659f25885e254496ab665c227c65caf651c7f40",
-    "internal/cli/philonet_regress_test.go": "b5fc2588d846e1765f45736d5c07dce3f29b2e10fca4508df52cb670c473fa58",
+    "internal/cli/philonet_regress_test.go": "e7b8e29ff0ad432b4a540477848347d0c7dfe9ff8b3538220917c4ee38e773bf",
     "internal/cli/platform_cli_test.go": "fa24927cf10e7800acee2329e28b7af0e3da8738af0bf0ef22eaae10ca2f3d5f",
     "internal/cli/platform_client.go": "6145722fa44c992754f0890154db7a2f5ae2a67628b97b1bd6fbbfe43f66a2aa",
     "internal/cli/platform_window.go": "2675b77392222f5a7e4f42652c101b27955a3a952de0c59e08e429e7af9f7749",

@@ -449,6 +449,9 @@ func TestPriorDefaultHistoryIsImportedOncePerAccount(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	if _, err := old.DB().Exec(`INSERT INTO pn_account_meta(uid,timezone) VALUES('uA','Asia/Kolkata'),('uB','America/New_York')`); err != nil {
+		t.Fatal(err)
+	}
 	_ = old.Close()
 
 	count := func(db *store.Store, table, uid string) int {
@@ -470,6 +473,15 @@ func TestPriorDefaultHistoryIsImportedOncePerAccount(t *testing.T) {
 			if got := count(db, tbl, "uB"); got != 0 {
 				t.Fatalf("pass %d: %s must not import account B's rows into A's file, got %d", pass, tbl, got)
 			}
+		}
+		if got := count(db, "pn_account_meta", "uA"); got != 1 {
+			t.Fatalf("pass %d: account A's recorded timezone must be imported, got %d rows", pass, got)
+		}
+		if loc := pnStoredLocation(ctx, db.DB(), "uA"); loc.String() != "Asia/Kolkata" {
+			t.Fatalf("pass %d: imported timezone = %s, want Asia/Kolkata", pass, loc)
+		}
+		if got := count(db, "pn_account_meta", "uB"); got != 0 {
+			t.Fatalf("pass %d: account B's timezone leaked into A's file", pass)
 		}
 		_ = db.Close()
 	}
