@@ -20,6 +20,8 @@ type quoteHeadline struct {
 }
 
 type quoteView struct {
+	Source           string             `json:"source"`
+	AsOf             string             `json:"as_of,omitempty"`
 	Symbol           string             `json:"symbol"`
 	Name             string             `json:"name"`
 	Sector           string             `json:"sector"`
@@ -54,14 +56,19 @@ func pick(r ipRow, dst map[string]float64, pairs ...string) {
 
 // buildQuote assembles one stock's view from the screener row and, when
 // present, its live row. Sector percentiles rank the stock against its peers.
-func buildQuote(sym string, screener []ipRow, live ipRow) (quoteView, bool) {
+func quoteScreenerRow(screener []ipRow, sym string) ipRow {
 	var row ipRow
-	var peers []ipRow
 	for _, r := range screener {
 		if ipStrField(r, "symbol") == sym {
 			row = r
 		}
 	}
+	return row
+}
+
+func buildQuote(sym string, screener []ipRow, live ipRow) (quoteView, bool) {
+	var peers []ipRow
+	row := quoteScreenerRow(screener, sym)
 	if row == nil && live == nil {
 		return quoteView{}, false
 	}
@@ -109,6 +116,37 @@ func buildQuote(sym string, screener []ipRow, live ipRow) (quoteView, bool) {
 	}
 	q.Price, q.ChgPct = ipRound(q.Price, 2), ipRound(q.ChgPct, 2)
 	return q, true
+}
+
+// quoteLiveRows rejects live rows older than an available screener snapshot.
+func quoteLiveRows(screener []ipRow, screenerSource ipSource, live *ipLive, liveSource ipSource) []ipRow {
+	if live == nil || (len(screener) > 0 && liveSource.AsOf < screenerSource.AsOf) {
+		return nil
+	}
+	return live.Payload.Rows
+}
+
+func quotePriceSource(screenerSource, liveSource ipSource, live ipRow, hasScreenerRow bool) ipSource {
+	if _, hasLivePrice := ipNum(live, "ltp"); hasLivePrice || (live != nil && !hasScreenerRow) {
+		return liveSource
+	}
+	return screenerSource
+}
+
+func aggregateQuoteSource(quotes []quoteView) ipSource {
+	if len(quotes) == 0 {
+		return ipSource{}
+	}
+	out := ipSource{Source: quotes[0].Source, AsOf: quotes[0].AsOf}
+	for _, q := range quotes[1:] {
+		if q.Source != out.Source {
+			out.Source = "mixed"
+		}
+		if q.AsOf != out.AsOf {
+			out.AsOf = ""
+		}
+	}
+	return out
 }
 
 func ipFetchNews(ctx context.Context, flags *rootFlags, sym string, limit int) ([]quoteHeadline, error) {
@@ -202,13 +240,17 @@ Do NOT use it to scan the whole universe; use 'screen' instead.`,
 			if err != nil {
 				return err
 			}
-			liveBySym := map[string]ipRow{}
-			if lv, _, lerr := loader.liveSnapshot(ctx); lerr == nil {
-				for _, r := range lv.Payload.Rows {
-					liveBySym[ipStrField(r, "symbol")] = r
-				}
+			var live *ipLive
+			var liveSource ipSource
+			if lv, lsrc, lerr := loader.liveSnapshot(ctx); lerr == nil {
+				live, liveSource = lv, lsrc
 			} else {
 				fmt.Fprintf(cmd.ErrOrStderr(), "warning: live snapshot unavailable (%v); showing last close\n", lerr)
+			}
+			liveRows := quoteLiveRows(screener, src, live, liveSource)
+			liveBySym := make(map[string]ipRow, len(liveRows))
+			for _, r := range liveRows {
+				liveBySym[ipStrField(r, "symbol")] = r
 			}
 			var lists []ipWatchlist
 			if flags.dataSource != "local" {
@@ -217,7 +259,7 @@ Do NOT use it to scan the whole universe; use 'screen' instead.`,
 					fmt.Fprintf(cmd.ErrOrStderr(), "warning: watchlist membership unavailable: %v\n", lerr)
 				}
 			}
-			res := quoteResult{Source: src.Source, AsOf: src.AsOf, Quotes: make([]quoteView, 0, len(args))}
+			res := quoteResult{Quotes: make([]quoteView, 0, len(args))}
 			for _, a := range args {
 				sym := ipNormalizeSymbol(a)
 				if !ipValidSymbol(sym) {
@@ -228,6 +270,8 @@ Do NOT use it to scan the whole universe; use 'screen' instead.`,
 					res.Missing = append(res.Missing, sym)
 					continue
 				}
+				qsrc := quotePriceSource(src, liveSource, liveBySym[sym], quoteScreenerRow(screener, sym) != nil)
+				q.Source, q.AsOf = qsrc.Source, qsrc.AsOf
 				for _, l := range lists {
 					for _, s := range l.Symbols {
 						if s == sym {
@@ -247,6 +291,8 @@ Do NOT use it to scan the whole universe; use 'screen' instead.`,
 			if len(res.Quotes) == 0 {
 				return notFoundErr(fmt.Errorf("no Nifty 200 stock found for: %s", strings.Join(res.Missing, ", ")))
 			}
+			resultSource := aggregateQuoteSource(res.Quotes)
+			res.Source, res.AsOf = resultSource.Source, resultSource.AsOf
 			return printJSONFiltered(cmd.OutOrStdout(), res, flags)
 		},
 	}

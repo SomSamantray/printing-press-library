@@ -195,6 +195,55 @@ func TestBuildQuote(t *testing.T) {
 	}
 }
 
+func TestQuoteUsesScreenerPriceWhenLiveSnapshotIsOlderAndReportsItsSource(t *testing.T) {
+	screenerSource := ipSource{Source: "live", AsOf: "2026-10-17"}
+	olderLiveSource := ipSource{Source: "local", AsOf: "2026-10-16"}
+	screener := []ipRow{scr("A", "IT", 120, 100, 90, 80, 2, nil)}
+	olderLive := &ipLive{}
+	olderLive.Payload.Rows = []ipRow{{"symbol": "A", "ltp": 111.0}}
+	rows := quoteLiveRows(screener, screenerSource, olderLive, olderLiveSource)
+	if len(rows) != 0 {
+		t.Fatalf("older live snapshot selected rows=%v, want no live rows", rows)
+	}
+	q, ok := buildQuote("A", screener, nil)
+	qsrc := quotePriceSource(screenerSource, olderLiveSource, nil, true)
+	q.Source, q.AsOf = qsrc.Source, qsrc.AsOf
+	if !ok || q.Price != 120 {
+		t.Fatalf("older live price should not replace screener close: quote=%+v ok=%v", q, ok)
+	}
+	if q.Source != screenerSource.Source || q.AsOf != screenerSource.AsOf {
+		t.Fatalf("older live result metadata = %s/%s, want %s/%s", q.Source, q.AsOf, screenerSource.Source, screenerSource.AsOf)
+	}
+
+	newerLiveSource := ipSource{Source: "live", AsOf: "2026-10-18"}
+	newerLive := &ipLive{}
+	newerLive.Payload.Rows = []ipRow{{"symbol": "A", "ltp": 122.0}}
+	rows = quoteLiveRows(screener, screenerSource, newerLive, newerLiveSource)
+	if len(rows) != 1 {
+		t.Fatalf("newer live rows = %v, want live rows", rows)
+	}
+	q, ok = buildQuote("A", screener, rows[0])
+	qsrc = quotePriceSource(screenerSource, newerLiveSource, rows[0], true)
+	q.Source, q.AsOf = qsrc.Source, qsrc.AsOf
+	if !ok || q.Price != 122 {
+		t.Fatalf("newer live price = %+v ok=%v", q, ok)
+	}
+	if q.Source != newerLiveSource.Source || q.AsOf != newerLiveSource.AsOf {
+		t.Fatalf("newer live result metadata = %s/%s, want %s/%s", q.Source, q.AsOf, newerLiveSource.Source, newerLiveSource.AsOf)
+	}
+
+	for _, liveRow := range []ipRow{nil, {"symbol": "A"}} {
+		qsrc = quotePriceSource(screenerSource, newerLiveSource, liveRow, true)
+		if qsrc != screenerSource {
+			t.Errorf("screener fallback metadata for live row %v = %+v, want %+v", liveRow, qsrc, screenerSource)
+		}
+	}
+	mixed := aggregateQuoteSource([]quoteView{{Source: screenerSource.Source, AsOf: screenerSource.AsOf}, {Source: newerLiveSource.Source, AsOf: newerLiveSource.AsOf}})
+	if mixed.Source != "live" || mixed.AsOf != "" {
+		t.Errorf("mixed-date aggregate = %+v, want common source and no shared date", mixed)
+	}
+}
+
 func TestSummarizeWatchlistOrdersByAbsMove(t *testing.T) {
 	live := map[string]ipRow{
 		"A": {"name": "A", "ltp": 10.0, "chg": 1.0},
@@ -207,6 +256,20 @@ func TestSummarizeWatchlistOrdersByAbsMove(t *testing.T) {
 	}
 	if w.Rows[0].RS == nil || *w.Rows[0].RS != 61 || w.Rows[1].RS != nil {
 		t.Errorf("RS join wrong: %+v", w.Rows)
+	}
+}
+
+func TestBriefNewsSymbolsCountsUniqueSymbolsTowardLimit(t *testing.T) {
+	moved := make([]briefWatchRow, 0, 10)
+	for i := 0; i < 8; i++ {
+		moved = append(moved, briefWatchRow{Symbol: "DUP"})
+	}
+	for _, sym := range []string{"A", "B", "C"} {
+		moved = append(moved, briefWatchRow{Symbol: sym})
+	}
+	got := briefNewsSymbols(moved, 8)
+	if strings.Join(got, ",") != "DUP,A,B,C" {
+		t.Fatalf("news symbols = %v, want unique symbols through the eight-symbol limit", got)
 	}
 }
 

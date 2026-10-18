@@ -61,6 +61,25 @@ type briefResult struct {
 	Notes      []string                 `json:"notes,omitempty"`
 }
 
+func briefNewsSymbols(moved []briefWatchRow, limit int) []string {
+	if limit <= 0 {
+		return nil
+	}
+	seen := make(map[string]bool, limit)
+	symbols := make([]string, 0, limit)
+	for _, row := range moved {
+		if seen[row.Symbol] {
+			continue
+		}
+		seen[row.Symbol] = true
+		symbols = append(symbols, row.Symbol)
+		if len(symbols) == limit {
+			break
+		}
+	}
+	return symbols
+}
+
 // summarizeWatchlist builds rows for a watchlist from live and screener data,
 // ordered by absolute move so the biggest stories lead.
 func summarizeWatchlist(l ipWatchlist, live map[string]ipRow, rs map[string]float64) briefWatchlist {
@@ -212,15 +231,10 @@ Do NOT use it for state changes since an earlier snapshot; use 'changes' instead
 				sort.SliceStable(moved, func(i, j int) bool { return math.Abs(moved[i].ChgPct) > math.Abs(moved[j].ChgPct) })
 				if !noNews {
 					cutoff := time.Now().Add(-time.Duration(sinceHours) * time.Hour)
-					seen := map[string]bool{}
-					for i, m := range moved {
-						if i >= 8 || seen[m.Symbol] {
-							continue
-						}
-						seen[m.Symbol] = true
-						items, nerr := ipFetchNews(ctx, flags, m.Symbol, 5)
+					for _, sym := range briefNewsSymbols(moved, 8) {
+						items, nerr := ipFetchNews(ctx, flags, sym, 5)
 						if nerr != nil {
-							res.Notes = append(res.Notes, fmt.Sprintf("news for %s unavailable", m.Symbol))
+							res.Notes = append(res.Notes, fmt.Sprintf("news for %s unavailable", sym))
 							continue
 						}
 						kept := 0
@@ -232,7 +246,7 @@ Do NOT use it for state changes since an earlier snapshot; use 'changes' instead
 								break
 							}
 							kept++
-							res.Headlines = append(res.Headlines, briefHeadline{Symbol: m.Symbol, Title: it.Title, Source: it.Source, PublishedAt: it.PublishedAt})
+							res.Headlines = append(res.Headlines, briefHeadline{Symbol: sym, Title: it.Title, Source: it.Source, PublishedAt: it.PublishedAt})
 						}
 					}
 				}

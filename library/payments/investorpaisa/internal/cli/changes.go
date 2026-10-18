@@ -4,6 +4,8 @@
 package cli
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"regexp"
 	"sort"
@@ -12,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mvanhorn/printing-press-library/library/payments/investorpaisa/internal/cliutil"
+	"github.com/mvanhorn/printing-press-library/library/payments/investorpaisa/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -160,29 +163,15 @@ Do NOT use it for today's snapshot ranking; use 'movers' instead.`,
 			if err != nil {
 				return err
 			}
-			snaps, err := ipLatestSnapshots(ctx, db, ipKindScreener, 60)
-			if err != nil {
-				return err
-			}
 			res := changesResult{Source: src.Source, AsOf: src.AsOf, Since: since, Sector: sector, Conditions: map[string]conditionDiff{}}
 			cur, perr := time.Parse("2006-01-02", src.AsOf)
 			if perr != nil {
 				return fmt.Errorf("snapshot has no valid date: %q", src.AsOf)
 			}
 			target := cur.AddDate(0, 0, -days).Format("2006-01-02")
-			var base *ipSnapshot
-			for i := range snaps {
-				if snaps[i].AsOf < src.AsOf && snaps[i].AsOf <= target {
-					base = &snaps[i]
-					break
-				}
-			}
-			if base == nil {
-				for i := range snaps { // fall back to the oldest earlier snapshot
-					if snaps[i].AsOf < src.AsOf {
-						base = &snaps[i]
-					}
-				}
+			base, err := ipSnapshotBaseline(ctx, db, ipKindScreener, src.AsOf, target)
+			if err != nil {
+				return err
 			}
 			if base == nil {
 				res.Note = "only one snapshot is stored so there is nothing to compare; run 'investorpaisa-pp-cli sync' on another trading day"
@@ -195,7 +184,7 @@ Do NOT use it for today's snapshot ranking; use 'movers' instead.`,
 				res.BaselineAsOf = base.AsOf
 				res.Conditions = diffSnapshots(baseRows, rows, rsThreshold, sector)
 				if base.AsOf > target {
-					res.Note = fmt.Sprintf("no snapshot as old as --since %s; compared against the oldest stored one (%s)", since, base.AsOf)
+					res.Note = changesFallbackNote(since, base.AsOf)
 				}
 			}
 			if wantsHumanTable(cmd.OutOrStdout(), flags) {
@@ -222,4 +211,34 @@ Do NOT use it for today's snapshot ranking; use 'movers' instead.`,
 	cmd.Flags().Float64Var(&rsThreshold, "rs-threshold", 70, "Relative-strength level for the rs_above_threshold condition")
 	cmd.Flags().StringVar(&dbPath, "db", "", "Path to the local SQLite store")
 	return cmd
+}
+
+func changesFallbackNote(since, baselineAsOf string) string {
+	return fmt.Sprintf("no snapshot as old as --since %s; compared against the oldest stored one (%s)", since, baselineAsOf)
+}
+
+// ipSnapshotBaseline returns the newest snapshot at or before target and before
+// current. If that date is unavailable, it returns the oldest stored snapshot
+// before current so callers can report that the requested history is missing.
+func ipSnapshotBaseline(ctx context.Context, db *store.Store, kind, current, target string) (*ipSnapshot, error) {
+	read := func(query string, args ...any) (*ipSnapshot, error) {
+		var snap ipSnapshot
+		var body []byte
+		err := db.DB().QueryRowContext(ctx, query, args...).Scan(&snap.Kind, &snap.AsOf, &snap.FetchedAt, &body)
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		snap.Body = body
+		return &snap, nil
+	}
+	base, err := read(`SELECT kind, asof, fetched_at, body FROM ip_snapshots
+		WHERE kind = ? AND asof < ? AND asof <= ? ORDER BY asof DESC LIMIT 1`, kind, current, target)
+	if err != nil || base != nil {
+		return base, err
+	}
+	return read(`SELECT kind, asof, fetched_at, body FROM ip_snapshots
+		WHERE kind = ? AND asof < ? ORDER BY asof ASC LIMIT 1`, kind, current)
 }
