@@ -1,6 +1,6 @@
 # Delhivery Maps CLI
 
-**Every Delhivery Maps endpoint, plus quota-aware address cleaning, trip costing and fleet planning that resume after quota or expiry stops a run.**
+**Every Delhivery Maps endpoint, plus quota-aware address cleaning, trip costing and fleet planning.**
 
 Run any of the 13 Delhivery Maps endpoints (India only) from the terminal, then batch work with 'address clean', cost a lane with 'trip quote', check service areas with 'coverage check' and plan routes from an orders sheet with 'fleet plan'. The gateway allows about 50 requests per 24 hours per token (route-plan has its own pool of 5), so the batch commands count their own calls, cache results, and mark work they cannot afford as deferred rather than failing.
 
@@ -558,7 +558,7 @@ The gateway allows about **50 requests per 24 hours per token**, shared by every
 | `coverage check` | 1 isochrone call plus 1 per uncached address | shared pool of 50 |
 | `fleet plan` | 1 per chunk of up to 50 orders, each taking about 30 seconds | separate route-plan pool of 5 |
 | `address report`, `address dupes`, `address purge` | none (local-only) | none |
-| any single endpoint command | 1 | shared pool of 50 (the `route-plan` endpoint uses the route-plan pool) |
+| any single endpoint command (`geocode`, `route`, `validate`, and so on) | 1 each, sent for you but not recorded in the batch ledger (see Limitations) | shared pool of 50 (the `route-plan` endpoint uses the route-plan pool) |
 
 Controls:
 
@@ -570,13 +570,14 @@ Controls:
 
 Limitations to weigh before relying on the numbers:
 
-- The call counter only sees calls made through this CLI; it cannot see other tools or people using the same token, so the real remaining quota can be lower.
+- The call counter only sees calls made through the four batch commands; it cannot see other tools or people using the same token, so the real remaining quota can be lower.
+- Standalone endpoint commands (`geocode`, `route`, `validate` and the other endpoint commands) and typed MCP endpoint tools spend quota without writing to the ledger. After you run them, the batch commands still count that quota as available, so a batch can start on a budget that is too high. A 429 then locks out the pool and defers the rest of the batch, as described above. Keep a rough count of standalone calls on a shared token, or set `--max-calls` on the batch.
 - The 24-hour lockout length is a local policy: the client cannot read the server's reset time.
 - For `fleet plan`, orders the solver leaves unassigned are reported as `unassigned_orders`. A response with `plan_status: false` could not be verified against the live service.
 
 ## Piping rows in (`--stdin`) and optional `--out`
 
-`address clean`, `coverage check`, `trip quote` and `fleet plan` can read their input rows from standard input with `--stdin` (the same as `--file -`, or `--orders -` for `fleet plan`). Input via `--stdin` needs no files, so agents and scripts can pipe rows straight in. The format (CSV, JSON Lines or a JSON array of objects) is detected automatically, and the same `--max-rows` and file-size caps apply. Empty stdin, or `--stdin` together with a real path, is a usage error (exit 2).
+`address clean`, `coverage check`, `trip quote` and `fleet plan` can read their input rows from standard input with `--stdin` (the same as `--file -`, or `--orders -` for `fleet plan`). Input via `--stdin` needs no files, so agents and scripts can pipe rows straight in. The format (CSV, JSON Lines or a JSON array of objects) is detected automatically, and the same `--max-rows` and file-size caps apply. Empty stdin, or `--stdin` together with a real path, is a usage error (exit 2). `--stdin` is not offered as an MCP tool argument, because an MCP call cannot supply standard input; MCP callers pass a server-local `--file` path instead.
 
 `--out` is optional on all four commands. Without it nothing is written to disk and the rows come back in the output instead: `cleaned` (`address clean`), `flagged` (`coverage check`), `stops` (`fleet plan`) or the lane records (`trip quote`), capped by `--max-rows`. `--csv` prints them as CSV (formula-neutralised) and human mode prints a table. With `--out` the behaviour is unchanged: no overwrite without `--force`, and so on.
 

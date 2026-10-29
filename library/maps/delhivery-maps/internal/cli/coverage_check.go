@@ -100,8 +100,11 @@ apostrophe, a deliberate guard against spreadsheet formula injection.
 			"mcp:read-only":              "true",
 			"mcp:read-only-unless-flags": "out",
 			"mcp:write-flags":            "out",
-			"pp:happy-args":              "--hub=28.4599,77.0679;--minutes=20",
-			"pp:happy-stdin":             `[{"lat":28.4650,"lng":77.0700},{"lat":28.7041,"lng":77.1025}]`,
+			// --stdin reads the host's standard input, which an MCP call cannot supply, so
+			// the flag is withheld from the MCP tool. MCP callers pass a server-local file.
+			"mcp:read-flags": "stdin",
+			"pp:happy-args":  "--hub=28.4599,77.0679;--minutes=20",
+			"pp:happy-stdin": `[{"lat":28.4650,"lng":77.0700},{"lat":28.7041,"lng":77.1025}]`,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {

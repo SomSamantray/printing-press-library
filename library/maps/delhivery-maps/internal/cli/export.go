@@ -85,7 +85,7 @@ large datasets as it has no memory pressure.`,
 					}
 				}()
 			} else {
-				writer = bufio.NewWriter(os.Stdout)
+				writer = bufio.NewWriter(cmd.OutOrStdout())
 			}
 			finishExport := func() error {
 				if err := writer.Flush(); err != nil {

@@ -43,7 +43,7 @@ func newAuthSetupCmd(_ *rootFlags) *cobra.Command {
 			fmt.Fprintln(w, "No setup URL is configured for this CLI; check the API's docs.")
 			fmt.Fprintln(w, "")
 			fmt.Fprintln(w, "Then set:")
-			fmt.Fprintln(w, "  export DELHIVERY_MAPS_TOKEN=\"your-token-here\"")
+			fmt.Fprintln(w, "  "+cliutil.EnvAssignHint(true, "DELHIVERY_MAPS_TOKEN", "your-token-here"))
 			fmt.Fprintln(w, "  echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token")
 			if !launch {
 				return nil
@@ -114,7 +114,7 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 				fmt.Fprintln(w, red("Not authenticated"))
 				fmt.Fprintln(w, "")
 				fmt.Fprintln(w, "Set your token:")
-				fmt.Fprintln(w, "  export DELHIVERY_MAPS_TOKEN=\"your-token-here\"")
+				fmt.Fprintln(w, "  "+cliutil.EnvAssignHint(true, "DELHIVERY_MAPS_TOKEN", "your-token-here"))
 				fmt.Fprintf(w, "  echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token\n")
 				return authErr(fmt.Errorf("no credentials configured"))
 			}
@@ -125,7 +125,7 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 			if _, line, expired, ok := jwtCredentialExpiry(jwtExpirySource(cfg)); ok {
 				fmt.Fprintf(w, "  Token expires: %s\n", line)
 				if expired {
-					fmt.Fprintf(w, "  %s\n", "Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or export DELHIVERY_MAPS_TOKEN=\"your-token-here\"")
+					fmt.Fprintf(w, "  %s\n", "Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or "+cliutil.EnvAssignHint(true, "DELHIVERY_MAPS_TOKEN", "your-token-here"))
 				}
 			}
 			return nil

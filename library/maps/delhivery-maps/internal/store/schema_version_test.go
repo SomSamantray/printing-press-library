@@ -2127,6 +2127,13 @@ func TestMigrate_V8ToV9AddsCandidatesAndEvents(t *testing.T) {
 	if notes != "hand-authored notes" {
 		t.Fatalf("preserved playbook notes = %q, want original", notes)
 	}
+	var ingress string
+	if err := s.DB().QueryRow(`SELECT ingress_surface FROM learning_playbooks WHERE query_family = 'family_X'`).Scan(&ingress); err != nil {
+		t.Fatalf("read upgraded ingress_surface: %v", err)
+	}
+	if ingress != "cli" {
+		t.Fatalf("upgraded ingress_surface = %q, want cli", ingress)
+	}
 
 	// v8 is past the FTS content pin (4) but before the tokenizer pin, so
 	// the trigram rebuild must replace the porter sentinel with leaves.
@@ -2349,6 +2356,155 @@ func TestMigrate_AddsColumnsOnUpgrade_Geocode(t *testing.T) {
 	}
 }
 
+// TestMigrate_AddsColumnsOnUpgrade_Isochrone verifies that opening a
+// database created by an older binary succeeds and adds newly generated
+// columns before CREATE INDEX runs against the pre-existing table. Regression
+// coverage for parent_id upgrades and indexed generated columns.
+func TestMigrate_AddsColumnsOnUpgrade_Isochrone(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+
+	// Pre-create the DB with the older table shape: id, data, synced_at and
+	// none of the newer generated columns. user_version stays 0 (pre-gate).
+	raw, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open raw: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "isochrone" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old table: %v", err)
+	}
+	raw.Close()
+
+	// Opening with the new binary must run CREATE INDEX statements without
+	// erroring on missing generated columns.
+	s, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("open upgraded db: %v", err)
+	}
+	defer s.Close()
+
+	// table_info hides generated columns; table_xinfo is the verify
+	// surface for VIRTUAL backfills such as bare_id.
+	rows, err := s.DB().Query(`SELECT name FROM pragma_table_xinfo(?)`, "isochrone")
+	if err != nil {
+		t.Fatalf("table_xinfo: %v", err)
+	}
+	defer rows.Close()
+
+	hasColumn := make(map[string]bool)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatalf("scan: %v", err)
+		}
+		hasColumn[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("rows: %v", err)
+	}
+
+	for _, want := range []string{
+		"req_id",
+		"request_id",
+		"status",
+		"type",
+	} {
+		if !hasColumn[want] {
+			t.Fatalf("%s column missing from isochrone after migrate", want)
+		}
+	}
+
+	for _, wantIdx := range []string{
+		"idx_isochrone_req_id",
+		"idx_isochrone_request_id",
+	} {
+		var got string
+		if err := s.DB().QueryRow(
+			`SELECT name FROM sqlite_master WHERE type='index' AND name=?`,
+			wantIdx,
+		).Scan(&got); err != nil {
+			t.Fatalf("%s index missing from isochrone after migrate: %v", wantIdx, err)
+		}
+	}
+}
+
+// TestMigrate_AddsColumnsOnUpgrade_Route verifies that opening a
+// database created by an older binary succeeds and adds newly generated
+// columns before CREATE INDEX runs against the pre-existing table. Regression
+// coverage for parent_id upgrades and indexed generated columns.
+func TestMigrate_AddsColumnsOnUpgrade_Route(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+
+	// Pre-create the DB with the older table shape: id, data, synced_at and
+	// none of the newer generated columns. user_version stays 0 (pre-gate).
+	raw, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open raw: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "route" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old table: %v", err)
+	}
+	raw.Close()
+
+	// Opening with the new binary must run CREATE INDEX statements without
+	// erroring on missing generated columns.
+	s, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("open upgraded db: %v", err)
+	}
+	defer s.Close()
+
+	// table_info hides generated columns; table_xinfo is the verify
+	// surface for VIRTUAL backfills such as bare_id.
+	rows, err := s.DB().Query(`SELECT name FROM pragma_table_xinfo(?)`, "route")
+	if err != nil {
+		t.Fatalf("table_xinfo: %v", err)
+	}
+	defer rows.Close()
+
+	hasColumn := make(map[string]bool)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatalf("scan: %v", err)
+		}
+		hasColumn[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("rows: %v", err)
+	}
+
+	for _, want := range []string{
+		"request_id",
+		"status",
+	} {
+		if !hasColumn[want] {
+			t.Fatalf("%s column missing from route after migrate", want)
+		}
+	}
+
+	for _, wantIdx := range []string{
+		"idx_route_request_id",
+	} {
+		var got string
+		if err := s.DB().QueryRow(
+			`SELECT name FROM sqlite_master WHERE type='index' AND name=?`,
+			wantIdx,
+		).Scan(&got); err != nil {
+			t.Fatalf("%s index missing from route after migrate: %v", wantIdx, err)
+		}
+	}
+}
+
 // TestMigrate_AddsColumnsOnUpgrade_Rvg verifies that opening a
 // database created by an older binary succeeds and adds newly generated
 // columns before CREATE INDEX runs against the pre-existing table. Regression
@@ -2418,6 +2574,79 @@ func TestMigrate_AddsColumnsOnUpgrade_Rvg(t *testing.T) {
 			wantIdx,
 		).Scan(&got); err != nil {
 			t.Fatalf("%s index missing from rvg after migrate: %v", wantIdx, err)
+		}
+	}
+}
+
+// TestMigrate_AddsColumnsOnUpgrade_Standarize verifies that opening a
+// database created by an older binary succeeds and adds newly generated
+// columns before CREATE INDEX runs against the pre-existing table. Regression
+// coverage for parent_id upgrades and indexed generated columns.
+func TestMigrate_AddsColumnsOnUpgrade_Standarize(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+
+	// Pre-create the DB with the older table shape: id, data, synced_at and
+	// none of the newer generated columns. user_version stays 0 (pre-gate).
+	raw, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open raw: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "standarize" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old table: %v", err)
+	}
+	raw.Close()
+
+	// Opening with the new binary must run CREATE INDEX statements without
+	// erroring on missing generated columns.
+	s, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("open upgraded db: %v", err)
+	}
+	defer s.Close()
+
+	// table_info hides generated columns; table_xinfo is the verify
+	// surface for VIRTUAL backfills such as bare_id.
+	rows, err := s.DB().Query(`SELECT name FROM pragma_table_xinfo(?)`, "standarize")
+	if err != nil {
+		t.Fatalf("table_xinfo: %v", err)
+	}
+	defer rows.Close()
+
+	hasColumn := make(map[string]bool)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatalf("scan: %v", err)
+		}
+		hasColumn[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("rows: %v", err)
+	}
+
+	for _, want := range []string{
+		"formatted_address",
+		"req_id",
+	} {
+		if !hasColumn[want] {
+			t.Fatalf("%s column missing from standarize after migrate", want)
+		}
+	}
+
+	for _, wantIdx := range []string{
+		"idx_standarize_req_id",
+	} {
+		var got string
+		if err := s.DB().QueryRow(
+			`SELECT name FROM sqlite_master WHERE type='index' AND name=?`,
+			wantIdx,
+		).Scan(&got); err != nil {
+			t.Fatalf("%s index missing from standarize after migrate: %v", wantIdx, err)
 		}
 	}
 }
@@ -2798,5 +3027,404 @@ func TestMigrate_AddsColumnsOnUpgrade_SyncState(t *testing.T) {
 		).Scan(&got); err != nil {
 			t.Fatalf("%s index missing from sync_state after migrate: %v", wantIdx, err)
 		}
+	}
+}
+
+func TestColumnNeedsBackfill(t *testing.T) {
+	known := map[string]map[string]struct{}{
+		"items": {"id": {}, "name": {}},
+	}
+	cases := []struct {
+		table  string
+		column string
+		want   bool
+	}{
+		{table: "missing", column: "name", want: false},
+		{table: "items", column: "name", want: false},
+		{table: "items", column: "note", want: true},
+		{table: "Items", column: "name", want: false},
+		{table: "items", column: "Name", want: true},
+	}
+	for _, tc := range cases {
+		if got := columnNeedsBackfill(known, tc.table, tc.column); got != tc.want {
+			t.Errorf("columnNeedsBackfill(%q, %q) = %v, want %v", tc.table, tc.column, got, tc.want)
+		}
+	}
+	if columnNeedsBackfill(nil, "items", "name") {
+		t.Fatal("nil map must not need a backfill")
+	}
+	markColumnPresent(known, "items", "note")
+	if columnNeedsBackfill(known, "items", "note") {
+		t.Fatal("marked column must not need a backfill")
+	}
+	markColumnPresent(known, "fresh", "id")
+	if columnNeedsBackfill(known, "fresh", "id") {
+		t.Fatal("column marked on a new table must be present")
+	}
+	noteBackfillProbe(context.Background())
+	noteBackfillAlter(context.Background())
+}
+
+func TestBackfillColumns_OneSnapshotPerOpen(t *testing.T) {
+	want := []struct{ table, column string }{
+		{"sync_state", "last_attempt_complete"},
+		{"sync_state", "scope_key"},
+		{"autosuggest", "display_text"},
+		{"autosuggest", "entity_id"},
+		{"autosuggest", "entity_name"},
+		{"autosuggest", "entity_type"},
+		{"autosuggest", "full_address"},
+		{"autosuggest", "lat"},
+		{"autosuggest", "long"},
+		{"autosuggest", "score"},
+		{"autosuggest", "shape"},
+		{"geocode", "error_radius"},
+		{"geocode", "lat"},
+		{"geocode", "lng"},
+		{"geocode", "req_id"},
+		{"isochrone", "req_id"},
+		{"isochrone", "request_id"},
+		{"isochrone", "status"},
+		{"isochrone", "type"},
+		{"route", "request_id"},
+		{"route", "status"},
+		{"rvg", "req_id"},
+		{"rvg", "status"},
+		{"standarize", "formatted_address"},
+		{"standarize", "req_id"},
+		{"toll_charges_by_od", "req_id"},
+		{"toll_charges_by_od", "status"},
+		{"toll_charges_by_route", "req_id"},
+		{"toll_charges_by_route", "status"},
+		{"validate", "corrections"},
+		{"validate", "formatted_address"},
+		{"validate", "granularity_level"},
+		{"validate", "quality"},
+		{"validate", "reason"},
+		{"validate", "req_id"},
+		{"validate", "request_id"},
+		{"verify", "corrections"},
+		{"verify", "formatted_address"},
+		{"verify", "granularity_level"},
+		{"verify", "is_verified"},
+		{"verify", "last_visited_date"},
+		{"verify", "quality"},
+		{"verify", "reason"},
+		{"verify", "req_id"},
+		{"verify", "request_id"},
+		{"verify", "verification_reasoning"},
+	}
+	if len(want) < 2 {
+		t.Fatal("backfill fixture must list more than one column")
+	}
+
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	raw, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open raw: %v", err)
+	}
+	if _, err := raw.Exec(`PRAGMA journal_mode = DELETE`); err != nil {
+		raw.Close()
+		t.Fatalf("journal_mode: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE sync_state (
+		resource_type TEXT PRIMARY KEY,
+		last_cursor TEXT,
+		last_synced_at DATETIME,
+		total_count INTEGER
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old sync_state: %v", err)
+	}
+	if _, err := raw.Exec(`INSERT INTO sync_state (resource_type, last_cursor) VALUES ('items', 'cursor-1')`); err != nil {
+		raw.Close()
+		t.Fatalf("seed sync_state: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "autosuggest" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old autosuggest: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "geocode" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old geocode: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "isochrone" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old isochrone: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "route" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old route: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "rvg" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old rvg: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "standarize" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old standarize: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "toll_charges_by_od" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old toll_charges_by_od: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "toll_charges_by_route" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old toll_charges_by_route: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "validate" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old validate: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE "verify" (
+		id TEXT PRIMARY KEY,
+		data JSON NOT NULL,
+		synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create old verify: %v", err)
+	}
+	if err := raw.Close(); err != nil {
+		t.Fatalf("close raw: %v", err)
+	}
+
+	ctx, stats := contextWithBackfillStats(context.Background())
+	s, err := OpenWithContext(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("open upgraded db: %v", err)
+	}
+	if stats.probes != 1 {
+		s.Close()
+		t.Fatalf("probes = %d, want 1 for %d columns", stats.probes, len(want))
+	}
+	if stats.alters != len(want) {
+		s.Close()
+		t.Fatalf("alters = %d, want %d (one per missing column, not per probe)", stats.alters, len(want))
+	}
+	for _, c := range want {
+		var name string
+		if err := s.DB().QueryRow(`SELECT name FROM pragma_table_xinfo(?) WHERE name = ?`, c.table, c.column).Scan(&name); err != nil {
+			s.Close()
+			t.Fatalf("%s.%s missing after backfill: %v", c.table, c.column, err)
+		}
+	}
+	var cursor string
+	if err := s.DB().QueryRow(`SELECT last_cursor FROM sync_state WHERE resource_type = 'items'`).Scan(&cursor); err != nil {
+		s.Close()
+		t.Fatalf("read upgraded sync_state: %v", err)
+	}
+	if cursor != "cursor-1" {
+		s.Close()
+		t.Fatalf("last_cursor = %q, want cursor-1", cursor)
+	}
+	var ingress string
+	if err := s.DB().QueryRow(`SELECT name FROM pragma_table_xinfo('learning_playbooks') WHERE name = 'ingress_surface'`).Scan(&ingress); err != nil {
+		s.Close()
+		t.Fatalf("missing learning_playbooks must be created with ingress_surface, not skipped: %v", err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatalf("close upgraded db: %v", err)
+	}
+
+	ctx, stats = contextWithBackfillStats(context.Background())
+	s, err = OpenWithContext(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("reopen upgraded db: %v", err)
+	}
+	defer s.Close()
+	if stats.probes != 1 || stats.alters != 0 {
+		t.Fatalf("reopen probes=%d alters=%d, want 1 and 0", stats.probes, stats.alters)
+	}
+}
+
+func TestBackfillColumns_GeneratedColumnNotReAdded(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	raw, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open raw: %v", err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE sync_state (
+		resource_type TEXT PRIMARY KEY,
+		last_cursor TEXT,
+		last_synced_at DATETIME,
+		total_count INTEGER,
+		scope_key TEXT GENERATED ALWAYS AS ('') VIRTUAL
+	)`); err != nil {
+		raw.Close()
+		t.Fatalf("create generated scope_key: %v", err)
+	}
+	if err := raw.Close(); err != nil {
+		t.Fatalf("close raw: %v", err)
+	}
+
+	ctx, stats := contextWithBackfillStats(context.Background())
+	s, err := OpenWithContext(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if stats.probes != 1 {
+		s.Close()
+		t.Fatalf("probes = %d, want 1", stats.probes)
+	}
+	if stats.alters != 1 {
+		s.Close()
+		t.Fatalf("alters = %d, want 1 (last_attempt_complete only; table_info would also retry scope_key)", stats.alters)
+	}
+	var hidden int
+	if err := s.DB().QueryRow(`SELECT hidden FROM pragma_table_xinfo('sync_state') WHERE name = 'scope_key'`).Scan(&hidden); err != nil {
+		s.Close()
+		t.Fatalf("scope_key visibility: %v", err)
+	}
+	if hidden != 2 && hidden != 3 {
+		s.Close()
+		t.Fatalf("scope_key hidden = %d, want a generated column", hidden)
+	}
+	var present string
+	if err := s.DB().QueryRow(`SELECT name FROM pragma_table_xinfo('sync_state') WHERE name = 'last_attempt_complete'`).Scan(&present); err != nil {
+		s.Close()
+		t.Fatalf("last_attempt_complete missing: %v", err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	ctx, stats = contextWithBackfillStats(context.Background())
+	s, err = OpenWithContext(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	defer s.Close()
+	if stats.probes != 1 || stats.alters != 0 {
+		t.Fatalf("reopen probes=%d alters=%d, want 1 and 0", stats.probes, stats.alters)
+	}
+}
+
+func TestBackfillColumns_FreshStoreDoesNotAlter(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	ctx, stats := contextWithBackfillStats(context.Background())
+	s, err := OpenWithContext(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("open fresh: %v", err)
+	}
+	if stats.probes != 1 || stats.alters != 0 {
+		s.Close()
+		t.Fatalf("fresh probes=%d alters=%d, want 1 and 0", stats.probes, stats.alters)
+	}
+	version, err := s.SchemaVersion()
+	if err != nil {
+		s.Close()
+		t.Fatalf("schema version: %v", err)
+	}
+	if version != StoreSchemaVersion {
+		s.Close()
+		t.Fatalf("user_version = %d, want %d", version, StoreSchemaVersion)
+	}
+	var scope string
+	if err := s.DB().QueryRow(`SELECT name FROM pragma_table_xinfo('sync_state') WHERE name = 'scope_key'`).Scan(&scope); err != nil {
+		s.Close()
+		t.Fatalf("fresh sync_state missing scope_key: %v", err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatalf("close fresh: %v", err)
+	}
+
+	ctx, stats = contextWithBackfillStats(context.Background())
+	s, err = OpenWithContext(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("reopen fresh: %v", err)
+	}
+	defer s.Close()
+	if stats.probes != 1 || stats.alters != 0 {
+		t.Fatalf("reopen probes=%d alters=%d, want 1 and 0", stats.probes, stats.alters)
+	}
+}
+
+func TestSnapshotTableColumnsCanceled(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`CREATE TABLE t (id TEXT)`); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	conn, err := db.Conn(context.Background())
+	if err != nil {
+		t.Fatalf("conn: %v", err)
+	}
+	defer conn.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = snapshotTableColumns(ctx, conn)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("snapshot error = %v, want context.Canceled", err)
+	}
+}
+
+func TestAddColumnDuplicateAndInvalid(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`CREATE TABLE sync_state (resource_type TEXT PRIMARY KEY)`); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	conn, err := db.Conn(context.Background())
+	if err != nil {
+		t.Fatalf("conn: %v", err)
+	}
+	defer conn.Close()
+
+	ctx := context.Background()
+	if err := addColumn(ctx, conn, "sync_state", "resource_type", "TEXT"); err != nil {
+		t.Fatalf("duplicate column must be swallowed: %v", err)
+	}
+	err = addColumn(ctx, conn, "sync_state", "bad_pk", "INTEGER PRIMARY KEY")
+	if err == nil || strings.Contains(err.Error(), "duplicate column name") {
+		t.Fatalf("primary key add = %v, want a non-duplicate error", err)
+	}
+	err = addColumn(ctx, conn, "missing_table", "col", "TEXT")
+	if err == nil || !strings.Contains(err.Error(), "missing_table.col") {
+		t.Fatalf("missing table add = %v, want wrapped missing_table.col", err)
 	}
 }

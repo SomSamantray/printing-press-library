@@ -1,7 +1,7 @@
 {
   "api_name": "delhivery-maps",
   "base_url": "https://gateway-maps-pub-int.delhivery.com",
-  "description": "Every Delhivery Maps endpoint, plus quota-aware address cleaning, trip costing and fleet planning that resume after quota or expiry stops a run.",
+  "description": "Every Delhivery Maps endpoint, plus quota-aware address cleaning, trip costing and fleet planning.",
   "mcp_ready": "full",
   "http_transport": "standard",
   "auth": {

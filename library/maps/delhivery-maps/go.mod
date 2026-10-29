@@ -1,6 +1,6 @@
 module github.com/mvanhorn/printing-press-library/library/maps/delhivery-maps
 
-go 1.27.3
+go 1.26.10
 
 require (
 	github.com/mark3labs/mcp-go v0.57.0

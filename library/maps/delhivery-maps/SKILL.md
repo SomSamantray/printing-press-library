@@ -1,6 +1,6 @@
 ---
 name: pp-delhivery-maps
-description: "Every Delhivery Maps endpoint, plus quota-aware address cleaning, trip costing and fleet planning that resume after quota or expiry stops a run. Trigger phrases: `geocode this Indian address`, `validate delivery address`, `clean a CSV of addresses`, `reverse geocode coordinates`, `toll cost for a truck trip`, `service area from a hub`, `which orders are outside the service area`, `distance matrix`, `plan delivery routes`, `use delhivery-maps`, `run delhivery-maps`."
+description: "Every Delhivery Maps endpoint, plus quota-aware address cleaning, trip costing and fleet planning. Trigger phrases: `geocode this Indian address`, `validate delivery address`, `clean a CSV of addresses`, `reverse geocode coordinates`, `toll cost for a truck trip`, `service area from a hub`, `which orders are outside the service area`, `distance matrix`, `plan delivery routes`, `use delhivery-maps`, `run delhivery-maps`."
 author: "Som Samantray"
 license: "Apache-2.0"
 argument-hint: "<command> [args] | install cli|mcp"
@@ -221,17 +221,17 @@ The gateway allows about **50 requests per 24 hours per token**, shared by every
 | `coverage check` | 1 isochrone call plus 1 per uncached address | shared pool of 50 |
 | `fleet plan` | 1 per chunk of up to 50 orders, each taking about 30 seconds | separate route-plan pool of 5 |
 | `address report`, `address dupes`, `address purge` | none (local-only) | none |
-| any single endpoint command | 1 | shared pool of 50 (the `route-plan` endpoint uses the route-plan pool) |
+| any single endpoint command (`geocode`, `route`, `validate`, and so on) | 1 each, sent for you but not recorded in the batch ledger (see Limitations) | shared pool of 50 (the `route-plan` endpoint uses the route-plan pool) |
 
 - `--max-calls N` (on `address clean`, `coverage check`, `trip quote`, `fleet plan`) caps live calls for a run and can only lower the budget. Omit it for the whole remaining budget; `--max-calls 0` means no calls; negative is a usage error. On `fleet plan` it applies to the route-plan pool.
 - `DELHIVERY_MAPS_DAILY_BUDGET` (default 50) and `DELHIVERY_MAPS_PLAN_BUDGET` (default 5) set the assumed quotas; `DELHIVERY_MAPS_IGNORE_LOCKOUT=1` ignores the 24-hour lockout after a 429.
 - Fully cached rows, lanes and addresses are still served after a 429 or a cap. `address clean --resume` re-runs only the steps still missing for a partially stored row.
 - `--dry-run` on a batch command prints the call formula (for example `calls_per_row: 3`) without reading the file or sending anything. Count the rows yourself and ask the user before spending a day's quota.
-- Limitations: the counter cannot see other consumers of the same token, so real remaining quota may be lower; the 24-hour lockout length is a local policy, not the server's reset time; orders the route-plan solver leaves unassigned are reported as `unassigned_orders`, and a `plan_status: false` response could not be verified live.
+- Limitations: the counter cannot see other consumers of the same token, so real remaining quota may be lower; standalone endpoint commands and typed MCP endpoint tools spend quota without writing to the ledger, so a batch can start on an overstated budget (a 429 then defers the rest); the 24-hour lockout length is a local policy, not the server's reset time; orders the route-plan solver leaves unassigned are reported as `unassigned_orders`, and a `plan_status: false` response could not be verified live.
 
 ## Piping rows in (`--stdin`) and optional `--out`
 
-`address clean`, `coverage check`, `trip quote` and `fleet plan` accept `--stdin` (same as `--file -`, or `--orders -` for `fleet plan`): input via `--stdin` needs no files, so agents and scripts can pipe rows straight in as CSV, JSON Lines or a JSON array of objects (auto-detected, same `--max-rows` and size caps). Empty stdin, or `--stdin` together with a real path, is a usage error (exit 2). `--out` is optional on all four: without it no file is written and the rows come back in the JSON output (`cleaned`, `flagged`, `stops`, or the lane records), capped by `--max-rows`; `--csv` prints formula-neutralised CSV and human mode prints a table. With `--out` nothing changes (no overwrite without `--force`).
+`address clean`, `coverage check`, `trip quote` and `fleet plan` accept `--stdin` (same as `--file -`, or `--orders -` for `fleet plan`): input via `--stdin` needs no files, so agents and scripts can pipe rows straight in as CSV, JSON Lines or a JSON array of objects (auto-detected, same `--max-rows` and size caps). Empty stdin, or `--stdin` together with a real path, is a usage error (exit 2). `--stdin` is not offered as an MCP tool argument, because an MCP call cannot supply standard input; MCP callers pass a server-local `--file` path instead. `--out` is optional on all four: without it no file is written and the rows come back in the JSON output (`cleaned`, `flagged`, `stops`, or the lane records), capped by `--max-rows`; `--csv` prints formula-neutralised CSV and human mode prints a table. With `--out` nothing changes (no overwrite without `--force`).
 
 ```bash
 printf 'address\n"flat 4b, lotus apt, sec 45, gurgaon, haryana 122003"\n' | delhivery-maps-pp-cli address clean --stdin --json

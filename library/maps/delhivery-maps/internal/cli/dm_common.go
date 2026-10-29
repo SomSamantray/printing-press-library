@@ -207,11 +207,30 @@ func dmBudgetEnvName(bucket string) string {
 	return dmBudgetEnv
 }
 
+// dmQuerier is the query surface shared by *sql.DB and a *sql.Conn that has
+// begun a transaction, so the budget can be read inside a reservation.
+type dmQuerier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// dmBudgetError turns a bucket's budget state into the error a call must
+// return, or nil when one more call may be sent.
+func dmBudgetError(bucket string, remaining int, locked bool) error {
+	switch {
+	case locked:
+		return fmt.Errorf("%w: locked out after an earlier HTTP 429 (set %s=1 to override)", errDMRateLimited, dmIgnoreLockoutEnv)
+	case remaining <= 0:
+		return fmt.Errorf("%w: the local budget of %d %s calls per %s is used up (see %s)", errDMRateLimited, dmBucketBudget(bucket), bucket, dmWindowText, dmBudgetEnvName(bucket))
+	}
+	return nil
+}
+
 // dmBudgetState estimates the calls left in a bucket's rolling window for one
 // scope (base URL and token fingerprint). remaining is 0 while a 429 lockout
 // for that scope and bucket is active; lockedOut says why. A lockout time in
 // the future (clock skew) is ignored.
-func dmBudgetState(ctx context.Context, db *sql.DB, scope, bucket string) (remaining int, lockedOut bool, err error) {
+func dmBudgetState(ctx context.Context, db dmQuerier, scope, bucket string) (remaining int, lockedOut bool, err error) {
 	var used int
 	now := time.Now()
 	cond := "endpoint != ?"
@@ -244,6 +263,45 @@ func dmRecordCall(ctx context.Context, db *sql.DB, scope, endpoint string) error
 	if _, err := db.ExecContext(ctx, `INSERT INTO dm_calls (called_at, endpoint, scope) VALUES (?, ?, ?)`, time.Now().Unix(), endpoint, scope); err != nil {
 		return fmt.Errorf("logging API call: %w", err)
 	}
+	return nil
+}
+
+// dmReserveCall checks the bucket budget and, when a call is allowed, logs it
+// in one write-locked transaction. BEGIN IMMEDIATE takes the database write
+// lock before the count is read, so a second CLI process sharing the database
+// waits and then sees this call. Two processes cannot both spend the last call.
+func dmReserveCall(ctx context.Context, db *sql.DB, scope, endpoint string) error {
+	dmWriteMu.Lock()
+	defer dmWriteMu.Unlock()
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("reserving API call: %w", err)
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, `BEGIN IMMEDIATE`); err != nil {
+		return fmt.Errorf("reserving API call: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_, _ = conn.ExecContext(context.Background(), `ROLLBACK`)
+		}
+	}()
+	bucket := dmBucketFor(endpoint)
+	remaining, locked, err := dmBudgetState(ctx, conn, scope, bucket)
+	if err != nil {
+		return err
+	}
+	if err := dmBudgetError(bucket, remaining, locked); err != nil {
+		return err
+	}
+	if _, err := conn.ExecContext(ctx, `INSERT INTO dm_calls (called_at, endpoint, scope) VALUES (?, ?, ?)`, time.Now().Unix(), endpoint, scope); err != nil {
+		return fmt.Errorf("logging API call: %w", err)
+	}
+	if _, err := conn.ExecContext(ctx, `COMMIT`); err != nil {
+		return fmt.Errorf("logging API call: %w", err)
+	}
+	committed = true
 	return nil
 }
 
@@ -462,25 +520,30 @@ func (a *dmAPI) spendCheck(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	switch {
-	case locked:
-		return fmt.Errorf("%w: locked out after an earlier HTTP 429 (set %s=1 to override)", errDMRateLimited, dmIgnoreLockoutEnv)
-	case remaining <= 0:
-		return fmt.Errorf("%w: the local budget of %d %s calls per %s is used up (see %s)", errDMRateLimited, dmBucketBudget(bucket), bucket, dmWindowText, dmBudgetEnvName(bucket))
-	case a.hasCap && int(a.calls.Load()) >= a.cap:
+	if err := dmBudgetError(bucket, remaining, locked); err != nil {
+		return err
+	}
+	return a.capError()
+}
+
+// capError reports when this run's own call cap is used up. It is per run
+// (per process), so it is checked here rather than in the shared budget.
+func (a *dmAPI) capError() error {
+	if a.hasCap && int(a.calls.Load()) >= a.cap {
 		return fmt.Errorf("%w: this run's call cap of %d is reached", errDMRateLimited, a.cap)
 	}
 	return nil
 }
 
-// spend reserves one call against the budget and logs it before it is sent.
+// spend reserves one call against the shared budget and logs it before it is
+// sent. The budget check and the log entry are one locked transaction.
 func (a *dmAPI) spend(ctx context.Context, path string) error {
 	a.spendMu.Lock()
 	defer a.spendMu.Unlock()
-	if err := a.spendCheck(ctx, path); err != nil {
+	if err := a.capError(); err != nil {
 		return err
 	}
-	if err := dmRecordCall(ctx, a.db, a.scope, path); err != nil {
+	if err := dmReserveCall(ctx, a.db, a.scope, path); err != nil {
 		return err
 	}
 	a.calls.Add(1)
@@ -937,9 +1000,16 @@ func dmSanitize(s string, keepNewlines bool) string {
 // dmStripControl is dmSanitize on a single line of text.
 func dmStripControl(s string) string { return dmSanitize(s, false) }
 
+// dmOutcomeKeys are the row fields that say why a row has no result: a quota
+// deferral, a failed call, or a reason. --compact keeps a field only when most
+// rows carry it, so a single deferred or failed row would lose these and look
+// like a successful one with zero values.
+var dmOutcomeKeys = []string{"deferred", "error", "reason", "status", "rate_limited"}
+
 // dmPrint prints v like printJSONFiltered, but for the csv, plain and quiet
 // output paths (which the shared printers do not neutralise) every string
-// value is first made safe against spreadsheet formula injection.
+// value is first made safe against spreadsheet formula injection. The
+// outcome keys survive --compact on every row.
 func dmPrint(w io.Writer, v any, flags *rootFlags) error {
 	if flags.csv || flags.plain || flags.quiet {
 		neutral, err := neutralizeValue(v)
@@ -948,7 +1018,7 @@ func dmPrint(w io.Writer, v any, flags *rootFlags) error {
 		}
 		v = neutral
 	}
-	return printJSONFiltered(w, v, flags)
+	return printJSONFilteredKeep(w, v, flags, dmOutcomeKeys...)
 }
 
 // neutralizeValue round-trips v through JSON and quotes every string that

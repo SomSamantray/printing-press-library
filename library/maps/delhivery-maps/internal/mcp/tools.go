@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -42,6 +43,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("query", mcplib.Required(), mcplib.Description("Search text - address, place name, pin code, or lat/long pair.")),
 			mcplib.WithNumber("lat", mcplib.Description("Latitude for geo-biased ranking.")),
 			mcplib.WithNumber("lng", mcplib.Description("Longitude for geo-biased ranking.")),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithReadOnlyHintAnnotation(true),
 			mcplib.WithDestructiveHintAnnotation(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
@@ -53,14 +55,14 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithDescription("Accepts a raw or semi-structured Indian address and returns geographic coordinates with an error radius indicating positional confidence. Required: address. Optional: req_id."),
 			mcplib.WithString("address", mcplib.Required(), mcplib.Description("Raw address string (max ~500 chars).")),
 			mcplib.WithString("req_id", mcplib.Description("Optional request identifier.")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/geocode", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
 	)
 	s.AddTool(
 		mcplib.NewTool("isochrone_compute",
-			mcplib.WithDescription("Returns a GeoJSON polygon of everywhere reachable from an origin within one cost budget. cost_type selects the product: `time` (cost_value in seconds, max 7,200) or `distance` (metres, max 100,000); cost_value must satisfy 0 < cost_value <= max or the call returns HTTP 400. direction is `outbound` (default: where you can reach from the origin) or `inbound` (who can reach the origin). Travel modes: auto, motorcycle, truck, pedestrian. The origin must lie inside India. One contour per call, so the response has exactly one feature, and the mode is echoed in features[0].properties.cost_type. Geometry is encoded polylines by default; send encode_geojson=false for plain [longitude, latitude] GeoJSON arrays. Required: cost_type, cost_value, origin. Optional: departure_time, direction (default: outbound), enable_smoothing (default: false) (plus 6 more)."),
+			mcplib.WithDescription("Returns a GeoJSON polygon covering everywhere reachable from an origin within a single cost budget. One endpoint serves both products — the `cost_type` field in the body selects which: | Cost Type | Product | Cost Value Unit | Question answered | | --- | --- | --- | --- | | `time` | IsoChrone | seconds | 'How far can I get in 10 minutes?' | | `distance` | IsoDistance | metres | 'How far can I get within 5 km of road travel?' | Everything else — request shape, validation, response shape, error codes — is identical between the two modes. The response echoes the mode back in `features[0].properties.cost_type`. `direction` flips the direction of travel: `outbound` (default) is where you can reach from the origin; `inbound` is who can reach the origin. The two differ on one-ways, restricted turns and time-dependent costing. Exactly one contour is requested per call, so the response always contains exactly one feature. **SERVICE LIMITS** | Cost Type | Unit | Min (exclusive) | Max | | --- | --- | --- | --- | | `time` | seconds | 0 | 7,200 | | `distance` | metres | 0 | 100,000 | | Travel Mode | Supported | | --- | --- | | auto | Yes | | motorcycle | Yes | | truck | Yes | | pedestrian | Yes | `cost_value` must satisfy `0 < cost_value <= max`. A value of `0`, a negative value, or a value above the max returns HTTP 400. A larger `cost_value` explores a larger area and costs more latency; the max caps worst-case compute time. The origin must lie inside the India boundary. **RESPONSE GEOMETRY FORMAT** By default, or when `encode_geojson` is omitted, the response uses encoded polyline strings to reduce response size. If you want standard GeoJSON coordinates directly, send `encode_geojson: false`. | `encode_geojson` | Response geometry | | --- | --- | | omitted or `true` (default) | Encoded polyline strings | | `false` | Standard GeoJSON numeric coordinate arrays in `[longitude, latitude]` order |. Required: cost_type, cost_value, origin. Optional: departure_time, direction (default: outbound), enable_smoothing (default: false) (plus 6 more)."),
 			mcplib.WithString("cost_type", mcplib.Required(), mcplib.Description("Selects the product: `time` → isochrone (budget in seconds), `distance` → isodistance (budget in metres).")),
 			mcplib.WithNumber("cost_value", mcplib.Required(), mcplib.Description("The budget.")),
 			mcplib.WithString("departure_time", mcplib.Description("Departure time in IST, `YYYY-MM-DDTHH:MM`. Only used when `traffic_aware` is `true`.")),
@@ -74,7 +76,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithBoolean("route-modifiers-avoid-tolls", mcplib.Description("Penalise tolled roads. (default: false)")),
 			mcplib.WithBoolean("traffic_aware", mcplib.Description("Enables time-dependent costing for `cost_type: time`. (default: false)")),
 			mcplib.WithString("travel_mode", mcplib.Description("Vehicle profile used for the expansion. (default: auto)")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/isochrone", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "cost_type", WireName: "cost_type", Location: "body"}, {PublicName: "cost_value", WireName: "cost_value", Location: "body"}, {PublicName: "departure_time", WireName: "departure_time", Location: "body"}, {PublicName: "direction", WireName: "direction", Location: "body"}, {PublicName: "enable_smoothing", WireName: "enable_smoothing", Location: "body"}, {PublicName: "encode_geojson", WireName: "encode_geojson", Location: "body"}, {PublicName: "origin", WireName: "origin", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}, {PublicName: "resolution", WireName: "resolution", Location: "body"}, {PublicName: "route-modifiers-avoid-highways", WireName: "avoid_highways", Location: "body", BodyPath: []string{"route_modifiers", "avoid_highways"}}, {PublicName: "route-modifiers-avoid-tolls", WireName: "avoid_tolls", Location: "body", BodyPath: []string{"route_modifiers", "avoid_tolls"}}, {PublicName: "traffic_aware", WireName: "traffic_aware", Location: "body"}, {PublicName: "travel_mode", WireName: "travel_mode", Location: "body"}}, []string{}),
@@ -87,7 +89,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithArray("sources", mcplib.Required(), mcplib.Description("List of `[lat, lng]` source coordinates. All within India.")),
 			mcplib.WithArray("targets", mcplib.Required(), mcplib.Description("List of `[lat, lng]` target coordinates. All within India.")),
 			mcplib.WithString("travel_mode", mcplib.Description("Travel mode (default: auto)")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/matrix", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "route-modifiers-avoid-highways", WireName: "avoid_highways", Location: "body", BodyPath: []string{"route_modifiers", "avoid_highways"}}, {PublicName: "route-modifiers-avoid-tolls", WireName: "avoid_tolls", Location: "body", BodyPath: []string{"route_modifiers", "avoid_tolls"}}, {PublicName: "sources", WireName: "sources", Location: "body"}, {PublicName: "targets", WireName: "targets", Location: "body"}, {PublicName: "travel_mode", WireName: "travel_mode", Location: "body"}}, []string{}),
@@ -99,6 +101,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithNumber("z", mcplib.Required(), mcplib.Description("Zoom level (0–20).")),
 			mcplib.WithNumber("x", mcplib.Required(), mcplib.Description("Tile column index.")),
 			mcplib.WithNumber("y", mcplib.Required(), mcplib.Description("Tile row index.")),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithReadOnlyHintAnnotation(true),
 			mcplib.WithDestructiveHintAnnotation(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
@@ -107,7 +110,7 @@ func RegisterTools(s *server.MCPServer) {
 	)
 	s.AddTool(
 		mcplib.NewTool("route_compute",
-			mcplib.WithDescription("Calculates the optimal route between 2+ waypoints within India, with multiple travel modes, alternate routes and route modifiers. Geometry (`geometry` and every `legs[].shape`) is returned as encoded polyline strings (precision 6) unless you send `output_format: { 'encode_polyline': false }`; maneuvers are off unless you send `output_format: { 'maneuvers': true }`. Max locations per request: auto 20, motorcycle 50, truck 20, pedestrian 50; exceeding it returns HTTP 400. There is no pre-check for maximum distance. Required: geo_coords. Optional: alternate_routes (default: false), departure_time, output_format (plus 3 more). Returns array of RouteComputeItem."),
+			mcplib.WithDescription("Calculates the optimal route between 2+ waypoints within India. Supports multiple travel modes, alternate routes, and route modifiers. **BREAKING CHANGE (v4.7):** Geometry is now **encoded** by default. Unless you send `output_format: { 'encode_polyline': false }`, both `geometry` and every `legs[].shape` are returned as encoded polyline strings (precision 6). Maneuvers are **off** by default — send `output_format: { 'maneuvers': true }` to include them. The old `decode_geometry` query parameter has been removed; use `output_format.encode_polyline` in the request body instead. **SERVICE LIMITS** | Travel Mode | Max Locations | | --- | --- | | auto | 20 | | motorcycle | 50 | | truck | 20 | | pedestrian | 50 | Requests exceeding the max location count return HTTP 400. There is no pre-check for maximum distance. Required: geo_coords. Optional: alternate_routes (default: false), departure_time, output_format (plus 3 more). Returns the new RouteResponse."),
 			mcplib.WithBoolean("alternate_routes", mcplib.Description("Include alternate routes in response. (default: false)")),
 			mcplib.WithString("departure_time", mcplib.Description("Specifies the planned departure time (for example, `2026-06-03T18:00`) in ISO-8601 format. Defaults to the current time.")),
 			mcplib.WithArray("geo_coords", mcplib.Required(), mcplib.Description("Ordered `[lat, lng]` waypoints. Minimum 2, all within India.")),
@@ -117,7 +120,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithBoolean("route-modifiers-avoid-tolls", mcplib.Description("Avoid tolls")),
 			mcplib.WithBoolean("traffic_aware", mcplib.Description("Enables hour-of-day traffic-aware ETA calculations. (default: false)")),
 			mcplib.WithString("travel_mode", mcplib.Description("One of auto, motorcycle, truck, pedestrian. (default: auto)")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/route", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "alternate_routes", WireName: "alternate_routes", Location: "body"}, {PublicName: "departure_time", WireName: "departure_time", Location: "body"}, {PublicName: "geo_coords", WireName: "geo_coords", Location: "body"}, {PublicName: "output-format-encode-polyline", WireName: "encode_polyline", Location: "body", BodyPath: []string{"output_format", "encode_polyline"}}, {PublicName: "output-format-maneuvers", WireName: "maneuvers", Location: "body", BodyPath: []string{"output_format", "maneuvers"}}, {PublicName: "route-modifiers-avoid-highways", WireName: "avoid_highways", Location: "body", BodyPath: []string{"route_modifiers", "avoid_highways"}}, {PublicName: "route-modifiers-avoid-tolls", WireName: "avoid_tolls", Location: "body", BodyPath: []string{"route_modifiers", "avoid_tolls"}}, {PublicName: "traffic_aware", WireName: "traffic_aware", Location: "body"}, {PublicName: "travel_mode", WireName: "travel_mode", Location: "body"}}, []string{}),
@@ -137,7 +140,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithNumber("vehicle_max_volume", mcplib.Description("Maximum volume in cubic centimeters that one vehicle in this contract can serve. Defaults to 100000 cm³.")),
 			mcplib.WithNumber("vehicle_max_weight", mcplib.Description("Maximum weight in kilograms that one vehicle in this contract can serve. Defaults to 1000 kg.")),
 			mcplib.WithString("vehicle_mode", mcplib.Description("Travel mode passed through to the distance-matrix API. Allowed values: 'auto', 'truck', 'bike', 'foot'.")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/route-plan", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "depot_lat", WireName: "depot_lat", Location: "body"}, {PublicName: "depot_lng", WireName: "depot_lng", Location: "body"}, {PublicName: "max_distance", WireName: "max_distance", Location: "body"}, {PublicName: "max_stops", WireName: "max_stops", Location: "body"}, {PublicName: "max_time", WireName: "max_time", Location: "body"}, {PublicName: "num_vehicles", WireName: "num_vehicles", Location: "body"}, {PublicName: "orders", WireName: "orders", Location: "body"}, {PublicName: "plan_start_time", WireName: "plan_start_time", Location: "body"}, {PublicName: "return_to_depot", WireName: "return_to_depot", Location: "body"}, {PublicName: "vehicle_max_volume", WireName: "vehicle_max_volume", Location: "body"}, {PublicName: "vehicle_max_weight", WireName: "vehicle_max_weight", Location: "body"}, {PublicName: "vehicle_mode", WireName: "vehicle_mode", Location: "body"}}, []string{}),
@@ -149,7 +152,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithNumber("lat", mcplib.Required(), mcplib.Description("Lat")),
 			mcplib.WithNumber("lng", mcplib.Required(), mcplib.Description("Lng")),
 			mcplib.WithString("req_id", mcplib.Required(), mcplib.Description("Unique request identifier.")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/rvg", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "steps", WireName: "steps", Location: "query"}, {PublicName: "lat", WireName: "lat", Location: "body"}, {PublicName: "lng", WireName: "lng", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
@@ -159,7 +162,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithDescription("Accepts a raw or semi-structured Indian address and returns a cleaned, standardised version with structured components and applied corrections. Required: address. Optional: req_id."),
 			mcplib.WithString("address", mcplib.Required(), mcplib.Description("Raw address string (max ~500 chars).")),
 			mcplib.WithString("req_id", mcplib.Description("Optional request identifier.")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/standarize", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
@@ -176,7 +179,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("req_id", mcplib.Description("Optional request id for tracing.")),
 			mcplib.WithString("vehicle_type", mcplib.Required(), mcplib.Description("Vehicle category for toll rate lookup.")),
 			mcplib.WithArray("waypoints", mcplib.Description("Optional ordered list of intermediate stops between origin and destination. The route visits them in order. (default: [])")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/toll_charges_by_od", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "destination-lat", WireName: "lat", Location: "body", BodyPath: []string{"destination", "lat"}}, {PublicName: "destination-lng", WireName: "lng", Location: "body", BodyPath: []string{"destination", "lng"}}, {PublicName: "include_alternates", WireName: "include_alternates", Location: "body"}, {PublicName: "include_polyline", WireName: "include_polyline", Location: "body"}, {PublicName: "origin-lat", WireName: "lat", Location: "body", BodyPath: []string{"origin", "lat"}}, {PublicName: "origin-lng", WireName: "lng", Location: "body", BodyPath: []string{"origin", "lng"}}, {PublicName: "req_id", WireName: "req_id", Location: "body"}, {PublicName: "vehicle_type", WireName: "vehicle_type", Location: "body"}, {PublicName: "waypoints", WireName: "waypoints", Location: "body"}}, []string{}),
@@ -187,7 +190,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("req_id", mcplib.Description("Optional request id for tracing.")),
 			mcplib.WithArray("routes", mcplib.Required(), mcplib.Description("Array of route objects with user-provided geometry.")),
 			mcplib.WithString("vehicle_type", mcplib.Required(), mcplib.Description("Vehicle category for toll rate lookup.")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/toll_charges_by_route", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "req_id", WireName: "req_id", Location: "body"}, {PublicName: "routes", WireName: "routes", Location: "body"}, {PublicName: "vehicle_type", WireName: "vehicle_type", Location: "body"}}, []string{}),
@@ -197,7 +200,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithDescription("Validates an Indian delivery address against a database of historically delivered addresses. Returns quality assessment, granularity, corrected address, and inline diff. Required: address. Optional: req_id."),
 			mcplib.WithString("address", mcplib.Required(), mcplib.Description("Raw delivery address string (Indian addresses only)")),
 			mcplib.WithString("req_id", mcplib.Description("Optional client tracking ID — echoed in response")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/validate", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
@@ -208,7 +211,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("address", mcplib.Required(), mcplib.Description("Raw delivery address to verify")),
 			mcplib.WithNumber("months", mcplib.Required(), mcplib.Description("Lookback window in months. Checks if address was delivered to within this period.")),
 			mcplib.WithString("req_id", mcplib.Description("Optional client tracking ID — echoed in response")),
-			mcplib.WithDestructiveHintAnnotation(false),
+			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/verify", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "months", WireName: "months", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
@@ -227,7 +230,26 @@ func RegisterTools(s *server.MCPServer) {
 
 	// Runtime Cobra-tree mirror — exposes every user-facing command that is
 	// not already covered by a typed endpoint or framework MCP tool.
-	cobratree.RegisterAll(s, cli.RootCmd(), cobratree.SiblingCLIPath)
+	cobratree.RegisterAll(s, cli.RootCmd(), cobratree.CachedSiblingCLIPath)
+
+	// The read-only switch covers every tool, so this runs after all
+	// registrations. Tools without readOnlyHint, including local-store
+	// writers, are removed.
+	if cliutil.IsMCPReadOnlyEnv() {
+		dropNonReadOnlyTools(s)
+	}
+}
+
+// dropNonReadOnlyTools removes every tool not annotated readOnlyHint=true.
+// A tool with no annotation fails closed.
+func dropNonReadOnlyTools(s *server.MCPServer) {
+	var drop []string
+	for name, entry := range s.ListTools() {
+		if hint := entry.Tool.Annotations.ReadOnlyHint; hint == nil || !*hint {
+			drop = append(drop, name)
+		}
+	}
+	s.DeleteTools(drop...)
 }
 
 type mcpParamBinding struct {
@@ -450,16 +472,8 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 			}
 		}
 
-		for k, v := range args {
-			if pathParams[k] || knownArgs[k] {
-				continue
-			}
-			switch method {
-			case "POST", "PUT", "PATCH":
-				bodyArgs[k] = v
-			default:
-				params[k] = formatMCPParamValue(v)
-			}
+		if err := rejectUndeclaredMCPArgs(args, knownArgs, pathParams); err != nil {
+			return mcpToolError(err.Error()), nil
 		}
 
 		// The public cursor argument is either an opaque MCP cursor or, on a
@@ -575,17 +589,17 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 			case strings.Contains(msg, "HTTP 400") && cliutil.LooksLikeAuthError(msg):
 				return mcpToolError("authentication error: " + cliutil.SanitizeErrorBody(msg) +
 					"\nhint: the API rejected the request — this usually means auth is missing or invalid." +
-					"\n      Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or export DELHIVERY_MAPS_TOKEN=\"your-token-here\"" +
+					"\n      " + "Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or " + cliutil.EnvAssignHint(true, "DELHIVERY_MAPS_TOKEN", "your-token-here") +
 					"\n      Run 'delhivery-maps-pp-cli doctor' to check auth status."), nil
 			case strings.Contains(msg, "HTTP 401"):
 				return mcpToolError("authentication failed: " + cliutil.SanitizeErrorBody(msg) +
 					"\nhint: check your token." +
-					"\n      Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or export DELHIVERY_MAPS_TOKEN=\"your-token-here\"" +
+					"\n      " + "Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or " + cliutil.EnvAssignHint(true, "DELHIVERY_MAPS_TOKEN", "your-token-here") +
 					"\n      Run 'delhivery-maps-pp-cli doctor' to check auth status."), nil
 			case strings.Contains(msg, "HTTP 403"):
 				return mcpToolError("permission denied: " + cliutil.SanitizeErrorBody(msg) +
 					"\nhint: your credentials are valid but lack access to this resource. Check that they have the required permissions and match the API's expected auth scheme." +
-					"\n      Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or export DELHIVERY_MAPS_TOKEN=\"your-token-here\"" +
+					"\n      " + "Set it with: echo \"$TOKEN\" | delhivery-maps-pp-cli auth set-token or " + cliutil.EnvAssignHint(true, "DELHIVERY_MAPS_TOKEN", "your-token-here") +
 					"\n      Run 'delhivery-maps-pp-cli doctor' to check auth status."), nil
 			case strings.Contains(msg, "HTTP 404"):
 				if method == "DELETE" {
@@ -647,6 +661,163 @@ func mcpToolError(message string) *mcplib.CallToolResult {
 	return mcplib.NewToolResultError(bound.Text(message))
 }
 
+// Reserved transport arguments are accepted on every endpoint tool. They are
+// not request fields, so an unused one is ignored instead of copied onto the
+// wire. Declared bindings with these names still flow through knownArgs.
+func mcpReservedArg(name string) bool {
+	switch name {
+	case "cursor", "body_json", "body_base64", "content_type":
+		return true
+	default:
+		return false
+	}
+}
+
+func rejectUndeclaredMCPArgs(args map[string]any, knownArgs, pathParams map[string]bool) error {
+	var unknown []string
+	for name := range args {
+		if pathParams[name] || knownArgs[name] || mcpReservedArg(name) {
+			continue
+		}
+		unknown = append(unknown, name)
+	}
+	if len(unknown) == 0 {
+		return nil
+	}
+	sort.Strings(unknown)
+	candidates := mcpArgCandidates(knownArgs, pathParams)
+	parts := make([]string, len(unknown))
+	for i, name := range unknown {
+		parts[i] = formatUnknownMCPArg(name, suggestMCPArg(name, candidates))
+	}
+	return fmt.Errorf("%s", strings.Join(parts, "; "))
+}
+
+func mcpArgCandidates(knownArgs, pathParams map[string]bool) []string {
+	names := make([]string, 0, len(knownArgs)+len(pathParams))
+	seen := make(map[string]struct{}, len(knownArgs)+len(pathParams))
+	for name := range knownArgs {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		names = append(names, name)
+	}
+	for name := range pathParams {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func formatUnknownMCPArg(name, suggestion string) string {
+	if suggestion == "" {
+		return fmt.Sprintf("unknown argument %q", name)
+	}
+	return fmt.Sprintf("unknown argument %q (did you mean %q?)", name, suggestion)
+}
+
+func suggestMCPArg(name string, candidates []string) string {
+	folded := mcpArgFold(name)
+	stripped := mcpArgStrip(folded)
+	best := ""
+	bestDist := 0
+	ambiguous := false
+	consider := func(cand string, dist int) {
+		if best == "" || dist < bestDist {
+			best = cand
+			bestDist = dist
+			ambiguous = false
+			return
+		}
+		if dist == bestDist && cand != best {
+			ambiguous = true
+		}
+	}
+	for _, cand := range candidates {
+		if cand == "" || cand == name {
+			continue
+		}
+		cf := mcpArgFold(cand)
+		if cf == folded {
+			consider(cand, 0)
+			continue
+		}
+		if stripped != "" && mcpArgStrip(cf) == stripped {
+			consider(cand, 0)
+			continue
+		}
+		dist := runeLevenshtein(folded, cf)
+		if mcpArgDistanceOK(folded, cf, dist) {
+			consider(cand, dist)
+		}
+	}
+	if ambiguous {
+		return ""
+	}
+	return best
+}
+
+func mcpArgFold(name string) string {
+	return strings.ReplaceAll(strings.ToLower(name), "-", "_")
+}
+
+func mcpArgStrip(folded string) string {
+	return strings.ReplaceAll(folded, "_", "")
+}
+
+func mcpArgDistanceOK(a, b string, dist int) bool {
+	if dist <= 0 {
+		return false
+	}
+	la, lb := len([]rune(a)), len([]rune(b))
+	if la < 3 || lb < 3 {
+		return false
+	}
+	if la >= 5 && lb >= 5 {
+		return dist <= 2
+	}
+	return dist <= 1
+}
+
+func runeLevenshtein(a, b string) int {
+	ar, br := []rune(a), []rune(b)
+	if len(ar) == 0 {
+		return len(br)
+	}
+	if len(br) == 0 {
+		return len(ar)
+	}
+	prev := make([]int, len(br)+1)
+	cur := make([]int, len(br)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(ar); i++ {
+		cur[0] = i
+		for j := 1; j <= len(br); j++ {
+			cost := 1
+			if ar[i-1] == br[j-1] {
+				cost = 0
+			}
+			del, ins, sub := prev[j]+1, cur[j-1]+1, prev[j-1]+cost
+			cur[j] = del
+			if ins < cur[j] {
+				cur[j] = ins
+			}
+			if sub < cur[j] {
+				cur[j] = sub
+			}
+		}
+		prev, cur = cur, prev
+	}
+	return prev[len(br)]
+}
+
 func mcpToolPageResultText(method string, data json.RawMessage, pageConfig mcpPageConfig, cursor string) *mcplib.CallToolResult {
 	return mcpToolPageResultTextWithPlatform(method, data, pageConfig, cursor, "", false, nil)
 }
@@ -685,6 +856,9 @@ func newMCPConfig() (*config.Config, error) {
 
 func newMCPClientFromConfig(ctx context.Context, cfg *config.Config) (*client.Client, *platform.Session, error) {
 	c := client.New(cfg, 60*time.Second, defaultMCPRateLimit)
+	if tlsErr := c.TLSConfigError(); tlsErr != nil {
+		return nil, nil, tlsErr
+	}
 	// Agents calling through MCP need fresh data every call. The on-disk
 	// response cache survives across MCP server invocations, so a
 	// DELETE/PATCH followed by a GET would otherwise return the
@@ -717,23 +891,6 @@ func toolResultJSON(v any) (*mcplib.CallToolResult, error) {
 	}
 	return mcplib.NewToolResultText(text), nil
 }
-func registeredCommandMirrorCapabilities(s *server.MCPServer, capabilities []map[string]string) []map[string]string {
-	registered := make([]map[string]string, 0, len(capabilities))
-	root := cli.RootCmd()
-	for _, capability := range capabilities {
-		toolName := cobratree.ToolNameForCommand(s, root, capability["cli_command"])
-		if toolName == "" {
-			continue
-		}
-		entry := s.GetTool(toolName)
-		if entry == nil || entry.Tool.Meta == nil || entry.Tool.Meta.AdditionalFields["pp:tenant-gate"] != "child-cli" {
-			continue
-		}
-		capability["mcp_tool"] = toolName
-		registered = append(registered, capability)
-	}
-	return registered
-}
 
 func handleContext(s *server.MCPServer) func(context.Context, mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	return func(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
@@ -757,7 +914,7 @@ func handleContextResult(s *server.MCPServer, _ context.Context, _ mcplib.CallTo
 	}
 	ctx := map[string]any{
 		"api":         "delhivery-maps",
-		"description": "Every Delhivery Maps endpoint, plus bulk address cleaning, trip costing and fleet planning that survive rate limits and token expiry.",
+		"description": "Public API documentation for the Delhivery Maps Gateway. All requests must be routed through this gateway.",
 		"archetype":   "payments",
 		"tool_count":  len(s.ListTools()),
 		"paths":       paths,
@@ -885,12 +1042,6 @@ func handleContextResult(s *server.MCPServer, _ context.Context, _ mcplib.CallTo
 			{"name": "Duplicate-doorstep finder", "command": "address dupes", "cli_command": "address dupes", "description": "Find repeated delivery locations among addresses you have cleaned.", "rationale": "Groups cached addresses by standardised text or geocodes within N metres.", "via": "mcp-command-mirror"},
 		}),
 		"playbook": []map[string]string{
-			{"topic": "Bulk address cleaning", "insight": "Composes three endpoints with rate-limit back-off, retries and a resumable local cache that single API calls cannot provide."},
-			{"topic": "Trip quote", "insight": "Chains the route polyline into toll-by-polylines and geocodes addresses from cache, which users otherwise stitch by hand."},
-			{"topic": "Service-area coverage check", "insight": "Joins the isochrone polygon, cached geocodes and a local point-in-polygon test."},
-			{"topic": "Fleet plan from orders file", "insight": "Automates geocode prep and the 50-order chunking around route-plan, then merges the results."},
-			{"topic": "Cached-address quality report", "insight": "Aggregates the local cache; the API has no list endpoints to answer this."},
-			{"topic": "Duplicate-doorstep finder", "insight": "Groups cached addresses by standardised text or geocodes within N metres."},
 			{"topic": "Financial data", "insight": "Always use read-only operations for financial queries. Never use create/update tools for payment data without explicit user confirmation."},
 			{"topic": "Reconciliation", "insight": "For reconciliation tasks, sync first then use sql for cross-referencing. API pagination over financial records is slow and rate-limited."},
 		},
@@ -903,4 +1054,22 @@ func handleContextResult(s *server.MCPServer, _ context.Context, _ mcplib.CallTo
 // includes the runtime Cobra-tree mirror.
 func RegisterNovelFeatureTools(s *server.MCPServer) {
 	_ = s
+}
+
+func registeredCommandMirrorCapabilities(s *server.MCPServer, capabilities []map[string]string) []map[string]string {
+	registered := make([]map[string]string, 0, len(capabilities))
+	root := cli.RootCmd()
+	for _, capability := range capabilities {
+		toolName := cobratree.ToolNameForCommand(s, root, capability["cli_command"])
+		if toolName == "" {
+			continue
+		}
+		entry := s.GetTool(toolName)
+		if entry == nil || entry.Tool.Meta == nil || entry.Tool.Meta.AdditionalFields["pp:tenant-gate"] != "child-cli" {
+			continue
+		}
+		capability["mcp_tool"] = toolName
+		registered = append(registered, capability)
+	}
+	return registered
 }

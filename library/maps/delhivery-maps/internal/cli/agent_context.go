@@ -6,11 +6,10 @@ package cli
 
 import (
 	"encoding/json"
-	"os"
 	"sort"
 
 	"github.com/mvanhorn/printing-press-library/library/maps/delhivery-maps/internal/cliutil"
-	"github.com/mvanhorn/printing-press-library/library/maps/delhivery-maps/internal/learn"
+	learn2 "github.com/mvanhorn/printing-press-library/library/maps/delhivery-maps/internal/learn"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -107,7 +106,7 @@ agents can introspect this CLI at runtime without parsing --help or
 reading source. Schema is versioned via schema_version.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := buildAgentContext(rootCmd)
-			enc := json.NewEncoder(os.Stdout)
+			enc := json.NewEncoder(cmd.OutOrStdout())
 			if pretty {
 				enc.SetIndent("", "  ")
 			}
@@ -152,7 +151,7 @@ func buildAgentContext(rootCmd *cobra.Command) agentContext {
 		Commands:                   collectAgentCommands(rootCmd),
 		AvailableProfiles:          profiles,
 		FeedbackEndpointConfigured: FeedbackEndpointConfigured(),
-		LearnProtocol:              learn.RecallFirstProtocol,
+		LearnProtocol:              learn2.RecallFirstProtocol,
 	}
 }
 

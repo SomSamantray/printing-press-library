@@ -126,8 +126,11 @@ file.
 			"mcp:read-only":              "true",
 			"mcp:read-only-unless-flags": "out",
 			"mcp:write-flags":            "out",
-			"pp:happy-args":              "--vehicles=1;--depot=28.4599,77.0679",
-			"pp:happy-stdin":             `[{"order_id":"ORD001","lat":28.48,"lng":77.09,"weight":10},{"order_id":"ORD002","lat":28.50,"lng":77.10,"weight":15},{"order_id":"ORD003","lat":28.4650,"lng":77.0700,"weight":5}]`,
+			// --stdin reads the host's standard input, which an MCP call cannot supply, so
+			// the flag is withheld from the MCP tool. MCP callers pass a server-local file.
+			"mcp:read-flags": "stdin",
+			"pp:happy-args":  "--vehicles=1;--depot=28.4599,77.0679",
+			"pp:happy-stdin": `[{"order_id":"ORD001","lat":28.48,"lng":77.09,"weight":10},{"order_id":"ORD002","lat":28.50,"lng":77.10,"weight":15},{"order_id":"ORD003","lat":28.4650,"lng":77.0700,"weight":5}]`,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {

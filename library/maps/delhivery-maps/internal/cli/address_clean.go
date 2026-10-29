@@ -175,8 +175,11 @@ DELHIVERY_MAPS_DAILY_BUDGET to change the assumed quota.
 			"mcp:read-only":              "true",
 			"mcp:read-only-unless-flags": "out",
 			"mcp:write-flags":            "out",
-			"pp:happy-args":              "--steps=geocode",
-			"pp:happy-stdin":             `[{"address":"flat 4b, lotus apt, sec 45, gurgaon, haryana 122003"}]`,
+			// --stdin reads the host's standard input, which an MCP call cannot supply, so
+			// the flag is withheld from the MCP tool. MCP callers pass a server-local file.
+			"mcp:read-flags": "stdin",
+			"pp:happy-args":  "--steps=geocode",
+			"pp:happy-stdin": `[{"address":"flat 4b, lotus apt, sec 45, gurgaon, haryana 122003"}]`,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {

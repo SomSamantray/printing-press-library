@@ -132,7 +132,10 @@ about %[3]d per %[6]s. A lane whose calls do not fit the remaining budget
 			"mcp:read-only":              "true",
 			"mcp:read-only-unless-flags": "out",
 			"mcp:write-flags":            "out",
-			"pp:happy-args":              "--from=28.5954,77.0319;--to=28.4089,77.3178;--vehicle=car_jeep_van",
+			// --stdin reads the host's standard input, which an MCP call cannot supply, so
+			// the flag is withheld from the MCP tool. MCP callers pass a server-local file.
+			"mcp:read-flags": "stdin",
+			"pp:happy-args":  "--from=28.5954,77.0319;--to=28.4089,77.3178;--vehicle=car_jeep_van",
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && cmd.Flags().NFlag() == 0 {
