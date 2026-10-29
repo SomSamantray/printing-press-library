@@ -57,6 +57,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("req_id", mcplib.Description("Optional request identifier.")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/geocode", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
 	)
@@ -78,6 +79,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("travel_mode", mcplib.Description("Vehicle profile used for the expansion. (default: auto)")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/isochrone", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "cost_type", WireName: "cost_type", Location: "body"}, {PublicName: "cost_value", WireName: "cost_value", Location: "body"}, {PublicName: "departure_time", WireName: "departure_time", Location: "body"}, {PublicName: "direction", WireName: "direction", Location: "body"}, {PublicName: "enable_smoothing", WireName: "enable_smoothing", Location: "body"}, {PublicName: "encode_geojson", WireName: "encode_geojson", Location: "body"}, {PublicName: "origin", WireName: "origin", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}, {PublicName: "resolution", WireName: "resolution", Location: "body"}, {PublicName: "route-modifiers-avoid-highways", WireName: "avoid_highways", Location: "body", BodyPath: []string{"route_modifiers", "avoid_highways"}}, {PublicName: "route-modifiers-avoid-tolls", WireName: "avoid_tolls", Location: "body", BodyPath: []string{"route_modifiers", "avoid_tolls"}}, {PublicName: "traffic_aware", WireName: "traffic_aware", Location: "body"}, {PublicName: "travel_mode", WireName: "travel_mode", Location: "body"}}, []string{}),
 	)
@@ -91,6 +93,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("travel_mode", mcplib.Description("Travel mode (default: auto)")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/matrix", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "route-modifiers-avoid-highways", WireName: "avoid_highways", Location: "body", BodyPath: []string{"route_modifiers", "avoid_highways"}}, {PublicName: "route-modifiers-avoid-tolls", WireName: "avoid_tolls", Location: "body", BodyPath: []string{"route_modifiers", "avoid_tolls"}}, {PublicName: "sources", WireName: "sources", Location: "body"}, {PublicName: "targets", WireName: "targets", Location: "body"}, {PublicName: "travel_mode", WireName: "travel_mode", Location: "body"}}, []string{}),
 	)
@@ -122,6 +125,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("travel_mode", mcplib.Description("One of auto, motorcycle, truck, pedestrian. (default: auto)")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/route", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "alternate_routes", WireName: "alternate_routes", Location: "body"}, {PublicName: "departure_time", WireName: "departure_time", Location: "body"}, {PublicName: "geo_coords", WireName: "geo_coords", Location: "body"}, {PublicName: "output-format-encode-polyline", WireName: "encode_polyline", Location: "body", BodyPath: []string{"output_format", "encode_polyline"}}, {PublicName: "output-format-maneuvers", WireName: "maneuvers", Location: "body", BodyPath: []string{"output_format", "maneuvers"}}, {PublicName: "route-modifiers-avoid-highways", WireName: "avoid_highways", Location: "body", BodyPath: []string{"route_modifiers", "avoid_highways"}}, {PublicName: "route-modifiers-avoid-tolls", WireName: "avoid_tolls", Location: "body", BodyPath: []string{"route_modifiers", "avoid_tolls"}}, {PublicName: "traffic_aware", WireName: "traffic_aware", Location: "body"}, {PublicName: "travel_mode", WireName: "travel_mode", Location: "body"}}, []string{}),
 	)
@@ -142,6 +146,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("vehicle_mode", mcplib.Description("Travel mode passed through to the distance-matrix API. Allowed values: 'auto', 'truck', 'bike', 'foot'.")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/route-plan", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "depot_lat", WireName: "depot_lat", Location: "body"}, {PublicName: "depot_lng", WireName: "depot_lng", Location: "body"}, {PublicName: "max_distance", WireName: "max_distance", Location: "body"}, {PublicName: "max_stops", WireName: "max_stops", Location: "body"}, {PublicName: "max_time", WireName: "max_time", Location: "body"}, {PublicName: "num_vehicles", WireName: "num_vehicles", Location: "body"}, {PublicName: "orders", WireName: "orders", Location: "body"}, {PublicName: "plan_start_time", WireName: "plan_start_time", Location: "body"}, {PublicName: "return_to_depot", WireName: "return_to_depot", Location: "body"}, {PublicName: "vehicle_max_volume", WireName: "vehicle_max_volume", Location: "body"}, {PublicName: "vehicle_max_weight", WireName: "vehicle_max_weight", Location: "body"}, {PublicName: "vehicle_mode", WireName: "vehicle_mode", Location: "body"}}, []string{}),
 	)
@@ -154,6 +159,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("req_id", mcplib.Required(), mcplib.Description("Unique request identifier.")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/rvg", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "steps", WireName: "steps", Location: "query"}, {PublicName: "lat", WireName: "lat", Location: "body"}, {PublicName: "lng", WireName: "lng", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
 	)
@@ -164,6 +170,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("req_id", mcplib.Description("Optional request identifier.")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/standarize", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
 	)
@@ -181,6 +188,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithArray("waypoints", mcplib.Description("Optional ordered list of intermediate stops between origin and destination. The route visits them in order. (default: [])")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/toll_charges_by_od", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "destination-lat", WireName: "lat", Location: "body", BodyPath: []string{"destination", "lat"}}, {PublicName: "destination-lng", WireName: "lng", Location: "body", BodyPath: []string{"destination", "lng"}}, {PublicName: "include_alternates", WireName: "include_alternates", Location: "body"}, {PublicName: "include_polyline", WireName: "include_polyline", Location: "body"}, {PublicName: "origin-lat", WireName: "lat", Location: "body", BodyPath: []string{"origin", "lat"}}, {PublicName: "origin-lng", WireName: "lng", Location: "body", BodyPath: []string{"origin", "lng"}}, {PublicName: "req_id", WireName: "req_id", Location: "body"}, {PublicName: "vehicle_type", WireName: "vehicle_type", Location: "body"}, {PublicName: "waypoints", WireName: "waypoints", Location: "body"}}, []string{}),
 	)
@@ -192,6 +200,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("vehicle_type", mcplib.Required(), mcplib.Description("Vehicle category for toll rate lookup.")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/toll_charges_by_route", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "req_id", WireName: "req_id", Location: "body"}, {PublicName: "routes", WireName: "routes", Location: "body"}, {PublicName: "vehicle_type", WireName: "vehicle_type", Location: "body"}}, []string{}),
 	)
@@ -202,6 +211,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("req_id", mcplib.Description("Optional client tracking ID — echoed in response")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/validate", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
 	)
@@ -213,6 +223,7 @@ func RegisterTools(s *server.MCPServer) {
 			mcplib.WithString("req_id", mcplib.Description("Optional client tracking ID — echoed in response")),
 			mcplib.WithSchemaAdditionalProperties(false),
 			mcplib.WithOpenWorldHintAnnotation(true),
+			mcplib.WithReadOnlyHintAnnotation(true),
 		),
 		makeAPIHandler("POST", "/verify", false, false, nil, mcpPageConfig{}, []mcpParamBinding{{PublicName: "address", WireName: "address", Location: "body"}, {PublicName: "months", WireName: "months", Location: "body"}, {PublicName: "req_id", WireName: "req_id", Location: "body"}}, []string{}),
 	)

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -69,5 +70,38 @@ func TestCompactOutputKeepsTheOutcomeOfTheOneDeferredRow(t *testing.T) {
 	}
 	if !regexp.MustCompile(`"error":\s*"rate limited"`).MatchString(out.String()) {
 		t.Errorf("compact output lost the error from the deferred row:\n%s", out.String())
+	}
+}
+
+// Discovery must still find the batch workflows, which live in the curated
+// index next to the promoted endpoint commands.
+func TestWhichFindsTheBatchWorkflows(t *testing.T) {
+	for query, want := range map[string]string{
+		"duplicate doorstep":    "address dupes",
+		"toll cost for a trip":  "trip quote",
+		"service area coverage": "coverage check",
+	} {
+		got := rankWhich(whichIndex, query, 3)
+		found := false
+		for _, m := range got {
+			if m.Entry.Command == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("which %q: %s not in the top matches", query, want)
+		}
+	}
+}
+
+// With the local-data switch on, the batch workflows that cache responses and
+// write addresses are refused before any call or write.
+func TestNoLocalDataRefusesTheBatchWorkflows(t *testing.T) {
+	t.Setenv(noLocalDataEnvVar, "1")
+	for _, path := range []string{"address clean", "trip quote", "coverage check", "fleet plan"} {
+		_, _, err := runCLI(t, append(strings.Fields(path), "--stdin")...)
+		if err == nil || !strings.Contains(err.Error(), "disabled while "+noLocalDataEnvVar+"=1") {
+			t.Errorf("%s: err = %v, want the local-data refusal", path, err)
+		}
 	}
 }

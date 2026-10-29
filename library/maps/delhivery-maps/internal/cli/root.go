@@ -970,9 +970,18 @@ func localDataDisabled() bool {
 	return strings.TrimSpace(os.Getenv(noLocalDataEnvVar)) == "1"
 }
 
-// localDataWriterCommands are the generated commands whose job is to copy API
-// data into the local store, keyed by command path below the root.
-var localDataWriterCommands = map[string]bool{"sync": true, "workflow archive": true}
+// localDataWriterCommands are the commands whose job is to copy API data into
+// the local store, keyed by command path below the root. The batch workflows
+// cache every response and write addresses, so they are refused as well; a
+// --dry-run of each makes no calls and writes nothing, so it stays allowed.
+var localDataWriterCommands = map[string]bool{
+	"sync":             true,
+	"workflow archive": true,
+	"address clean":    true,
+	"trip quote":       true,
+	"coverage check":   true,
+	"fleet plan":       true,
+}
 
 // applyLocalDataEnv folds the local-data env switches into the parsed flags.
 // The disable switch outranks every flag so an agent-supplied argument cannot
